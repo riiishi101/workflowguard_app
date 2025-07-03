@@ -164,4 +164,25 @@ export class AuthController {
       throw new HttpException('Failed to find or create user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  @Public()
+  @Get('hubspot-contacts/:email')
+  async getHubspotContacts(@Param('email') email: string, @Res() res: Response) {
+    try {
+      // Find user by email
+      const user = await this.authService.validateUser(email);
+      if (!user || !user.hubspotAccessToken) {
+        return res.status(404).json({ message: 'User or HubSpot access token not found' });
+      }
+
+      // Fetch contacts from HubSpot
+      const hubspotRes = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts', {
+        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+      });
+
+      return res.status(200).json({ contacts: hubspotRes.data });
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to fetch contacts from HubSpot', error: error.response?.data || error.message });
+    }
+  }
 }
