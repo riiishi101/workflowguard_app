@@ -185,4 +185,63 @@ export class AuthController {
       return res.status(500).json({ message: 'Failed to fetch contacts from HubSpot', error: error.response?.data || error.message });
     }
   }
+
+  @Public()
+  @Get('hubspot-companies/:email')
+  async getHubspotCompanies(@Param('email') email: string, @Res() res: Response) {
+    try {
+      const user = await this.authService.validateUser(email);
+      if (!user || !user.hubspotAccessToken) {
+        return res.status(404).json({ message: 'User or HubSpot access token not found' });
+      }
+      const hubspotRes = await axios.get('https://api.hubapi.com/crm/v3/objects/companies', {
+        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+      });
+      return res.status(200).json({ companies: hubspotRes.data });
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to fetch companies from HubSpot', error: error.response?.data || error.message });
+    }
+  }
+
+  @Public()
+  @Get('hubspot-deals/:email')
+  async getHubspotDeals(@Param('email') email: string, @Res() res: Response) {
+    try {
+      const user = await this.authService.validateUser(email);
+      if (!user || !user.hubspotAccessToken) {
+        return res.status(404).json({ message: 'User or HubSpot access token not found' });
+      }
+      const hubspotRes = await axios.get('https://api.hubapi.com/crm/v3/objects/deals', {
+        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+      });
+      return res.status(200).json({ deals: hubspotRes.data });
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to fetch deals from HubSpot', error: error.response?.data || error.message });
+    }
+  }
+
+  @Public()
+  @Post('hubspot-contacts/:email')
+  async createHubspotContact(@Param('email') email: string, @Body() body: any, @Res() res: Response) {
+    try {
+      const user = await this.authService.validateUser(email);
+      if (!user || !user.hubspotAccessToken) {
+        return res.status(404).json({ message: 'User or HubSpot access token not found' });
+      }
+      // Use provided body or sample data
+      const contactData = body && Object.keys(body).length > 0 ? body : {
+        properties: {
+          email: `test${Date.now()}@example.com`,
+          firstname: 'Test',
+          lastname: 'Contact',
+        }
+      };
+      const hubspotRes = await axios.post('https://api.hubapi.com/crm/v3/objects/contacts', contactData, {
+        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+      });
+      return res.status(201).json({ contact: hubspotRes.data });
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to create contact in HubSpot', error: error.response?.data || error.message });
+    }
+  }
 }
