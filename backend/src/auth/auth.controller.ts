@@ -85,16 +85,30 @@ export class AuthController {
 
       const { access_token, refresh_token, expires_in } = tokenRes.data;
 
-      // Fetch user email from HubSpot
+      // Fetch user email and portalId from HubSpot
       const userRes = await axios.get('https://api.hubapi.com/integrations/v1/me', {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       const email = userRes.data.user || userRes.data.email;
+      const portalId = userRes.data.portalId;
+
+      if (!email && portalId) {
+        // Use portalId as a fallback unique identifier (synthetic email)
+        const syntheticEmail = `portal-${portalId}@hubspot.test`;
+        const user = await this.authService.findOrCreateUser(syntheticEmail);
+        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+        return res.status(200).json({
+          message: 'OAuth successful (using portalId as identifier) and tokens stored!',
+          portalId,
+          syntheticEmail,
+          expires_in,
+        });
+      }
 
       if (!email) {
         // Log the HubSpot response for debugging
         console.error('HubSpot /integrations/v1/me response:', userRes.data);
-        return res.status(400).json({ message: 'Could not retrieve user email from HubSpot', hubspotResponse: userRes.data });
+        return res.status(400).json({ message: 'Could not retrieve user email or portalId from HubSpot', hubspotResponse: userRes.data });
       }
 
       // Find or create user in your DB
