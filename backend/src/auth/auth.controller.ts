@@ -91,6 +91,12 @@ export class AuthController {
       });
       const email = userRes.data.user || userRes.data.email;
 
+      if (!email) {
+        // Log the HubSpot response for debugging
+        console.error('HubSpot /integrations/v1/me response:', userRes.data);
+        return res.status(400).json({ message: 'Could not retrieve user email from HubSpot', hubspotResponse: userRes.data });
+      }
+
       // Find or create user in your DB
       const user = await this.authService.findOrCreateUser(email);
       await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
