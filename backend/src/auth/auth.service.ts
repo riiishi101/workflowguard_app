@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from '../user/dto/create-user.dto';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -80,5 +81,29 @@ export class AuthService {
         hubspotTokenExpiresAt: expiresAt,
       },
     });
+  }
+
+  async getValidHubspotAccessToken(user: any) {
+    const now = new Date();
+    if (user.hubspotAccessToken && user.hubspotTokenExpiresAt && user.hubspotTokenExpiresAt > now) {
+      // Token is still valid
+      return user.hubspotAccessToken;
+    }
+    // Token expired, refresh it
+    if (!user.hubspotRefreshToken) {
+      throw new Error('No HubSpot refresh token available');
+    }
+    const tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
+      params: {
+        grant_type: 'refresh_token',
+        client_id: process.env.HUBSPOT_CLIENT_ID,
+        client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+        refresh_token: user.hubspotRefreshToken,
+      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    const { access_token, refresh_token, expires_in } = tokenRes.data;
+    await this.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+    return access_token;
   }
 }

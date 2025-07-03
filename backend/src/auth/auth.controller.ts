@@ -191,11 +191,13 @@ export class AuthController {
   async getHubspotCompanies(@Param('email') email: string, @Res() res: Response) {
     try {
       const user = await this.authService.validateUser(email);
-      if (!user || !user.hubspotAccessToken) {
-        return res.status(404).json({ message: 'User or HubSpot access token not found' });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
       }
+      // Get a valid (refreshed if needed) access token
+      const accessToken = await this.authService.getValidHubspotAccessToken(user);
       const hubspotRes = await axios.get('https://api.hubapi.com/crm/v3/objects/companies', {
-        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       return res.status(200).json({ companies: hubspotRes.data });
     } catch (error) {
