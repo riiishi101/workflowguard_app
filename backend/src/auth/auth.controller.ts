@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import axios from 'axios';
 import { Public } from './public.decorator';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -165,7 +166,7 @@ export class AuthController {
     }
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Get('hubspot-contacts/:email')
   async getHubspotContacts(@Param('email') email: string, @Res() res: Response) {
     try {
@@ -186,7 +187,7 @@ export class AuthController {
     }
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Get('hubspot-companies/:email')
   async getHubspotCompanies(@Param('email') email: string, @Res() res: Response) {
     try {
@@ -205,7 +206,7 @@ export class AuthController {
     }
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Get('hubspot-deals/:email')
   async getHubspotDeals(@Param('email') email: string, @Res() res: Response) {
     try {
@@ -223,7 +224,7 @@ export class AuthController {
     }
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Post('hubspot-contacts/:email')
   async createHubspotContact(@Param('email') email: string, @Body() body: any, @Res() res: Response) {
     try {
