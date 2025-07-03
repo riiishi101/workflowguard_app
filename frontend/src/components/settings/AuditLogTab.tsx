@@ -113,8 +113,8 @@ const AuditLogTab = () => {
                 }}
                 disabled={!planChecked}
               >
-                Upgrade Now
-              </Button>
+          Upgrade Now
+        </Button>
             </TooltipTrigger>
             <TooltipContent>
               All plan upgrades are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.

@@ -104,20 +104,20 @@ const Dashboard = () => {
       const stored = localStorage.getItem('selectedWorkflows');
       if (stored) {
         try {
-          const selected = JSON.parse(stored);
-          if (Array.isArray(selected) && selected.length > 0) {
-            setWorkflows(selected.map(id => ({
-              id,
-              name: `Workflow ${id}`,
-              hubspotId: id,
-              ownerId: '',
-              createdAt: '',
-              updatedAt: '',
-              owner: { email: 'user@example.com' },
-              versions: []
-            })));
-          } else {
-            setWorkflows([]); // Explicitly set to empty to trigger empty state
+        const selected = JSON.parse(stored);
+        if (Array.isArray(selected) && selected.length > 0) {
+          setWorkflows(selected.map(id => ({
+            id,
+            name: `Workflow ${id}`,
+            hubspotId: id,
+            ownerId: '',
+            createdAt: '',
+            updatedAt: '',
+            owner: { email: 'user@example.com' },
+            versions: []
+          })));
+        } else {
+          setWorkflows([]); // Explicitly set to empty to trigger empty state
           }
         } catch (err) {
           console.error('Error parsing stored workflows:', err);
@@ -169,7 +169,7 @@ const Dashboard = () => {
     if (workflow.versions && workflow.versions.length > 0) {
       const latestVersion = workflow.versions[0];
       try {
-        return new Date(latestVersion.createdAt).toLocaleString();
+      return new Date(latestVersion.createdAt).toLocaleString();
       } catch (err) {
         console.error('Error parsing date:', err);
         return "Invalid date";
@@ -223,8 +223,8 @@ const Dashboard = () => {
     setActionLoading(true);
     try {
       // In production, this would call an API to delete workflows
-      setWorkflows(workflows.filter(w => !selectedIds.includes(w.id)));
-      setSelectedIds([]);
+    setWorkflows(workflows.filter(w => !selectedIds.includes(w.id)));
+    setSelectedIds([]);
       toast({
         title: "Workflows Deleted",
         description: `${selectedIds.length} workflow(s) have been deleted.`,
@@ -314,7 +314,7 @@ const Dashboard = () => {
             <p className="text-red-500 mb-4">{error}</p>
             <Button onClick={fetchWorkflows} variant="outline">
               Try Again
-            </Button>
+          </Button>
           </div>
         </main>
       </div>

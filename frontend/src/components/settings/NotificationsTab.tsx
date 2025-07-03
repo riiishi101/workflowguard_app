@@ -108,10 +108,10 @@ const NotificationsTab = () => {
         workflowRolledBack: notifications.workflowRolledBack,
         criticalActionModified: notifications.criticalActionModified,
       });
-      toast({
-        title: 'Notification settings saved',
-        description: 'Your notification preferences have been updated.',
-      });
+    toast({
+      title: 'Notification settings saved',
+      description: 'Your notification preferences have been updated.',
+    });
     } catch (e: any) {
       toast({
         title: 'Error',

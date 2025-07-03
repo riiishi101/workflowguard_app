@@ -70,12 +70,12 @@ const PlanBillingTab = () => {
           <div className="flex items-center gap-3 mb-1">
             <span className="text-2xl font-bold text-gray-900">{plan.planId.charAt(0).toUpperCase() + plan.planId.slice(1)} Plan</span>
             {plan.status === 'trial' && (
-              <Badge
-                variant="secondary"
-                className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
-              >
-                Trial
-              </Badge>
+            <Badge
+              variant="secondary"
+              className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
+            >
+              Trial
+            </Badge>
             )}
           </div>
           <div className="text-gray-600 text-base mb-6">{plan.price ? `$${plan.price}/month` : ''}</div>
@@ -126,152 +126,152 @@ const PlanBillingTab = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Starter Plan */}
-        <Card className="h-full flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-xl">Starter</CardTitle>
-            <div className="text-3xl font-bold">
-              $29<span className="text-base font-normal">/month</span>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-grow justify-between space-y-3">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Up to 25 workflows/month</span>
+        <div className="grid grid-cols-3 gap-6">
+          {/* Starter Plan */}
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-xl">Starter</CardTitle>
+              <div className="text-3xl font-bold">
+                $29<span className="text-base font-normal">/month</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Basic Monitoring</span>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-grow justify-between space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Up to 25 workflows/month</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Basic Monitoring</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>30 days history</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Email Support</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>30 days history</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Email Support</span>
-              </div>
-            </div>
-            <div className="flex-grow" />
+              <div className="flex-grow" />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" className="w-full mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
                     Manage in HubSpot
-                  </Button>
+              </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Professional Plan */}
-        <Card className="border-blue-500 border-2 h-full flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-xl">Professional</CardTitle>
-            <div className="text-3xl font-bold">
-              $59<span className="text-base font-normal">/month</span>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-grow justify-between space-y-3">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Up to 500 workflows/month</span>
+          {/* Professional Plan */}
+          <Card className="border-blue-500 border-2 h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-xl">Professional</CardTitle>
+              <div className="text-3xl font-bold">
+                $59<span className="text-base font-normal">/month</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Advanced Monitoring</span>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-grow justify-between space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Up to 500 workflows/month</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Advanced Monitoring</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>90 days history</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Priority Support</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Custom Notifications</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>90 days history</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Priority Support</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Custom Notifications</span>
-              </div>
-            </div>
-            <div className="flex-grow" />
+              <div className="flex-grow" />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button className="w-full bg-blue-500 hover:bg-blue-600 mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
                     Manage in HubSpot
-                  </Button>
+              </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Enterprise Plan */}
-        <Card className="h-full flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-xl">Enterprise</CardTitle>
-            <div className="text-3xl font-bold">
-              $99<span className="text-base font-normal">/month</span>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-grow justify-between space-y-3">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Unlimited workflows</span>
+          {/* Enterprise Plan */}
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-xl">Enterprise</CardTitle>
+              <div className="text-3xl font-bold">
+                $99<span className="text-base font-normal">/month</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Advanced Monitoring</span>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-grow justify-between space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Unlimited workflows</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Advanced Monitoring</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Unlimited history</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>24/7 Support</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>API Access</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>User Permissions</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Audit Logs</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Unlimited history</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>24/7 Support</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>API Access</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>User Permissions</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Audit Logs</span>
-              </div>
-            </div>
-            <div className="flex-grow" />
+              <div className="flex-grow" />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" className="w-full mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
                     Manage in HubSpot
-                  </Button>
+              </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
     </div>
   );
 };

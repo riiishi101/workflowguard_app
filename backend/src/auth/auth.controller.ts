@@ -62,6 +62,15 @@ export class AuthController {
     }
   }
 
+  @Get('/callback')
+  async hubspotOAuthCallback(@Query('code') code: string, @Res() res: Response) {
+    if (!code) {
+      return res.status(400).json({ message: 'Missing code parameter' });
+    }
+    // You can add your token exchange logic here later
+    return res.status(200).json({ message: 'OAuth callback received', code });
+  }
+
   @Post('validate')
   async validateUser(@Body() body: { email: string }) {
     try {

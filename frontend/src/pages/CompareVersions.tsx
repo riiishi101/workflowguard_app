@@ -271,17 +271,17 @@ const CompareVersions = () => {
         ) : error ? (
           <div className="text-center text-red-600 py-12">{error}</div>
         ) : (
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            {/* Version A */}
-            <div className="border border-gray-200 rounded-lg">
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="font-semibold text-gray-900">
+        <div className="grid grid-cols-2 gap-6 mb-8">
+          {/* Version A */}
+          <div className="border border-gray-200 rounded-lg">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <h3 className="font-semibold text-gray-900">
                   Version A - {versionAData?.createdAt ? new Date(versionAData.createdAt).toLocaleString() : ""}
-                </h3>
-                <p className="text-sm text-gray-600">
+              </h3>
+              <p className="text-sm text-gray-600">
                   Created by {versionAData?.createdBy || "-"}
-                </p>
-              </div>
+              </p>
+            </div>
               <div
                 className="p-4 space-y-3 max-h-96 overflow-y-auto"
                 ref={panelARef}
@@ -292,19 +292,19 @@ const CompareVersions = () => {
                     <span className="font-medium text-gray-800">{step.title}</span>
                   </div>
                 )) : <div className="text-gray-400">No steps</div>}
-              </div>
             </div>
+          </div>
 
-            {/* Version B */}
-            <div className="border border-gray-200 rounded-lg">
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="font-semibold text-gray-900">
+          {/* Version B */}
+          <div className="border border-gray-200 rounded-lg">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <h3 className="font-semibold text-gray-900">
                   Version B - {versionBData?.createdAt ? new Date(versionBData.createdAt).toLocaleString() : ""}
-                </h3>
-                <p className="text-sm text-gray-600">
+              </h3>
+              <p className="text-sm text-gray-600">
                   Created by {versionBData?.createdBy || "-"}
-                </p>
-              </div>
+              </p>
+            </div>
               <div
                 className="p-4 space-y-3 max-h-96 overflow-y-auto"
                 ref={panelBRef}

@@ -149,11 +149,11 @@ const WorkflowHistory = () => {
       for (const id of bulkDeleteIds) {
         await apiService.deleteWorkflowVersion(id);
       }
-      setVersions(versions.filter(v => !bulkDeleteIds.includes(v.id)));
+    setVersions(versions.filter(v => !bulkDeleteIds.includes(v.id)));
       setLastBulkDeleted(versions.filter(v => bulkDeleteIds.includes(v.id)));
-      setShowBulkDeleteDialog(false);
-      toast({
-        title: 'Versions Deleted',
+    setShowBulkDeleteDialog(false);
+    toast({
+      title: 'Versions Deleted',
         description: `${bulkDeleteIds.length} workflow version(s) have been deleted.`,
         variant: 'default',
         duration: 4000,
@@ -291,10 +291,10 @@ const WorkflowHistory = () => {
             {workflow?.hubspotId && (
               <Button variant="outline" size="sm" className="text-blue-600" asChild>
                 <a href={`https://app.hubspot.com/workflows/${workflow.hubspotId}`} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Go to Workflow in HubSpot
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Go to Workflow in HubSpot
                 </a>
-              </Button>
+            </Button>
             )}
           </div>
         </div>
