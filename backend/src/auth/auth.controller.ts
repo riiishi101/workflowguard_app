@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, R
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import axios from 'axios';
+import { Public } from './public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -62,6 +63,7 @@ export class AuthController {
     }
   }
 
+  @Public()
   @Get('/callback')
   async hubspotOAuthCallback(@Query('code') code: string, @Res() res: Response) {
     if (!code) {
