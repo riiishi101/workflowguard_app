@@ -69,8 +69,33 @@ export class AuthController {
     if (!code) {
       return res.status(400).json({ message: 'Missing code parameter' });
     }
-    // You can add your token exchange logic here later
-    return res.status(200).json({ message: 'OAuth callback received', code });
+
+    try {
+      // Exchange code for access token
+      const tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
+        params: {
+          grant_type: 'authorization_code',
+          client_id: process.env.HUBSPOT_CLIENT_ID,
+          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+          redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
+          code,
+        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+
+      const { access_token, refresh_token, expires_in } = tokenRes.data;
+
+      // TODO: Store these tokens in your database, session, etc.
+
+      return res.status(200).json({
+        message: 'OAuth successful!',
+        access_token,
+        refresh_token,
+        expires_in,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: 'Token exchange failed', error: error.response?.data || error.message });
+    }
   }
 
   @Post('validate')
