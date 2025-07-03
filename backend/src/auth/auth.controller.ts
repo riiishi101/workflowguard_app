@@ -210,11 +210,12 @@ export class AuthController {
   async getHubspotDeals(@Param('email') email: string, @Res() res: Response) {
     try {
       const user = await this.authService.validateUser(email);
-      if (!user || !user.hubspotAccessToken) {
-        return res.status(404).json({ message: 'User or HubSpot access token not found' });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
       }
+      const accessToken = await this.authService.getValidHubspotAccessToken(user);
       const hubspotRes = await axios.get('https://api.hubapi.com/crm/v3/objects/deals', {
-        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       return res.status(200).json({ deals: hubspotRes.data });
     } catch (error) {
@@ -227,9 +228,10 @@ export class AuthController {
   async createHubspotContact(@Param('email') email: string, @Body() body: any, @Res() res: Response) {
     try {
       const user = await this.authService.validateUser(email);
-      if (!user || !user.hubspotAccessToken) {
-        return res.status(404).json({ message: 'User or HubSpot access token not found' });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
       }
+      const accessToken = await this.authService.getValidHubspotAccessToken(user);
       // Use provided body or sample data
       const contactData = body && Object.keys(body).length > 0 ? body : {
         properties: {
@@ -239,7 +241,7 @@ export class AuthController {
         }
       };
       const hubspotRes = await axios.post('https://api.hubapi.com/crm/v3/objects/contacts', contactData, {
-        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       return res.status(201).json({ contact: hubspotRes.data });
     } catch (error) {
