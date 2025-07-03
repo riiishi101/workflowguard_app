@@ -85,16 +85,23 @@ export class AuthController {
 
       const { access_token, refresh_token, expires_in } = tokenRes.data;
 
-      // TODO: Store these tokens in your database, session, etc.
+      // Fetch user email from HubSpot
+      const userRes = await axios.get('https://api.hubapi.com/integrations/v1/me', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      const email = userRes.data.user || userRes.data.email;
+
+      // Find or create user in your DB
+      const user = await this.authService.findOrCreateUser(email);
+      await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
 
       return res.status(200).json({
-        message: 'OAuth successful!',
-        access_token,
-        refresh_token,
+        message: 'OAuth successful and tokens stored!',
+        email,
         expires_in,
       });
     } catch (error) {
-      return res.status(500).json({ message: 'Token exchange failed', error: error.response?.data || error.message });
+      return res.status(500).json({ message: 'Token exchange or storage failed', error: error.response?.data || error.message });
     }
   }
 

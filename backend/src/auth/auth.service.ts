@@ -69,4 +69,16 @@ export class AuthService {
       data: { hubspotPortalId },
     });
   }
+
+  async updateUserHubspotTokens(userId: string, accessToken: string, refreshToken: string, expiresIn: number) {
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        hubspotAccessToken: accessToken,
+        hubspotRefreshToken: refreshToken,
+        hubspotTokenExpiresAt: expiresAt,
+      },
+    });
+  }
 }
