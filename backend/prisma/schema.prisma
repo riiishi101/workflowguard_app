@@ -32,6 +32,9 @@ model User {
   overages      Overage[]
   notificationSettings NotificationSettings?
   apiKeys       ApiKey[]
+  hubspotAccessToken   String?
+  hubspotRefreshToken  String?
+  hubspotTokenExpiresAt DateTime?
 }
 
 model Workflow {
