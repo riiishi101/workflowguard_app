@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Wifi, Bell, RefreshCw, Users, Eye, User } from "lucide-react";
 import { io, Socket } from 'socket.io-client';
+import RoleGuard from '../components/RoleGuard';
 
 const StatusCard = ({
   title,
@@ -226,10 +227,12 @@ export default function RealTimeDashboard() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Updates
             </TabsTrigger>
-            <TabsTrigger value="admin" className="flex items-center">
-              <User className="w-4 h-4 mr-2" />
-              Admin Controls
-            </TabsTrigger>
+            <RoleGuard roles={['admin']}>
+              <TabsTrigger value="admin" className="flex items-center">
+                <User className="w-4 h-4 mr-2" />
+                Admin Controls
+              </TabsTrigger>
+            </RoleGuard>
             <TabsTrigger value="users" className="flex items-center">
               <Users className="w-4 h-4 mr-2" />
               Connected Users
@@ -419,172 +422,174 @@ export default function RealTimeDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="admin" className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              {/* Send Notification Section */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Send Notification
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Send real-time notifications to users
-                  </p>
+          <RoleGuard roles={['admin']}>
+            <TabsContent value="admin" className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                {/* Send Notification Section */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Send Notification
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Send real-time notifications to users
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Type
+                      </label>
+                      <Select defaultValue="system-alert">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="system-alert">
+                            System Alert
+                          </SelectItem>
+                          <SelectItem value="maintenance">Maintenance</SelectItem>
+                          <SelectItem value="update">Update</SelectItem>
+                          <SelectItem value="security">Security Alert</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Priority
+                      </label>
+                      <Select defaultValue="medium">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="critical">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Target
+                      </label>
+                      <Select defaultValue="all-users">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all-users">All Users</SelectItem>
+                          <SelectItem value="specific-user">
+                            Specific User
+                          </SelectItem>
+                          <SelectItem value="admin-only">Admin Only</SelectItem>
+                          <SelectItem value="active-users">
+                            Active Users
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Title
+                      </label>
+                      <Input placeholder="Notification title" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Message
+                      </label>
+                      <textarea
+                        className="w-full min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Notification message"
+                      />
+                    </div>
+
+                    <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendNotification} disabled={loading}>
+                      Send Notification
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type
-                    </label>
-                    <Select defaultValue="system-alert">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="system-alert">
-                          System Alert
-                        </SelectItem>
-                        <SelectItem value="maintenance">Maintenance</SelectItem>
-                        <SelectItem value="update">Update</SelectItem>
-                        <SelectItem value="security">Security Alert</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {/* Send Update Section */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Send Update
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Send real-time updates to users
+                    </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Priority
-                    </label>
-                    <Select defaultValue="medium">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Type
+                      </label>
+                      <Select defaultValue="workflow-updated">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="workflow-updated">
+                            Workflow Updated
+                          </SelectItem>
+                          <SelectItem value="system-status">
+                            System Status
+                          </SelectItem>
+                          <SelectItem value="user-action">User Action</SelectItem>
+                          <SelectItem value="data-sync">Data Sync</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Target
-                    </label>
-                    <Select defaultValue="all-users">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all-users">All Users</SelectItem>
-                        <SelectItem value="specific-user">
-                          Specific User
-                        </SelectItem>
-                        <SelectItem value="admin-only">Admin Only</SelectItem>
-                        <SelectItem value="active-users">
-                          Active Users
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Target
+                      </label>
+                      <Select defaultValue="all-users">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all-users">All Users</SelectItem>
+                          <SelectItem value="specific-user">
+                            Specific User
+                          </SelectItem>
+                          <SelectItem value="admin-only">Admin Only</SelectItem>
+                          <SelectItem value="active-users">
+                            Active Users
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title
-                    </label>
-                    <Input placeholder="Notification title" />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Data (JSON)
+                      </label>
+                      <textarea
+                        className="w-full min-h-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                        placeholder='{"key": "value"}'
+                        defaultValue='{"key": "value"}'
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Message
-                    </label>
-                    <textarea
-                      className="w-full min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Notification message"
-                    />
+                    <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendUpdate} disabled={loading}>
+                      Send Update
+                    </Button>
                   </div>
-
-                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendNotification} disabled={loading}>
-                    Send Notification
-                  </Button>
                 </div>
               </div>
-
-              {/* Send Update Section */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Send Update
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Send real-time updates to users
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type
-                    </label>
-                    <Select defaultValue="workflow-updated">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="workflow-updated">
-                          Workflow Updated
-                        </SelectItem>
-                        <SelectItem value="system-status">
-                          System Status
-                        </SelectItem>
-                        <SelectItem value="user-action">User Action</SelectItem>
-                        <SelectItem value="data-sync">Data Sync</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Target
-                    </label>
-                    <Select defaultValue="all-users">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all-users">All Users</SelectItem>
-                        <SelectItem value="specific-user">
-                          Specific User
-                        </SelectItem>
-                        <SelectItem value="admin-only">Admin Only</SelectItem>
-                        <SelectItem value="active-users">
-                          Active Users
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data (JSON)
-                    </label>
-                    <textarea
-                      className="w-full min-h-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-                      placeholder='{"key": "value"}'
-                      defaultValue='{"key": "value"}'
-                    />
-                  </div>
-
-                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendUpdate} disabled={loading}>
-                    Send Update
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          </RoleGuard>
 
           <TabsContent value="users" className="space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 p-6">

@@ -234,4 +234,13 @@ export class UserService {
       where: { id: userId },
     });
   }
+
+  async findAllWithHubSpotTokens() {
+    return this.prisma.user.findMany({
+      where: {
+        hubspotAccessToken: { not: null },
+        hubspotTokenExpiresAt: { gt: new Date() },
+      },
+    });
+  }
 }

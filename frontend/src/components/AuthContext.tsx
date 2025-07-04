@@ -24,55 +24,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
+  // Fetch user from /users/me if token exists
   useEffect(() => {
-    // MOCK AUTH FOR FRONTEND UI TESTING
-    setUser({
-      id: 'mock-user-id',
-      email: 'mockuser@example.com',
-      name: 'Mock User',
-      role: 'admin',
-    });
-    setToken('mock-token');
-    setLoading(false);
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      setToken(storedToken);
+      apiService.setToken(storedToken);
+      apiService.get('/users/me')
+        .then((res) => {
+          setUser(res.data);
+        })
+        .catch(() => {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('authToken');
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
-    setUser({
-      id: 'mock-user-id',
-      email,
-      name: 'Mock User',
-      role: 'admin',
-    });
-    setToken('mock-token');
-    localStorage.setItem('authToken', 'mock-token');
-    localStorage.setItem('authUser', JSON.stringify({
-      id: 'mock-user-id',
-      email,
-      name: 'Mock User',
-      role: 'admin',
-    }));
-    setLoading(false);
+    try {
+      const res = await apiService.post('/auth/login', { email, password });
+      const { token: jwtToken } = res.data;
+      setToken(jwtToken);
+      localStorage.setItem('authToken', jwtToken);
+      apiService.setToken(jwtToken);
+      const userRes = await apiService.get('/users/me');
+      setUser(userRes.data);
+      localStorage.setItem('authUser', JSON.stringify(userRes.data));
+      setLoading(false);
+    } catch (err) {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('authToken');
+      setLoading(false);
+      throw err;
+    }
   };
 
   const register = async (email: string, password: string, name?: string, role?: string) => {
     setLoading(true);
-    setUser({
-      id: 'mock-user-id',
-      email,
-      name: name || 'Mock User',
-      role: role || 'admin',
-    });
-    setToken('mock-token');
-    localStorage.setItem('authToken', 'mock-token');
-    localStorage.setItem('authUser', JSON.stringify({
-      id: 'mock-user-id',
-      email,
-      name: name || 'Mock User',
-      role: role || 'admin',
-    }));
-    setLoading(false);
+    try {
+      await apiService.post('/auth/register', { email, password, name, role });
+      await login(email, password);
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
   };
 
   const logout = () => {
@@ -80,6 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
+    apiService.setToken(null);
+    navigate('/login');
   };
 
   return (

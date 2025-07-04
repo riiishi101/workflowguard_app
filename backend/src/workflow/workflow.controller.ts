@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Query, Req, UseGuards } from '@nestjs/common';
 import { WorkflowService } from './workflow.service';
 import { CreateWorkflowDto, UpdateWorkflowDto } from './dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('workflows')
 export class WorkflowController {
@@ -15,8 +17,14 @@ export class WorkflowController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query('ownerId') ownerId?: string) {
+  async findAll(@Req() req: Request, @Query('ownerId') ownerId?: string, @Query('live') live?: string) {
+    const userId = (req.user as any)?.sub;
+    if (live === 'true' && userId) {
+      // Fetch live workflows from HubSpot for the current user
+      return await this.workflowService.getWorkflowsFromHubSpot(userId);
+    }
     if (ownerId) {
       // Filter by owner if provided
       return await this.workflowService.findAll().then(workflows => 
@@ -68,5 +76,12 @@ export class WorkflowController {
     } catch (error) {
       throw new HttpException('Failed to delete workflow', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/sync-from-hubspot')
+  async syncFromHubSpot(@Req() req: Request, @Param('id') id: string) {
+    const userId = (req.user as any)?.sub;
+    return this.workflowService.snapshotFromHubSpot(id, userId);
   }
 }

@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
-import { WorkflowService } from './workflow.service';
+import { ScheduleModule } from '@nestjs/schedule';
 import { WorkflowController } from './workflow.controller';
+import { WorkflowService } from './workflow.service';
+import { WorkflowSyncService } from './workflow-sync.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [PrismaModule, UserModule],
+  imports: [PrismaModule, UserModule, ScheduleModule.forRoot()],
   controllers: [WorkflowController],
-  providers: [WorkflowService],
+  providers: [WorkflowService, WorkflowSyncService],
   exports: [WorkflowService],
 })
 export class WorkflowModule {}

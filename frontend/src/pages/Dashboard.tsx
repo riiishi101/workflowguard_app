@@ -412,15 +412,17 @@ const Dashboard = () => {
                   Add Workflow
                 </Button>
               </RoleGuard>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExport}
-                disabled={actionLoading || workflows.length === 0}
-              >
-                {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                Export
-              </Button>
+              <RoleGuard roles={['admin', 'restorer']}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleExport}
+                  disabled={actionLoading || workflows.length === 0}
+                >
+                  {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                  Export
+                </Button>
+              </RoleGuard>
             </div>
           </div>
 

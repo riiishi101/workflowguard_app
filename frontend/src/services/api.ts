@@ -733,6 +733,12 @@ class ApiService {
       body: JSON.stringify(config),
     });
   }
+
+  async syncWorkflowFromHubSpot(workflowId: string) {
+    return this.request(`/workflows/${workflowId}/sync-from-hubspot`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiService = new ApiService();

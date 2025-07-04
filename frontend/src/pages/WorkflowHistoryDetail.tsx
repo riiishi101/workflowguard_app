@@ -26,6 +26,8 @@ import {
   Eye,
   RotateCcw,
   Copy,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { useRequireAuth, useAuth } from '../components/AuthContext';
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
@@ -35,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import { saveAs } from 'file-saver';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import RoleGuard from '../components/RoleGuard';
 
 const WorkflowHistoryDetail = () => {
   useRequireAuth();
@@ -63,6 +66,7 @@ const WorkflowHistoryDetail = () => {
   const [auditCurrentPage, setAuditCurrentPage] = useState(1);
   const [auditRowsPerPage, setAuditRowsPerPage] = useState(10);
   const [auditSearchTerm, setAuditSearchTerm] = useState("");
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
   
   useEffect(() => {
     if (!workflowId) return;
@@ -208,19 +212,46 @@ const WorkflowHistoryDetail = () => {
                 <ExternalLink className="w-4 h-4 mr-2" />
                 View in HubSpot
               </Button>
-              <Button
-                onClick={() => {
-                  if (filteredVersions.length > 0) {
-                    setSelectedVersion(filteredVersions[0]);
-                    setShowRollbackModal(true);
-                  }
-                }}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-                size="sm"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Rollback Latest
-              </Button>
+              <RoleGuard roles={['admin', 'restorer']}>
+                <Button
+                  onClick={() => {
+                    if (filteredVersions.length > 0) {
+                      setSelectedVersion(filteredVersions[0]);
+                      setShowRollbackModal(true);
+                    }
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  size="sm"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Rollback Latest
+                </Button>
+              </RoleGuard>
+              <RoleGuard roles={['admin', 'restorer']}>
+                <Button
+                  onClick={async () => {
+                    if (!workflowId) return;
+                    setSnapshotLoading(true);
+                    try {
+                      await apiService.syncWorkflowFromHubSpot(workflowId);
+                      toast({ title: 'Snapshot Created', description: 'A new version was created from HubSpot.' });
+                      // Refresh version list
+                      const data = await apiService.getWorkflowVersions(workflowId);
+                      setVersions(Array.isArray(data) ? data : []);
+                    } catch (e: any) {
+                      toast({ title: 'Error', description: e.message || 'Failed to snapshot from HubSpot', variant: 'destructive' });
+                    } finally {
+                      setSnapshotLoading(false);
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                  disabled={snapshotLoading}
+                >
+                  {snapshotLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                  Snapshot from HubSpot
+                </Button>
+              </RoleGuard>
             </div>
           </div>
         </div>
@@ -353,18 +384,20 @@ const WorkflowHistoryDetail = () => {
                         >
                           View Changes
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700"
-                          aria-label={`Rollback to ${version.version}`}
-                          onClick={() => {
-                            setSelectedVersion(version);
-                            setShowRollbackModal(true);
-                          }}
-                        >
-                          Rollback
-                        </Button>
+                        <RoleGuard roles={['admin', 'restorer']}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700"
+                            aria-label={`Rollback to ${version.version}`}
+                            onClick={() => {
+                              setSelectedVersion(version);
+                              setShowRollbackModal(true);
+                            }}
+                          >
+                            Rollback
+                          </Button>
+                        </RoleGuard>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">

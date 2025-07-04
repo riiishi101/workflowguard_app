@@ -1,8 +1,9 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Workflow, Prisma } from '@prisma/client';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UserService } from '../user/user.service';
+import axios from 'axios';
 
 @Injectable()
 export class WorkflowService {
@@ -116,5 +117,55 @@ export class WorkflowService {
     return this.prisma.workflow.delete({
       where: { id },
     });
+  }
+
+  async getWorkflowsFromHubSpot(userId: string): Promise<any[]> {
+    // Get user and their valid HubSpot access token
+    const user = await this.userService.findOne(userId);
+    if (!user || !user.hubspotAccessToken) {
+      throw new ForbiddenException('No HubSpot access token found for user');
+    }
+    // Optionally refresh token if expired (implement if needed)
+    // const accessToken = await this.userService.getValidHubspotAccessToken(user);
+    const accessToken = user.hubspotAccessToken;
+    // Fetch workflows from HubSpot
+    const response = await axios.get('https://api.hubapi.com/automation/v3/workflows', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data.workflows || [];
+  }
+
+  async snapshotFromHubSpot(workflowId: string, userId: string) {
+    // 1. Find workflow in your DB to get hubspotId
+    const workflow = await this.prisma.workflow.findUnique({ where: { id: workflowId } });
+    if (!workflow) throw new NotFoundException('Workflow not found');
+    // 2. Get user and valid access token
+    const user = await this.userService.findOne(userId);
+    if (!user || !user.hubspotAccessToken) throw new ForbiddenException('No HubSpot access token');
+    // 3. Fetch latest workflow details from HubSpot
+    const response = await axios.get(`https://api.hubapi.com/automation/v3/workflows/${workflow.hubspotId}`, {
+      headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+    });
+    // 4. Create new WorkflowVersion in your DB
+    const latestVersion = await this.prisma.workflowVersion.findFirst({
+      where: { workflowId },
+      orderBy: { versionNumber: 'desc' },
+    });
+    const versionNumber = latestVersion ? latestVersion.versionNumber + 1 : 1;
+    return this.prisma.workflowVersion.create({
+      data: {
+        workflowId,
+        versionNumber,
+        snapshotType: 'manual',
+        createdBy: userId,
+        data: response.data,
+      },
+    });
+  }
+
+  private isWorkflowChanged(hubspotData: any, latestVersion: any): boolean {
+    if (!latestVersion) return true;
+    // Compare the raw data (can be improved for deep diff)
+    return JSON.stringify(hubspotData) !== JSON.stringify(latestVersion.data);
   }
 }

@@ -72,21 +72,32 @@ const Settings = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-6 bg-gray-50 p-1 rounded-lg">
-            {tabs.map(tab => {
-              if (tab.always || (tab.feature && plan.features.includes(tab.feature))) {
-                return (
-                  <TabsTrigger key={tab.key} value={tab.key} onClick={() => handleTabClick(tab)}>
-                    {tab.label}
-                  </TabsTrigger>
-                );
-              }
-              // Optionally render disabled tab
-              return (
-                <TabsTrigger key={tab.key} value={tab.key} onClick={() => handleTabClick(tab)} disabled>
-                  {tab.label}
-                </TabsTrigger>
-              );
-            })}
+            <TabsTrigger key="plan-billing" value="plan-billing" onClick={() => handleTabClick({ key: 'plan-billing', always: true })}>
+              My Plan & Billing
+            </TabsTrigger>
+            <TabsTrigger key="profile" value="profile" onClick={() => handleTabClick({ key: 'profile', always: true })}>
+              My Profile
+            </TabsTrigger>
+            {plan.features.includes('custom_notifications') && (
+              <TabsTrigger key="notifications" value="notifications" onClick={() => handleTabClick({ key: 'notifications', feature: 'custom_notifications' })}>
+                Notifications
+              </TabsTrigger>
+            )}
+            <RoleGuard roles={['admin']}>
+              <TabsTrigger key="user-permissions" value="user-permissions" onClick={() => handleTabClick({ key: 'user-permissions', feature: 'user_permissions' })}>
+                User Permissions
+              </TabsTrigger>
+            </RoleGuard>
+            <RoleGuard roles={['admin', 'restorer']}>
+              <TabsTrigger key="audit-log" value="audit-log" onClick={() => handleTabClick({ key: 'audit-log', feature: 'audit_logs' })}>
+                Audit Log
+              </TabsTrigger>
+            </RoleGuard>
+            <RoleGuard roles={['admin']}>
+              <TabsTrigger key="api-access" value="api-access" onClick={() => handleTabClick({ key: 'api-access', feature: 'api_access' })}>
+                API Access
+              </TabsTrigger>
+            </RoleGuard>
           </TabsList>
 
           <div className="mt-8">
@@ -96,21 +107,21 @@ const Settings = () => {
             <TabsContent value="notifications">
               <NotificationsTab />
             </TabsContent>
-            {user && user.role === 'admin' && (
+            <RoleGuard roles={['admin']}>
               <TabsContent value="user-permissions">
                 <UserPermissionsTab />
               </TabsContent>
-            )}
-            {(user && (user.role === 'admin' || user.role === 'restorer')) && (
+            </RoleGuard>
+            <RoleGuard roles={['admin', 'restorer']}>
               <TabsContent value="audit-log">
                 <AuditLogTab />
               </TabsContent>
-            )}
-            {user && user.role === 'admin' && (
+            </RoleGuard>
+            <RoleGuard roles={['admin']}>
               <TabsContent value="api-access">
                 <ApiAccessTab />
               </TabsContent>
-            )}
+            </RoleGuard>
             <TabsContent value="profile">
               <ProfileTab />
             </TabsContent>
