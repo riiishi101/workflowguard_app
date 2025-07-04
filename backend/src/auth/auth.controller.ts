@@ -98,12 +98,7 @@ export class AuthController {
         const syntheticEmail = `portal-${portalId}@hubspot.test`;
         const user = await this.authService.findOrCreateUser(syntheticEmail);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-        return res.status(200).json({
-          message: 'OAuth successful (using portalId as identifier) and tokens stored!',
-          portalId,
-          syntheticEmail,
-          expires_in,
-        });
+        return res.redirect('https://workflowguard.pro/dashboard');
       }
 
       if (!email) {
@@ -115,12 +110,7 @@ export class AuthController {
       // Find or create user in your DB
       const user = await this.authService.findOrCreateUser(email);
       await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-
-      return res.status(200).json({
-        message: 'OAuth successful and tokens stored!',
-        email,
-        expires_in,
-      });
+      return res.redirect('https://workflowguard.pro/dashboard');
     } catch (error) {
       return res.status(500).json({ message: 'Token exchange or storage failed', error: error.response?.data || error.message });
     }
