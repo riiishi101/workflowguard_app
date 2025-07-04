@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { SsoConfigController } from './sso-config.controller';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { SsoConfigController } from './sso-config.controller';
       secret: process.env.JWT_SECRET || 'supersecretkey',
       signOptions: { expiresIn: '7d' },
     }),
+    AuditLogModule,
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController, SsoConfigController],
