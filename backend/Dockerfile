@@ -27,8 +27,8 @@ COPY --from=builder /app/prisma ./prisma
 # Generate Prisma client (again, for production)
 RUN npx prisma generate
 
-# Run migrations before starting the app
-RUN npx prisma migrate deploy
+COPY entrypoint.sh /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 EXPOSE 4000
 
