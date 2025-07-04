@@ -19,7 +19,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --production
+RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
@@ -27,6 +27,9 @@ COPY --from=builder /app/prisma ./prisma
 # Generate Prisma client (again, for production)
 RUN npx prisma generate
 
+# Run migrations before starting the app
+RUN npx prisma migrate deploy
+
 EXPOSE 4000
 
-CMD ["node", "dist/src/main.js"] 
+CMD ["npm", "run", "start:prod"] 
