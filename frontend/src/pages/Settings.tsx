@@ -153,6 +153,13 @@ const Settings = () => {
         >
           Manage Subscription
         </Button>
+
+        <Button
+          onClick={() => window.location.href = '/api/auth/hubspot'}
+          className="bg-orange-600 text-white mt-4 mb-2"
+        >
+          Reconnect to HubSpot
+        </Button>
       </main>
     </div>
   );
