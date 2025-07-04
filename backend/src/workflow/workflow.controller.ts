@@ -53,9 +53,11 @@ export class WorkflowController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateWorkflowDto: UpdateWorkflowDto) {
+  @UseGuards(JwtAuthGuard)
+  async update(@Req() req: Request, @Param('id') id: string, @Body() updateWorkflowDto: UpdateWorkflowDto) {
     try {
-      const workflow = await this.workflowService.update(id, updateWorkflowDto);
+      const userId = (req.user as any)?.sub;
+      const workflow = await this.workflowService.update(id, { ...updateWorkflowDto, updatedBy: userId });
       if (!workflow) {
         throw new HttpException('Workflow not found', HttpStatus.NOT_FOUND);
       }
@@ -66,9 +68,11 @@ export class WorkflowController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  @UseGuards(JwtAuthGuard)
+  async remove(@Req() req: Request, @Param('id') id: string) {
     try {
-      const workflow = await this.workflowService.remove(id);
+      const userId = (req.user as any)?.sub;
+      const workflow = await this.workflowService.remove(id, userId);
       if (!workflow) {
         throw new HttpException('Workflow not found', HttpStatus.NOT_FOUND);
       }

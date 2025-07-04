@@ -53,6 +53,12 @@ interface WelcomeEmailData {
   features: string[];
 }
 
+interface PasswordResetEmailData {
+  userEmail: string;
+  userName: string;
+  resetToken: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -249,6 +255,26 @@ export class EmailService {
 
     this.logger.log(`Bulk notification completed: ${success} successful, ${failed} failed`);
     return { success, failed };
+  }
+
+  /**
+   * Send password reset email
+   */
+  async sendPasswordResetEmail(data: PasswordResetEmailData): Promise<boolean> {
+    try {
+      const template = this.getPasswordResetEmailTemplate(data);
+      await this.sendEmail({
+        to: data.userEmail,
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+      });
+      this.logger.log(`Password reset email sent to ${data.userEmail}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email to ${data.userEmail}:`, error);
+      return false;
+    }
   }
 
   /**
@@ -814,6 +840,65 @@ Contact support: ${this.supportEmail}
 This is an automated message from ${this.appName}
     `;
 
+    return { subject, html, text };
+  }
+
+  private getPasswordResetEmailTemplate(data: PasswordResetEmailData): EmailTemplate {
+    const resetUrl = `${this.getAppUrl()}/reset-password?token=${data.resetToken}`;
+    const subject = `🔒 Password Reset Request`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset='utf-8'>
+        <title>Password Reset</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f8f9fa; }
+          .button { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class='container'>
+          <div class='header'>
+            <h1>🔒 Password Reset</h1>
+          </div>
+          <div class='content'>
+            <p>Hello ${data.userName},</p>
+            <p>We received a request to reset your password for your ${this.appName} account.</p>
+            <p>If you did not request this, you can safely ignore this email.</p>
+            <p><a href='${resetUrl}' class='button'>Reset Password</a></p>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you have any questions, please contact our support team.</p>
+          </div>
+          <div class='footer'>
+            <p>This is an automated message from ${this.appName}</p>
+            <p>Contact: ${this.supportEmail}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    const text = `
+Password Reset
+
+Hello ${data.userName},
+
+We received a request to reset your password for your ${this.appName} account.
+
+If you did not request this, you can safely ignore this email.
+
+Reset your password: ${resetUrl}
+
+This link will expire in 1 hour.
+
+Contact support: ${this.supportEmail}
+
+This is an automated message from ${this.appName}
+    `;
     return { subject, html, text };
   }
 

@@ -17,9 +17,10 @@ export class UserController {
   @Roles('admin')
   @PlanFeature('user_permissions')
   @UseGuards(PlanFeatureGuard)
-  async create(@Body() createUserDto: CreateUserDto) {
+  async create(@Req() req: Request, @Body() createUserDto: CreateUserDto) {
     try {
-      return await this.userService.create(createUserDto);
+      const actorUserId = (req.user as any)?.sub;
+      return await this.userService.create(createUserDto, actorUserId);
     } catch (error) {
       if (error.code === 'P2002') {
         throw new HttpException('User with this email already exists', HttpStatus.CONFLICT);
@@ -54,9 +55,10 @@ export class UserController {
   @Patch(':id')
   @PlanFeature('user_permissions')
   @UseGuards(PlanFeatureGuard)
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(@Req() req: Request, @Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     try {
-      const user = await this.userService.update(id, updateUserDto);
+      const actorUserId = (req.user as any)?.sub;
+      const user = await this.userService.update(id, { ...updateUserDto, updatedBy: actorUserId });
       if (!user) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
@@ -73,9 +75,10 @@ export class UserController {
   @Roles('admin')
   @PlanFeature('user_permissions')
   @UseGuards(PlanFeatureGuard)
-  async remove(@Param('id') id: string) {
+  async remove(@Req() req: Request, @Param('id') id: string) {
     try {
-      const user = await this.userService.remove(id);
+      const actorUserId = (req.user as any)?.sub;
+      const user = await this.userService.remove(id, actorUserId);
       if (!user) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
@@ -197,5 +200,24 @@ export class UserController {
     const userId = (req.user as any)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.deleteMe(userId);
+  }
+
+  @Post(':id/reset-password')
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard)
+  async resetPassword(@Param('id') id: string) {
+    await this.userService.resetPassword(id);
+    return { message: 'Password reset initiated.' };
+  }
+
+  @Post('reset-password')
+  async resetPasswordWithToken(@Body() body: { token: string; newPassword: string }) {
+    const { token, newPassword } = body;
+    const result = await this.userService.resetPasswordWithToken(token, newPassword);
+    if (result.success) {
+      return { message: 'Password has been reset successfully.' };
+    } else {
+      throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
+    }
   }
 }

@@ -4,10 +4,15 @@ import { Workflow, Prisma } from '@prisma/client';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UserService } from '../user/user.service';
 import axios from 'axios';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class WorkflowService {
-  constructor(private prisma: PrismaService, private userService: UserService) {}
+  constructor(
+    private prisma: PrismaService,
+    private userService: UserService,
+    private auditLogService: AuditLogService,
+  ) {}
 
   async create(data: CreateWorkflowDto): Promise<Workflow> {
     const { ownerId, ...rest } = data;
@@ -57,6 +62,14 @@ export class WorkflowService {
         },
       });
     }
+    // Audit log
+    await this.auditLogService.create({
+      userId: ownerId,
+      action: 'create',
+      entityType: 'workflow',
+      entityId: workflow.id,
+      newValue: workflow,
+    });
     return workflow;
   }
 
@@ -102,8 +115,9 @@ export class WorkflowService {
     });
   }
 
-  async update(id: string, data: Prisma.WorkflowUpdateInput): Promise<Workflow> {
-    return this.prisma.workflow.update({
+  async update(id: string, data: Prisma.WorkflowUpdateInput & { updatedBy?: string }): Promise<Workflow> {
+    const oldWorkflow = await this.prisma.workflow.findUnique({ where: { id } });
+    const workflow = await this.prisma.workflow.update({
       where: { id },
       data,
       include: {
@@ -111,12 +125,30 @@ export class WorkflowService {
         versions: true,
       },
     });
+    // Audit log
+    await this.auditLogService.create({
+      userId: (data as any).updatedBy,
+      action: 'update',
+      entityType: 'workflow',
+      entityId: workflow.id,
+      oldValue: oldWorkflow,
+      newValue: workflow,
+    });
+    return workflow;
   }
 
-  async remove(id: string): Promise<Workflow> {
-    return this.prisma.workflow.delete({
-      where: { id },
+  async remove(id: string, userId?: string): Promise<Workflow> {
+    const oldWorkflow = await this.prisma.workflow.findUnique({ where: { id } });
+    const workflow = await this.prisma.workflow.delete({ where: { id } });
+    // Audit log
+    await this.auditLogService.create({
+      userId,
+      action: 'delete',
+      entityType: 'workflow',
+      entityId: id,
+      oldValue: oldWorkflow,
     });
+    return workflow;
   }
 
   async getWorkflowsFromHubSpot(userId: string): Promise<any[]> {
@@ -152,7 +184,7 @@ export class WorkflowService {
       orderBy: { versionNumber: 'desc' },
     });
     const versionNumber = latestVersion ? latestVersion.versionNumber + 1 : 1;
-    return this.prisma.workflowVersion.create({
+    const version = await this.prisma.workflowVersion.create({
       data: {
         workflowId,
         versionNumber,
@@ -161,6 +193,15 @@ export class WorkflowService {
         data: response.data,
       },
     });
+    // Audit log
+    await this.auditLogService.create({
+      userId,
+      action: 'sync',
+      entityType: 'workflow',
+      entityId: workflowId,
+      newValue: version,
+    });
+    return version;
   }
 
   private isWorkflowChanged(hubspotData: any, latestVersion: any): boolean {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -20,6 +20,10 @@ import { Download, Calendar, Lock } from "lucide-react";
 import apiService from "@/services/api";
 import PremiumModal from "@/components/UpgradeRequiredModal";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ReactJson from 'react-json-view';
+import { format, subDays } from 'date-fns';
+import { io, Socket } from "socket.io-client";
+import { useToast } from '@/components/ui/use-toast';
 
 // Define the audit log type
 interface AuditLog {
@@ -40,31 +44,40 @@ const AuditLogTab = () => {
   const [dateRange, setDateRange] = useState("all");
   const [userFilter, setUserFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
+  const [entityFilter, setEntityFilter] = useState('all');
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [plan, setPlan] = useState<any>(null);
   const [planChecked, setPlanChecked] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+  const [highlightedLogId, setHighlightedLogId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchAuditLogs = async () => {
       setLoading(true);
       setError(null);
       try {
-        // For now, only userId and entityType filters are supported by backend
-        const userId = userFilter !== "all" ? userFilter : undefined;
-        const entityType = undefined; // Could be set from actionFilter if backend supports
-        const logs = await apiService.getAuditLogs(userId, entityType);
+        const userId = userFilter !== 'all' ? userFilter : undefined;
+        const entityType = entityFilter !== 'all' ? entityFilter : undefined;
+        const action = actionFilter !== 'all' ? actionFilter : undefined;
+        const params: any = { userId, entityType, action };
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
+        const logs = await apiService.getAuditLogsAdvanced(params);
         setAuditLogs(logs as AuditLog[]);
         setShowUpgradeBanner(false);
       } catch (err: any) {
-        setError(err.message || "Failed to fetch audit logs");
+        setError(err.message || 'Failed to fetch audit logs');
         if (
-          err.message === "Unauthorized" ||
-          (typeof err.message === "string" &&
-            (err.message.toLowerCase().includes("plan") ||
-             err.message.toLowerCase().includes("upgrade")))
+          err.message === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.toLowerCase().includes('plan') ||
+              err.message.toLowerCase().includes('upgrade')))
         ) {
           setShowUpgradeBanner(true);
         }
@@ -73,13 +86,76 @@ const AuditLogTab = () => {
       }
     };
     fetchAuditLogs();
-  }, [userFilter]);
+  }, [userFilter, entityFilter, actionFilter, startDate, endDate]);
 
   useEffect(() => {
     apiService.getMyPlan()
       .then((data) => setPlan(data))
       .finally(() => setPlanChecked(true));
   }, []);
+
+  useEffect(() => {
+    // Connect to socket.io for real-time audit log updates
+    if (!socketRef.current) {
+      socketRef.current = io("/realtime", { transports: ["websocket"] });
+      socketRef.current.on("connect", () => {
+        // Join admin room for audit log updates
+        socketRef.current?.emit("join", { room: "admin" });
+      });
+      socketRef.current.on("update", (update: any) => {
+        if (update.type === "user_activity" && update.data) {
+          // Only prepend if matches current filters
+          const log = update.data;
+          if (
+            (userFilter === "all" || log.userId === userFilter) &&
+            (entityFilter === "all" || log.entityType === entityFilter) &&
+            (actionFilter === "all" || log.action === actionFilter)
+          ) {
+            setAuditLogs((prev) => [log, ...prev]);
+            setHighlightedLogId(log.id);
+            toast({
+              title: 'New Activity',
+              description: `${log.user?.name || log.userId || 'Someone'} performed ${log.action} on ${log.entityType}`,
+              duration: 4000,
+            });
+            setTimeout(() => setHighlightedLogId(null), 3000);
+          }
+        }
+      });
+    }
+    return () => {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function exportAuditLogsToCSV(logs: AuditLog[]) {
+    if (!logs.length) return;
+    const headers = [
+      'Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'Old Value', 'New Value', 'IP Address'
+    ];
+    const rows = logs.map(log => [
+      log.timestamp || log.createdAt || '',
+      log.user?.name || log.userId || '-',
+      log.action,
+      log.entityType,
+      log.entityId,
+      typeof log.oldValue === 'object' ? JSON.stringify(log.oldValue) : (log.oldValue || '-'),
+      typeof log.newValue === 'object' ? JSON.stringify(log.newValue) : (log.newValue || '-'),
+      log.ipAddress || '-'
+    ]);
+    const csvContent = [headers, ...rows].map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="space-y-6">
@@ -133,10 +209,25 @@ const AuditLogTab = () => {
         </p>
 
         {/* Filters */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
+          {/* Date Range Picker */}
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
-            <Select value={dateRange} onValueChange={setDateRange}>
+            <Select value={dateRange} onValueChange={(val) => {
+              setDateRange(val);
+              if (val === 'all') {
+                setStartDate(null); setEndDate(null);
+              } else if (val === 'today') {
+                const today = format(new Date(), 'yyyy-MM-dd');
+                setStartDate(today); setEndDate(today);
+              } else if (val === 'week') {
+                setStartDate(format(subDays(new Date(), 6), 'yyyy-MM-dd'));
+                setEndDate(format(new Date(), 'yyyy-MM-dd'));
+              } else if (val === 'month') {
+                setStartDate(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
+                setEndDate(format(new Date(), 'yyyy-MM-dd'));
+              }
+            }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
@@ -148,7 +239,36 @@ const AuditLogTab = () => {
               </SelectContent>
             </Select>
           </div>
-
+          {/* Entity Type Filter */}
+          <Select value={entityFilter} onValueChange={setEntityFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Entities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Entities</SelectItem>
+              <SelectItem value="workflow">Workflow</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+              <SelectItem value="notification_settings">Notification Settings</SelectItem>
+              <SelectItem value="sso_config">SSO Config</SelectItem>
+              {/* Add more entity types as needed */}
+            </SelectContent>
+          </Select>
+          {/* Action Filter */}
+          <Select value={actionFilter} onValueChange={setActionFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Actions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Actions</SelectItem>
+              <SelectItem value="create">Create</SelectItem>
+              <SelectItem value="update">Update</SelectItem>
+              <SelectItem value="delete">Delete</SelectItem>
+              <SelectItem value="restore">Restore</SelectItem>
+              <SelectItem value="sync">Sync</SelectItem>
+              {/* Add more actions as needed */}
+            </SelectContent>
+          </Select>
+          {/* User Filter (existing) */}
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="All Users" />
@@ -159,20 +279,7 @@ const AuditLogTab = () => {
               {/* <SelectItem value="userId1">User 1</SelectItem> */}
             </SelectContent>
           </Select>
-
-          <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Actions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Actions</SelectItem>
-              {/* <SelectItem value="created">Created</SelectItem>
-              <SelectItem value="updated">Updated</SelectItem>
-              <SelectItem value="deleted">Deleted</SelectItem> */}
-            </SelectContent>
-          </Select>
-
-          <Button variant="outline" className="text-blue-600">
+          <Button variant="outline" className="text-blue-600" onClick={() => exportAuditLogsToCSV(auditLogs)}>
             <Download className="w-4 h-4 mr-2" />
             Export Log
           </Button>
@@ -209,7 +316,7 @@ const AuditLogTab = () => {
                   </TableRow>
                 ) : (
                   auditLogs.map((log: any) => (
-                    <TableRow key={log.id} className="hover:bg-gray-50">
+                    <TableRow key={log.id} className={`hover:bg-gray-50 ${log.id === highlightedLogId ? 'bg-yellow-100 animate-pulse' : ''}`}>
                       <TableCell className="font-mono text-sm text-gray-600">
                         {log.timestamp || log.createdAt}
                       </TableCell>
@@ -232,15 +339,37 @@ const AuditLogTab = () => {
                       </TableCell>
                       <TableCell>{log.entityType || "-"}</TableCell>
                       <TableCell>{log.entityId || "-"}</TableCell>
-                      <TableCell className="text-gray-600">
-                        {typeof log.oldValue === "object"
-                          ? JSON.stringify(log.oldValue)
-                          : log.oldValue || "-"}
+                      <TableCell className="text-gray-600 max-w-xs truncate">
+                        {log.oldValue && typeof log.oldValue === 'object' ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-pointer">
+                                  <ReactJson src={log.oldValue} name={false} collapsed={1} enableClipboard={false} displayDataTypes={false} style={{ fontSize: 12 }} />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-lg max-h-96 overflow-auto">
+                                <ReactJson src={log.oldValue} name={false} enableClipboard={true} displayDataTypes={false} style={{ fontSize: 12 }} />
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (log.oldValue || '-')}
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {typeof log.newValue === "object"
-                          ? JSON.stringify(log.newValue)
-                          : log.newValue || "-"}
+                      <TableCell className="font-medium max-w-xs truncate">
+                        {log.newValue && typeof log.newValue === 'object' ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-pointer">
+                                  <ReactJson src={log.newValue} name={false} collapsed={1} enableClipboard={false} displayDataTypes={false} style={{ fontSize: 12 }} />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-lg max-h-96 overflow-auto">
+                                <ReactJson src={log.newValue} name={false} enableClipboard={true} displayDataTypes={false} style={{ fontSize: 12 }} />
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (log.newValue || '-')}
                       </TableCell>
                       <TableCell className="font-mono text-sm text-gray-600">
                         {log.ipAddress || "-"}

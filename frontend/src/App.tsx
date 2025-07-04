@@ -21,6 +21,7 @@ import { AuthProvider, useAuth } from './components/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FullScreenProgress from "@/components/ui/FullScreenProgress";
+import ResetPassword from './pages/ResetPassword';
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => {
               <Route path="/analytics" element={<AnalyticsDashboard />} />
               <Route path="/realtime-dashboard" element={<RealtimeDashboard />} />
               <Route path="/help" element={<HelpSupport />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

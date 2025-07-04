@@ -6,6 +6,8 @@ import { AuditLogService } from '../audit-log/audit-log.service';
 import { NotificationService } from '../notification/notification.service';
 import { PLAN_CONFIG } from '../plan-config';
 import { randomBytes, createHash } from 'crypto';
+import { EmailService } from '../services/email.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -13,15 +15,24 @@ export class UserService {
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
     private notificationService: NotificationService,
+    private emailService: EmailService,
   ) {}
 
-  async create(data: CreateUserDto): Promise<User> {
-    return this.prisma.user.create({
+  async create(data: CreateUserDto, actorUserId?: string): Promise<User> {
+    const user = await this.prisma.user.create({
       data: {
         ...data,
         role: data.role ?? 'viewer',
       },
     });
+    await this.auditLogService.create({
+      userId: actorUserId,
+      action: 'create',
+      entityType: 'user',
+      entityId: user.id,
+      newValue: user,
+    });
+    return user;
   }
 
   async findAll(): Promise<User[]> {
@@ -40,17 +51,34 @@ export class UserService {
     });
   }
 
-  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
-    return this.prisma.user.update({
+  async update(id: string, data: Prisma.UserUpdateInput & { updatedBy?: string }): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.update({
       where: { id },
       data,
     });
+    await this.auditLogService.create({
+      userId: (data as any).updatedBy,
+      action: 'update',
+      entityType: 'user',
+      entityId: user.id,
+      oldValue: oldUser,
+      newValue: user,
+    });
+    return user;
   }
 
-  async remove(id: string): Promise<User> {
-    return this.prisma.user.delete({
-      where: { id },
+  async remove(id: string, actorUserId?: string): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.delete({ where: { id } });
+    await this.auditLogService.create({
+      userId: actorUserId,
+      action: 'delete',
+      entityType: 'user',
+      entityId: id,
+      oldValue: oldUser,
     });
+    return user;
   }
 
   async getWorkflowCountByOwner(ownerId: string): Promise<number> {
@@ -159,11 +187,21 @@ export class UserService {
   }
 
   async updateNotificationSettings(userId: string, dto: any) {
-    return this.prisma.notificationSettings.upsert({
+    const oldSettings = await this.prisma.notificationSettings.findUnique({ where: { userId } });
+    const settings = await this.prisma.notificationSettings.upsert({
       where: { userId },
       update: dto,
       create: { userId, ...dto },
     });
+    await this.auditLogService.create({
+      userId,
+      action: 'update',
+      entityType: 'notification_settings',
+      entityId: userId,
+      oldValue: oldSettings,
+      newValue: settings,
+    });
+    return settings;
   }
 
   async getApiKeys(userId: string) {
@@ -222,17 +260,31 @@ export class UserService {
     });
   }
 
-  async updateMe(userId: string, dto: any) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: dto,
+  async updateMe(userId: string, dto: any): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.update({ where: { id: userId }, data: dto });
+    await this.auditLogService.create({
+      userId,
+      action: 'update',
+      entityType: 'user',
+      entityId: userId,
+      oldValue: oldUser,
+      newValue: user,
     });
+    return user;
   }
 
-  async deleteMe(userId: string) {
-    return this.prisma.user.delete({
-      where: { id: userId },
+  async deleteMe(userId: string): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.delete({ where: { id: userId } });
+    await this.auditLogService.create({
+      userId,
+      action: 'delete',
+      entityType: 'user',
+      entityId: userId,
+      oldValue: oldUser,
     });
+    return user;
   }
 
   async findAllWithHubSpotTokens() {
@@ -242,5 +294,52 @@ export class UserService {
         hubspotTokenExpiresAt: { gt: new Date() },
       },
     });
+  }
+
+  async resetPassword(userId: string) {
+    // Generate a reset token
+    const token = randomBytes(32).toString('hex');
+    // Store the token and expiry (e.g., 1 hour) in the user record or a separate table
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        resetToken: token,
+        resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000),
+      } as any, // Add these fields to your schema if not present
+    });
+    // Send email with reset link
+    await this.emailService.sendPasswordResetEmail({
+      userEmail: user.email,
+      userName: user.name || user.email,
+      resetToken: token,
+    });
+    // Log the token for debugging (should be removed in production)
+    console.log(`Password reset token for user ${userId}: ${token}`);
+    return token;
+  }
+
+  async resetPasswordWithToken(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    // Find user by token and check expiry
+    const user = await this.prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpires: { gt: new Date() },
+      },
+    });
+    if (!user) {
+      return { success: false, message: 'Invalid or expired token.' };
+    }
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Update user password and clear resetToken fields
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpires: null,
+      } as any,
+    });
+    return { success: true, message: 'Password reset successful.' };
   }
 }

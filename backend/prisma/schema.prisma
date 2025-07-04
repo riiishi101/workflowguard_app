@@ -35,6 +35,8 @@ model User {
   hubspotAccessToken   String?
   hubspotRefreshToken  String?
   hubspotTokenExpiresAt DateTime?
+  resetToken    String?
+  resetTokenExpires DateTime?
 }
 
 model Workflow {

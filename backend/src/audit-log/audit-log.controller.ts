@@ -29,6 +29,9 @@ export class AuditLogController {
     @Query('userId') userId?: string,
     @Query('entityType') entityType?: string,
     @Query('entityId') entityId?: string,
+    @Query('action') action?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
@@ -37,11 +40,17 @@ export class AuditLogController {
     if (!plan?.features?.includes('audit_logs')) {
       throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
     }
-    if (userId) {
-      return await this.auditLogService.findByUser(userId);
+    // Advanced filtering
+    const where: any = {};
+    if (userId) where.userId = userId;
+    if (entityType) where.entityType = entityType;
+    if (entityId) where.entityId = entityId;
+    if (action) where.action = action;
+    if (startDate && endDate) {
+      where.timestamp = { gte: new Date(startDate), lte: new Date(endDate + 'T23:59:59.999Z') };
     }
-    if (entityType && entityId) {
-      return await this.auditLogService.findByEntity(entityType, entityId);
+    if (Object.keys(where).length > 0) {
+      return await this.auditLogService.findAdvanced(where);
     }
     return await this.auditLogService.findAll();
   }
