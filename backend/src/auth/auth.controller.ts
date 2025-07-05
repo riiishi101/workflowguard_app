@@ -15,7 +15,7 @@ export class AuthController {
     // This would redirect to HubSpot's OAuth consent page
     const clientId = process.env.HUBSPOT_CLIENT_ID;
     const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'http://localhost:3000/auth/hubspot/callback');
-    const scopes = encodeURIComponent('contacts workflows');
+    const scopes = encodeURIComponent('crm.objects.companies.read crm.objects.contacts.read crm.objects.deals.read crm.schemas.companies.read crm.schemas.contacts.read crm.schemas.deals.read oauth');
     
     const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUri}`;
     
