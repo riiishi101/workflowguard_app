@@ -91,15 +91,15 @@ export class AuthController {
 
       // Set JWT as HttpOnly, Secure cookie
       const isProduction = process.env.NODE_ENV === 'production';
-      console.log('Setting JWT cookie, production:', isProduction, 'domain:', isProduction ? '.workflowguard.pro' : 'undefined');
+      console.log('Setting JWT cookie, production:', isProduction);
       console.log('User email:', user.email, 'User ID:', user.id);
       res.cookie('jwt', jwt, {
         httpOnly: true,
         secure: isProduction, // true in production, false in development
-        sameSite: 'lax',
+        sameSite: 'none', // Allow cross-site cookies
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
-        domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for cross-subdomain access
+        // Remove domain restriction for now
       });
       console.log('JWT cookie set successfully');
 
@@ -252,9 +252,9 @@ export class AuthController {
     res.clearCookie('jwt', {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: 'none', // Allow cross-site cookies
       path: '/',
-      domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for cross-subdomain access
+      // Remove domain restriction for now
     });
     return res.json({ message: 'Logged out successfully' });
   }
@@ -318,10 +318,10 @@ export class AuthController {
     res.cookie('jwt', jwt, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: 'none', // Allow cross-site cookies
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
-      domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for cross-subdomain access
+      // Remove domain restriction for now
     });
     
     console.log('Manual auth - JWT cookie set successfully');
