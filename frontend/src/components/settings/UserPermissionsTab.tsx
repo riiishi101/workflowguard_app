@@ -389,7 +389,7 @@ const UserPermissionsTab = () => {
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
+                  <TableRow key={user.id}>
                       <TableCell>
                         <input
                           type="checkbox"
@@ -397,32 +397,32 @@ const UserPermissionsTab = () => {
                           onChange={e => handleSelectUser(user.id, e.target.checked)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell className="text-gray-600">{user.email}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) =>
-                            handleRoleChange(user.id, value)
-                          }
-                          disabled={!canEdit}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                            <SelectItem value="Restorer">Restorer</SelectItem>
-                            <SelectItem value="Viewer">Viewer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="text-gray-600">{user.email}</TableCell>
+                    <TableCell>
+                      <Select
+                        value={user.role}
+                        onValueChange={(value) =>
+                          handleRoleChange(user.id, value)
+                        }
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="Restorer">Restorer</SelectItem>
+                          <SelectItem value="Viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
                         <Button variant="outline" size="sm" onClick={() => openProfile(user)}>
                           View/Edit
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                   ))
                 )}
               </TableBody>

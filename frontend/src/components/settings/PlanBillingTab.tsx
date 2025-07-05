@@ -52,14 +52,14 @@ const PlanBillingTab = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <RoleGuard roles={['admin']}>
-                    <a
-                      href={HUBSPOT_MANAGE_SUBSCRIPTION_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 text-base font-medium hover:underline"
-                    >
-                      Manage Subscription in HubSpot
-                    </a>
+                  <a
+                    href={HUBSPOT_MANAGE_SUBSCRIPTION_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 text-base font-medium hover:underline"
+                  >
+                    Manage Subscription in HubSpot
+                  </a>
                   </RoleGuard>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -121,12 +121,12 @@ const PlanBillingTab = () => {
             All invoices and billing history are managed in your HubSpot account. You can view and download your invoices directly from HubSpot.
           </div>
           <RoleGuard roles={['admin']}>
-            <Button
-              className="bg-blue-600 text-white"
-              onClick={() => window.open(`https://app.hubspot.com/billing/${plan.hubspotPortalId || ''}`, '_blank')}
-            >
-              View Invoices in HubSpot
-            </Button>
+          <Button
+            className="bg-blue-600 text-white"
+            onClick={() => window.open(`https://app.hubspot.com/billing/${plan.hubspotPortalId || ''}`, '_blank')}
+          >
+            View Invoices in HubSpot
+          </Button>
           </RoleGuard>
         </CardContent>
       </Card>
@@ -161,18 +161,18 @@ const PlanBillingTab = () => {
               </div>
               <div className="flex-grow" />
             <RoleGuard roles={['admin']}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" className="w-full mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
-                      Manage in HubSpot
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" className="w-full mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
+                    Manage in HubSpot
+              </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             </RoleGuard>
             </CardContent>
           </Card>
@@ -210,18 +210,18 @@ const PlanBillingTab = () => {
               </div>
               <div className="flex-grow" />
             <RoleGuard roles={['admin']}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button className="w-full bg-blue-500 hover:bg-blue-600 mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
-                      Manage in HubSpot
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button className="w-full bg-blue-500 hover:bg-blue-600 mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
+                    Manage in HubSpot
+              </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             </RoleGuard>
             </CardContent>
           </Card>
@@ -267,18 +267,18 @@ const PlanBillingTab = () => {
               </div>
               <div className="flex-grow" />
             <RoleGuard roles={['admin']}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" className="w-full mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
-                      Manage in HubSpot
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" className="w-full mt-4" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>
+                    Manage in HubSpot
+              </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             </RoleGuard>
             </CardContent>
           </Card>

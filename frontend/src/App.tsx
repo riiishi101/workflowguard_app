@@ -16,17 +16,23 @@ const ModalsManager = () => {
   const [connectOpen, setConnectOpen] = useState(false);
 
   // Show WelcomeModal if not logged in
-  // Show ConnectHubSpotModal if logged in but not connected
+  // Show ConnectHubSpotModal if logged in but not connected to HubSpot
   React.useEffect(() => {
     if (!user) {
       setWelcomeOpen(true);
       setConnectOpen(false);
-    } else if (user && (!plan || !(plan.features && plan.features.includes('hubspot_connected')))) {
-      setWelcomeOpen(false);
-      setConnectOpen(true);
     } else {
-      setWelcomeOpen(false);
-      setConnectOpen(false);
+      // Check if user has HubSpot connection by looking at plan features OR user data
+      const hasHubSpotConnection = plan?.features?.includes('hubspot_connected') || 
+                                  user.hubspotPortalId;
+      
+      if (!hasHubSpotConnection) {
+        setWelcomeOpen(false);
+        setConnectOpen(true);
+      } else {
+        setWelcomeOpen(false);
+        setConnectOpen(false);
+      }
     }
   }, [user, plan]);
 
@@ -103,13 +109,13 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
+        <AuthProvider>
       <PlanProvider>
-        <Router>
+          <Router>
           <AppRoutes />
-        </Router>
+          </Router>
       </PlanProvider>
-    </AuthProvider>
+        </AuthProvider>
   );
 };
 

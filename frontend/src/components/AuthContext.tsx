@@ -8,6 +8,8 @@ export interface User {
   email: string;
   name?: string;
   role: string;
+  hubspotAccessToken?: string;
+  hubspotPortalId?: string;
 }
 
 interface AuthContextType {

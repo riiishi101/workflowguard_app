@@ -213,19 +213,19 @@ const WorkflowHistoryDetail = () => {
                 View in HubSpot
               </Button>
               <RoleGuard roles={['admin', 'restorer']}>
-                <Button
-                  onClick={() => {
-                    if (filteredVersions.length > 0) {
-                      setSelectedVersion(filteredVersions[0]);
-                      setShowRollbackModal(true);
-                    }
-                  }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
-                  size="sm"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Rollback Latest
-                </Button>
+              <Button
+                onClick={() => {
+                  if (filteredVersions.length > 0) {
+                    setSelectedVersion(filteredVersions[0]);
+                    setShowRollbackModal(true);
+                  }
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                size="sm"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Rollback Latest
+              </Button>
               </RoleGuard>
               <RoleGuard roles={['admin', 'restorer']}>
                 <Button
@@ -385,18 +385,18 @@ const WorkflowHistoryDetail = () => {
                           View Changes
                         </Button>
                         <RoleGuard roles={['admin', 'restorer']}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-700"
-                            aria-label={`Rollback to ${version.version}`}
-                            onClick={() => {
-                              setSelectedVersion(version);
-                              setShowRollbackModal(true);
-                            }}
-                          >
-                            Rollback
-                          </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-700"
+                          aria-label={`Rollback to ${version.version}`}
+                          onClick={() => {
+                            setSelectedVersion(version);
+                            setShowRollbackModal(true);
+                          }}
+                        >
+                          Rollback
+                        </Button>
                         </RoleGuard>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
