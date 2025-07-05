@@ -38,7 +38,7 @@ const ModalsManager = () => {
 
   // Only ConnectHubSpotModal triggers OAuth redirect
   const handleHubSpotOAuth = () => {
-    window.location.href = 'https://workflowguard-app.onrender.com/auth/hubspot';
+    window.location.href = 'https://workflowguard-app.onrender.com/api/auth/hubspot';
   };
 
   return (
