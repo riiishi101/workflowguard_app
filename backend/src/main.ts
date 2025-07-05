@@ -37,6 +37,7 @@ async function bootstrap() {
   // CORS configuration
   app.enableCors({
     origin: [
+      'https://www.workflowguard.pro',
       'http://localhost:3000',
       'http://localhost:8080',
       process.env.FRONTEND_URL
