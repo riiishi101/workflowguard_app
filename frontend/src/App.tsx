@@ -1,16 +1,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from './components/AuthContext';
+import { PlanProvider } from './components/AuthContext';
 
 const HomePage = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          WorkflowGuard - AuthProvider Only
+          WorkflowGuard - PlanProvider Only
         </h1>
         <p className="text-xl text-gray-600 mb-6">
-          Only AuthProvider is enabled.
+          Only PlanProvider is enabled.
         </p>
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
@@ -74,7 +74,7 @@ const SettingsPage = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
+    <PlanProvider>
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -83,7 +83,7 @@ const App = () => {
           <Route path="*" element={<HomePage />} />
         </Routes>
       </Router>
-    </AuthProvider>
+    </PlanProvider>
   );
 };
 
