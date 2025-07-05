@@ -72,11 +72,7 @@ const AuditLogTab = () => {
       try {
         const userId = userFilter !== 'all' ? userFilter : undefined;
         const entityType = entityFilter !== 'all' ? entityFilter : undefined;
-        const action = actionFilter !== 'all' ? actionFilter : undefined;
-        const params: any = { userId, entityType, action };
-        if (startDate) params.startDate = startDate;
-        if (endDate) params.endDate = endDate;
-        const logs = await apiService.getAuditLogsAdvanced(params);
+        const logs = await apiService.getAuditLogs(userId, entityType);
         setAuditLogs(logs as AuditLog[]);
         setShowUpgradeBanner(false);
       } catch (err: any) {
