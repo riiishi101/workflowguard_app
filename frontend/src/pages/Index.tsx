@@ -1,39 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import WelcomeModal from "@/components/WelcomeModal";
-import ConnectHubSpotModal from "@/components/ConnectHubSpotModal";
-import apiService from "@/services/api";
 import { useAuth } from "@/components/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [showConnect, setShowConnect] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
     }
   }, [user, loading, navigate]);
-
-  const handleConnectHubSpot = () => {
-    setShowWelcome(false);
-    setShowConnect(true);
-  };
-
-  const handleConnect = () => {
-    setShowConnect(false);
-    apiService.initiateHubSpotOAuth();
-  };
-
-  const handleCloseWelcome = () => {
-    setShowWelcome(false);
-  };
-
-  const handleCloseConnect = () => {
-    setShowConnect(false);
-  };
 
   // Show a simple test page for debugging
   return (
@@ -51,6 +28,9 @@ const Index = () => {
           </p>
           <p className="text-sm text-gray-500">
             User: {user ? user.email : 'Not logged in'}
+          </p>
+          <p className="text-sm text-gray-500">
+            Loading: {loading ? 'Yes' : 'No'}
           </p>
           <div className="space-x-4">
             <button 

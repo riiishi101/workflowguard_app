@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import apiService from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 interface User {
@@ -26,38 +25,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch user from /users/me if token exists
+  // Simplified initialization - no API calls
   useEffect(() => {
     const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
+    const storedUser = localStorage.getItem('authUser');
+    
+    if (storedToken && storedUser) {
       setToken(storedToken);
-      apiService.setToken(storedToken);
-      apiService.getMe()
-        .then((res) => {
-          setUser(res as User);
-        })
-        .catch(() => {
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem('authToken');
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+      setUser(JSON.parse(storedUser));
     }
+    
+    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await apiService.loginUser({ email, password });
-      const { token: jwtToken } = res as any;
-      setToken(jwtToken);
-      localStorage.setItem('authToken', jwtToken);
-      apiService.setToken(jwtToken);
-      const userRes = await apiService.getMe();
-      setUser(userRes as User);
-      localStorage.setItem('authUser', JSON.stringify(userRes));
+      // Mock login for testing
+      const mockUser = {
+        id: '1',
+        email,
+        name: email.split('@')[0],
+        role: 'admin'
+      };
+      const mockToken = 'mock-token-' + Date.now();
+      
+      setToken(mockToken);
+      setUser(mockUser);
+      localStorage.setItem('authToken', mockToken);
+      localStorage.setItem('authUser', JSON.stringify(mockUser));
       setLoading(false);
     } catch (err) {
       setUser(null);
@@ -71,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name?: string, role?: string) => {
     setLoading(true);
     try {
-      await apiService.registerUser({ email, password, name, role });
+      // Mock registration for testing
       await login(email, password);
     } catch (err) {
       setLoading(false);
@@ -84,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
-    apiService.setToken(null);
     navigate('/login');
   };
 
