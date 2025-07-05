@@ -71,12 +71,14 @@ export class AuthController {
       } else {
         // Find or create user in your DB
         user = await this.authService.findOrCreateUser(email);
+        console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+        console.log('OAuth - HubSpot tokens updated for user:', user.email);
       }
 
       // Generate JWT
       const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-      console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length);
+      console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
 
       // Set JWT as HttpOnly, Secure cookie
       const isProduction = process.env.NODE_ENV === 'production';
@@ -271,14 +273,11 @@ export class AuthController {
   @Public()
   @Get('set-test-cookie')
   async setTestCookie(@Res() res: Response) {
-    const testUser = {
-      id: 'test-user-id',
-      email: 'test@example.com',
-      role: 'viewer'
-    };
+    // Create or find a real user in the database
+    const user = await this.authService.findOrCreateUser('test@example.com', 'Test User');
     
-    const jwt = this.jwtService.sign({ sub: testUser.id, email: testUser.email, role: testUser.role });
-    console.log('Setting test JWT cookie:', jwt.substring(0, 20) + '...');
+    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    console.log('Setting test JWT cookie for real user:', user.email, 'User ID:', user.id);
     
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('jwt', jwt, {
@@ -291,7 +290,7 @@ export class AuthController {
     
     return res.json({ 
       message: 'Test JWT cookie set', 
-      user: testUser,
+      user: user,
       cookieSet: true 
     });
   }
