@@ -27,16 +27,17 @@ export class AuthController {
     res.redirect(authUrl);
   }
 
-
-
   @Public()
   @Get('/callback')
   async hubspotOAuthCallback(@Query('code') code: string, @Res() res: Response) {
+    console.log('OAuth callback called with code:', code ? 'present' : 'missing');
     if (!code) {
+      console.log('OAuth callback: Missing code parameter');
       return res.status(400).json({ message: 'Missing code parameter' });
     }
 
     try {
+      console.log('OAuth callback: Starting token exchange...');
       // Exchange code for access token
       const tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
         params: {
@@ -49,6 +50,7 @@ export class AuthController {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
 
+      console.log('OAuth callback: Token exchange successful');
       const { access_token, refresh_token, expires_in } = tokenRes.data;
 
       // Fetch user email and portalId from HubSpot
@@ -99,6 +101,7 @@ export class AuthController {
       console.log('Redirecting to dashboard...');
       return res.redirect('https://www.workflowguard.pro/dashboard');
     } catch (error) {
+      console.log('OAuth callback error:', error.response?.data || error.message);
       return res.status(500).json({ message: 'Token exchange or storage failed', error: error.response?.data || error.message });
     }
   }
