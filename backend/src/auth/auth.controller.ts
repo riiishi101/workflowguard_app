@@ -18,7 +18,8 @@ export class AuthController {
   async initiateHubSpotOAuth(@Res() res: Response) {
     // This would redirect to HubSpot's OAuth consent page
     const clientId = process.env.HUBSPOT_CLIENT_ID;
-    const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'http://localhost:3000/auth/hubspot/callback');
+    // Use the callback endpoint that sets JWT cookies
+    const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'https://workflowguard-app.onrender.com/api/auth/callback');
     const scopes = encodeURIComponent('crm.objects.companies.read crm.objects.contacts.read crm.objects.deals.read crm.schemas.companies.read crm.schemas.contacts.read crm.schemas.deals.read oauth');
     
     const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUri}`;
@@ -26,48 +27,7 @@ export class AuthController {
     res.redirect(authUrl);
   }
 
-  @Get('hubspot/callback')
-  async handleHubSpotCallback(@Query('code') code: string, @Query('state') state: string) {
-    try {
-      if (!code) {
-        throw new HttpException('Authorization code not provided', HttpStatus.BAD_REQUEST);
-      }
 
-      // 1. Exchange code for tokens
-      const tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
-        params: {
-          grant_type: 'authorization_code',
-          client_id: process.env.HUBSPOT_CLIENT_ID,
-          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
-          redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
-          code,
-        },
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-
-      const { access_token, refresh_token, hub_id } = tokenRes.data;
-
-      // 2. Fetch user email from HubSpot
-      const userRes = await axios.get('https://api.hubapi.com/integrations/v1/me', {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-      const email = userRes.data.user || userRes.data.email;
-
-      // 3. Create or update user in your DB with hubspotPortalId
-      const user = await this.authService.findOrCreateUser(email);
-      await this.authService.updateUserHubspotPortalId(user.id, hub_id);
-
-      // 4. (Optional) Create session/JWT, redirect, etc.
-      return {
-        message: 'OAuth callback received',
-        hub_id,
-        email,
-        // ...other info...
-      };
-    } catch (error) {
-      throw new HttpException('OAuth callback failed', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
 
   @Public()
   @Get('/callback')
@@ -306,5 +266,33 @@ export class AuthController {
   @Get('test')
   async test() {
     return { message: 'Auth test endpoint working', timestamp: new Date().toISOString() };
+  }
+
+  @Public()
+  @Get('set-test-cookie')
+  async setTestCookie(@Res() res: Response) {
+    const testUser = {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      role: 'viewer'
+    };
+    
+    const jwt = this.jwtService.sign({ sub: testUser.id, email: testUser.email, role: testUser.role });
+    console.log('Setting test JWT cookie:', jwt.substring(0, 20) + '...');
+    
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('jwt', jwt, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+    
+    return res.json({ 
+      message: 'Test JWT cookie set', 
+      user: testUser,
+      cookieSet: true 
+    });
   }
 }
