@@ -30,7 +30,7 @@ const ModalsManager = () => {
     }
   }, [user, plan]);
 
-  // New: WelcomeModal opens ConnectHubSpotModal instead of redirecting
+  // WelcomeModal opens ConnectHubSpotModal
   const handleConnectHubSpot = () => {
     setConnectOpen(true);
   };
