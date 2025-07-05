@@ -1,91 +1,63 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, PlanProvider, useAuth, usePlan } from './components/AuthContext';
+import WelcomeModal from './components/WelcomeModal';
+import ConnectHubSpotModal from './components/ConnectHubSpotModal';
+import Dashboard from './pages/Dashboard';
+import WorkflowSelection from './pages/WorkflowSelection';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 
-const HomePage = () => {
-  const { user, token, loading, login, logout } = useAuth();
+// Helper: Show Welcome/Connect modals based on context
+const ModalsManager = () => {
+  const { user } = useAuth();
   const { plan } = usePlan();
+  const [welcomeOpen, setWelcomeOpen] = useState(!user);
+  const [connectOpen, setConnectOpen] = useState(false);
+
+  // Show WelcomeModal if not logged in
+  // Show ConnectHubSpotModal if logged in but not connected
+  React.useEffect(() => {
+    if (!user) {
+      setWelcomeOpen(true);
+      setConnectOpen(false);
+    } else if (user && (!plan || !(plan.features && plan.features.includes('hubspot_connected')))) {
+      setWelcomeOpen(false);
+      setConnectOpen(true);
+    } else {
+      setWelcomeOpen(false);
+      setConnectOpen(false);
+    }
+  }, [user, plan]);
+
+  const handleConnectHubSpot = () => {
+    // Redirect to backend OAuth endpoint
+    window.location.href = '/api/auth/hubspot/login';
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          WorkflowGuard - Auth & Plan Test
-        </h1>
-        <p className="text-xl text-gray-600 mb-6">
-          AuthProvider and PlanProvider are enabled.<br />
-          <span className="text-sm">(Try login/logout below)</span>
-        </p>
-        <div className="space-y-2">
-          <p className="text-sm text-gray-500">Current path: {window.location.pathname}</p>
-          <p className="text-sm text-gray-500">React version: {React.version}</p>
-          <p className="text-sm text-gray-500">Timestamp: {new Date().toISOString()}</p>
-          <p className="text-sm text-gray-500">Loading: {loading ? 'Yes' : 'No'}</p>
-          <p className="text-sm text-gray-500">User: {user ? user.email : 'Not logged in'}</p>
-          <p className="text-sm text-gray-500">Token: {token || '-'}</p>
-          <p className="text-sm text-gray-500">Plan: {plan ? plan.name : '-'}</p>
-        </div>
-        <div className="space-x-4 mt-4">
-          {!user ? (
-            <button
-              onClick={() => login({ id: '1', email: 'test@user.com', name: 'Test User', role: 'admin' }, 'mock-token-123')}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Login (Mock)
-            </button>
-          ) : (
-            <button
-              onClick={logout}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Logout
-            </button>
-          )}
-          <a href="/dashboard" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Go to Dashboard
-          </a>
-          <a href="/settings" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-            Go to Settings
-          </a>
-        </div>
-      </div>
-    </div>
+    <>
+      <WelcomeModal open={welcomeOpen} onClose={() => setWelcomeOpen(false)} onConnectHubSpot={handleConnectHubSpot} />
+      <ConnectHubSpotModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleConnectHubSpot} />
+    </>
   );
 };
 
-const DashboardPage = () => {
+const AppRoutes = () => {
+  const { user } = useAuth();
+  // Optionally, add route guards here
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          Dashboard Page
-        </h1>
-        <p className="text-xl text-gray-600 mb-6">
-          SPA routing is working correctly!
-        </p>
-        <a href="/" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-          Back to Home
-        </a>
-      </div>
-    </div>
-  );
-};
-
-const SettingsPage = () => {
-  return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          Settings Page
-        </h1>
-        <p className="text-xl text-gray-600 mb-6">
-          Settings page is working!
-        </p>
-        <a href="/" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-          Back to Home
-        </a>
-      </div>
-    </div>
+    <>
+      <ModalsManager />
+      <Routes>
+        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/select-workflows"} replace />} />
+        <Route path="/select-workflows" element={<WorkflowSelection />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/settings" element={<Settings />} />
+        {/* Add more routes as needed */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 };
 
@@ -94,12 +66,7 @@ const App = () => {
     <AuthProvider>
       <PlanProvider>
         <Router>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<HomePage />} />
-          </Routes>
+          <AppRoutes />
         </Router>
       </PlanProvider>
     </AuthProvider>
