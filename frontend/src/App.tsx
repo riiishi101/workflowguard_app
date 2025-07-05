@@ -17,7 +17,7 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import RealtimeDashboard from "./pages/RealtimeDashboard";
 import EmptyDashboard from './components/EmptyDashboard';
 import EmptyWorkflowHistory from './components/EmptyWorkflowHistory';
-import { AuthProvider, useAuth } from './components/AuthContext';
+import { AuthProvider, useAuth, PlanProvider } from './components/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FullScreenProgress from "@/components/ui/FullScreenProgress";
@@ -62,9 +62,11 @@ const App = () => {
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <Router>
-            <AppContent />
-          </Router>
+          <PlanProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </PlanProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
