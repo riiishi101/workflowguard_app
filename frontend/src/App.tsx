@@ -38,13 +38,13 @@ const ModalsManager = () => {
 
   // Only ConnectHubSpotModal triggers OAuth redirect
   const handleHubSpotOAuth = () => {
-    window.location.href = 'https://your-backend-url.onrender.com/auth/hubspot/login'; // TODO: Replace with your backend URL
+    window.location.href = 'https://workflowguard-backend.onrender.com/auth/hubspot/login';
   };
 
   return (
     <>
       <WelcomeModal open={welcomeOpen} onClose={() => {}} onConnectHubSpot={handleConnectHubSpot} />
-      <ConnectHubSpotModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleHubSpotOAuth} debug={connectOpen} />
+      <ConnectHubSpotModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleHubSpotOAuth} />
     </>
   );
 };

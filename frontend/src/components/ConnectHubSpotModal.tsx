@@ -8,20 +8,16 @@ interface ConnectHubSpotModalProps {
   open: boolean;
   onClose: () => void;
   onConnect: () => void;
-  debug?: boolean;
 }
 
 const ConnectHubSpotModal = ({
   open,
   onClose,
   onConnect,
-  debug,
 }: ConnectHubSpotModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-8 bg-gray-50 border-0">
-        {/* DEBUG MESSAGE */}
-        {debug && <div style={{color: 'red', textAlign: 'center'}}>DEBUG: ConnectHubSpotModal is open</div>}
         <VisuallyHidden>
           <DialogTitle>Connect Your HubSpot Account</DialogTitle>
         </VisuallyHidden>
