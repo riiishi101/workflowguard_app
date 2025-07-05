@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext } from 'react';
 
-// --- Auth Context ---
+// --- Minimal Static Auth Context ---
 export interface User {
   id: string;
   email: string;
@@ -10,49 +9,25 @@ export interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  login: (user: User, token: string) => void;
+  user: null;
+  token: null;
+  loading: false;
+  login: () => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Restore from localStorage
-    const storedUser = localStorage.getItem('authUser');
-    const storedToken = localStorage.getItem('authToken');
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
-    }
-    setLoading(false);
-  }, []);
-
-  const login = (user: User, token: string) => {
-    setUser(user);
-    setToken(token);
-    localStorage.setItem('authUser', JSON.stringify(user));
-    localStorage.setItem('authToken', token);
+  const value: AuthContextType = {
+    user: null,
+    token: null,
+    loading: false,
+    login: () => {},
+    logout: () => {},
   };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('authToken');
-    navigate('/login');
-  };
-
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -62,17 +37,6 @@ export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
-};
-
-export const useRequireAuth = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
-  return { user, loading };
 };
 
 // --- Plan Context ---
@@ -90,10 +54,9 @@ interface PlanContextType {
 const PlanContext = createContext<PlanContextType | undefined>(undefined);
 
 export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [plan, setPlan] = useState<Plan | null>(null);
+  const [plan, setPlan] = React.useState<Plan | null>(null);
 
-  useEffect(() => {
-    // Optionally restore from localStorage or set a default plan
+  React.useEffect(() => {
     const storedPlan = localStorage.getItem('userPlan');
     if (storedPlan) {
       setPlan(JSON.parse(storedPlan));
