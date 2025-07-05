@@ -351,4 +351,35 @@ export class AuthController {
     // Redirect to dashboard
     return res.redirect('https://www.workflowguard.pro/dashboard');
   }
+
+  @Public()
+  @Get('manual-auth-with-hubspot')
+  async manualAuthWithHubSpot(@Res() res: Response) {
+    // Create or find a test user with HubSpot connection
+    const user = await this.authService.findOrCreateUser('test-hubspot@workflowguard.pro', 'Test HubSpot User');
+    
+    // Update user with HubSpot connection
+    await this.authService.updateUserHubspotPortalId(user.id, '243202415');
+    await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
+    
+    // Generate JWT
+    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    console.log('Manual auth with HubSpot - Generated JWT for user:', user.email, 'User ID:', user.id);
+    
+    // Set JWT as HttpOnly, Secure cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('jwt', jwt, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'none', // Allow cross-site cookies
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+      // No domain restriction to allow cross-domain cookies
+    });
+    
+    console.log('Manual auth with HubSpot - JWT cookie set successfully');
+    
+    // Redirect to dashboard
+    return res.redirect('https://www.workflowguard.pro/dashboard');
+  }
 }

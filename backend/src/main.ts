@@ -50,7 +50,7 @@ async function bootstrap() {
   
   // Enable cookie parser
   app.use(cookieParser());
-
+  
   // Enable global validation
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
