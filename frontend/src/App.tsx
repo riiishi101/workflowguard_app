@@ -45,7 +45,19 @@ const ModalsManager = () => {
 
 const AppRoutes = () => {
   const { user } = useAuth();
-  // Optionally, add route guards here
+  const location = useLocation();
+
+  // User onboarding logic: if authenticated but no workflows selected, redirect to /select-workflows
+  React.useEffect(() => {
+    if (user) {
+      const selected = localStorage.getItem('selectedWorkflows');
+      const workflows = selected ? JSON.parse(selected) : [];
+      if ((!workflows || workflows.length === 0) && location.pathname !== '/select-workflows') {
+        window.location.replace('/select-workflows');
+      }
+    }
+  }, [user, location.pathname]);
+
   return (
     <>
       <ModalsManager />
