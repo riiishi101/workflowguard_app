@@ -32,9 +32,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (storedToken) {
       setToken(storedToken);
       apiService.setToken(storedToken);
-      apiService.get('/users/me')
+      apiService.getMe()
         .then((res) => {
-          setUser(res.data);
+          setUser(res as User);
         })
         .catch(() => {
           setUser(null);
@@ -50,14 +50,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await apiService.post('/auth/login', { email, password });
-      const { token: jwtToken } = res.data;
+      const res = await apiService.loginUser({ email, password });
+      const { token: jwtToken } = res as any;
       setToken(jwtToken);
       localStorage.setItem('authToken', jwtToken);
       apiService.setToken(jwtToken);
-      const userRes = await apiService.get('/users/me');
-      setUser(userRes.data);
-      localStorage.setItem('authUser', JSON.stringify(userRes.data));
+      const userRes = await apiService.getMe();
+      setUser(userRes as User);
+      localStorage.setItem('authUser', JSON.stringify(userRes));
       setLoading(false);
     } catch (err) {
       setUser(null);
@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name?: string, role?: string) => {
     setLoading(true);
     try {
-      await apiService.post('/auth/register', { email, password, name, role });
+      await apiService.registerUser({ email, password, name, role });
       await login(email, password);
     } catch (err) {
       setLoading(false);

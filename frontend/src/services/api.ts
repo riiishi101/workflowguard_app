@@ -19,12 +19,18 @@ interface CreateWebhookDto {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 class ApiService {
+  private token: string | null = null;
+
+  setToken(token: string | null) {
+    this.token = token;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    const token = localStorage.getItem('authToken');
+    const token = this.token || localStorage.getItem('authToken');
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
