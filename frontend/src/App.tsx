@@ -32,6 +32,7 @@ const ModalsManager = () => {
 
   // WelcomeModal opens ConnectHubSpotModal
   const handleConnectHubSpot = () => {
+    console.log('WelcomeModal Connect button clicked');
     setConnectOpen(true);
   };
 
@@ -43,7 +44,7 @@ const ModalsManager = () => {
   return (
     <>
       <WelcomeModal open={welcomeOpen} onClose={() => {}} onConnectHubSpot={handleConnectHubSpot} />
-      <ConnectHubSpotModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleHubSpotOAuth} />
+      <ConnectHubSpotModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleHubSpotOAuth} debug={connectOpen} />
     </>
   );
 };
