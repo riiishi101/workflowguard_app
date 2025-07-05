@@ -26,16 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Restore from localStorage
-    const storedUser = localStorage.getItem('authUser');
-    const storedToken = localStorage.getItem('authToken');
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
-      setLoading(false);
-      return;
-    }
-    // If no token in localStorage, check for JWT cookie
+    // Always check for JWT cookie authentication first
     (async () => {
       try {
         console.log('Checking for JWT cookie authentication...');
@@ -48,12 +39,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Auth /me response data:', data);
           setUser(data.user);
           setToken(null); // No Bearer token, but user is authenticated via cookie
+          // Clear any old localStorage data since we're using cookie auth
+          localStorage.removeItem('authUser');
+          localStorage.removeItem('authToken');
         } else {
           console.log('Auth /me failed:', res.status, res.statusText);
+          // Fall back to localStorage if cookie auth fails
+          const storedUser = localStorage.getItem('authUser');
+          const storedToken = localStorage.getItem('authToken');
+          if (storedUser && storedToken) {
+            console.log('Falling back to localStorage authentication');
+            setUser(JSON.parse(storedUser));
+            setToken(storedToken);
+          }
         }
       } catch (e) {
         console.log('Auth /me error:', e);
-        // Not authenticated
+        // Fall back to localStorage if cookie auth fails
+        const storedUser = localStorage.getItem('authUser');
+        const storedToken = localStorage.getItem('authToken');
+        if (storedUser && storedToken) {
+          console.log('Falling back to localStorage authentication after error');
+          setUser(JSON.parse(storedUser));
+          setToken(storedToken);
+        }
       } finally {
         setLoading(false);
       }
