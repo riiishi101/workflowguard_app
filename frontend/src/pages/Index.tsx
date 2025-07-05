@@ -35,17 +35,38 @@ const Index = () => {
     setShowConnect(false);
   };
 
-  // UI-ONLY DEVELOPMENT: Skip welcome and connect modals
+  // Show a simple test page for debugging
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-          Welcome to WorkflowGuard (UI Mock Mode)
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          WorkflowGuard - Routing Test
         </h1>
-        <p className="text-gray-600">
-          All features are available for UI testing. No backend or HubSpot connection required.
+        <p className="text-xl text-gray-600 mb-6">
+          If you can see this page, SPA routing is working correctly!
         </p>
-        {/* You can add links or buttons to navigate to dashboard, workflows, etc. */}
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Current path: {window.location.pathname}
+          </p>
+          <p className="text-sm text-gray-500">
+            User: {user ? user.email : 'Not logged in'}
+          </p>
+          <div className="space-x-4">
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Go to Dashboard
+            </button>
+            <button 
+              onClick={() => navigate('/settings')}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              Go to Settings
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
