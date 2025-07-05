@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface User {
+// --- Auth Context ---
+export interface User {
   id: string;
   email: string;
   name?: string;
@@ -12,8 +13,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string, role?: string) => Promise<void>;
+  login: (user: User, token: string) => void;
   logout: () => void;
 }
 
@@ -25,77 +25,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Simplified initialization - no API calls
   useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
+    // Restore from localStorage
     const storedUser = localStorage.getItem('authUser');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
+    const storedToken = localStorage.getItem('authToken');
+    if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
+      setToken(storedToken);
     }
-    
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      // Mock login for testing
-      const mockUser = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        role: 'admin'
-      };
-      const mockToken = 'mock-token-' + Date.now();
-      
-      setToken(mockToken);
-      setUser(mockUser);
-      localStorage.setItem('authToken', mockToken);
-      localStorage.setItem('authUser', JSON.stringify(mockUser));
-      setLoading(false);
-    } catch (err) {
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem('authToken');
-      setLoading(false);
-      throw err;
-    }
-  };
-
-  const register = async (email: string, password: string, name?: string, role?: string) => {
-    setLoading(true);
-    try {
-      // Mock registration for testing
-      await login(email, password);
-    } catch (err) {
-      setLoading(false);
-      throw err;
-    }
+  const login = (user: User, token: string) => {
+    setUser(user);
+    setToken(token);
+    localStorage.setItem('authUser', JSON.stringify(user));
+    localStorage.setItem('authToken', token);
   };
 
   const logout = () => {
-    setToken(null);
     setUser(null);
-    localStorage.removeItem('authToken');
+    setToken(null);
     localStorage.removeItem('authUser');
+    localStorage.removeItem('authToken');
     navigate('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };
 
 export const useRequireAuth = () => {
@@ -109,44 +75,51 @@ export const useRequireAuth = () => {
   return { user, loading };
 };
 
-// Plan Context
-const PlanContext = createContext(null);
+// --- Plan Context ---
+export interface Plan {
+  name: string;
+  features: string[];
+  status: string;
+}
 
-export function PlanProvider({ children }) {
-  const [plan, setPlan] = useState(null);
-  const [loading, setLoading] = useState(true);
+interface PlanContextType {
+  plan: Plan | null;
+  setPlan: (plan: Plan) => void;
+}
+
+const PlanContext = createContext<PlanContextType | undefined>(undefined);
+
+export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [plan, setPlan] = useState<Plan | null>(null);
 
   useEffect(() => {
-    // MOCK PLAN FOR FRONTEND UI TESTING
-    setPlan({
-      name: 'Professional',
-      planId: 'professional',
-      status: 'active',
-      features: [
-        'workflow_comparison',
-        'rollback',
-        'notifications',
-        'custom_notifications',
-        'user_permissions',
-        'audit_logs',
-        'api_access',
-        'sso',
-      ],
-      workflowLimit: 500,
-      historyRetention: 90,
-      trialEndDate: '2099-12-31',
-      nextBillingDate: '2099-12-31',
-    });
-    setLoading(false);
+    // Optionally restore from localStorage or set a default plan
+    const storedPlan = localStorage.getItem('userPlan');
+    if (storedPlan) {
+      setPlan(JSON.parse(storedPlan));
+    } else {
+      setPlan({
+        name: 'Free',
+        features: ['basic_usage'],
+        status: 'active',
+      });
+    }
   }, []);
 
+  const updatePlan = (plan: Plan) => {
+    setPlan(plan);
+    localStorage.setItem('userPlan', JSON.stringify(plan));
+  };
+
   return (
-    <PlanContext.Provider value={{ plan, loading }}>
+    <PlanContext.Provider value={{ plan, setPlan: updatePlan }}>
       {children}
     </PlanContext.Provider>
   );
-}
+};
 
-export function usePlan() {
-  return useContext(PlanContext);
-} 
+export const usePlan = () => {
+  const ctx = useContext(PlanContext);
+  if (!ctx) throw new Error('usePlan must be used within PlanProvider');
+  return ctx;
+}; 
