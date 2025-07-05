@@ -20,7 +20,6 @@ import { Download, Calendar, Lock } from "lucide-react";
 import apiService from "@/services/api";
 import PremiumModal from "@/components/UpgradeRequiredModal";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import ReactJson from 'react-json-view';
 import { format, subDays } from 'date-fns';
 import { io, Socket } from "socket.io-client";
 import { useToast } from '@/components/ui/use-toast';
@@ -39,6 +38,15 @@ interface AuditLog {
   timestamp?: string;
   createdAt?: string;
 }
+
+// Simple JSON display component
+const JsonDisplay = ({ data }: { data: any }) => {
+  return (
+    <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-32">
+      {JSON.stringify(data, null, 2)}
+    </pre>
+  );
+};
 
 const AuditLogTab = () => {
   const [dateRange, setDateRange] = useState("all");
@@ -345,11 +353,11 @@ const AuditLogTab = () => {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="cursor-pointer">
-                                  <ReactJson src={log.oldValue} name={false} collapsed={1} enableClipboard={false} displayDataTypes={false} style={{ fontSize: 12 }} />
+                                  <JsonDisplay data={log.oldValue} />
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-lg max-h-96 overflow-auto">
-                                <ReactJson src={log.oldValue} name={false} enableClipboard={true} displayDataTypes={false} style={{ fontSize: 12 }} />
+                                <JsonDisplay data={log.oldValue} />
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -361,11 +369,11 @@ const AuditLogTab = () => {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="cursor-pointer">
-                                  <ReactJson src={log.newValue} name={false} collapsed={1} enableClipboard={false} displayDataTypes={false} style={{ fontSize: 12 }} />
+                                  <JsonDisplay data={log.newValue} />
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-lg max-h-96 overflow-auto">
-                                <ReactJson src={log.newValue} name={false} enableClipboard={true} displayDataTypes={false} style={{ fontSize: 12 }} />
+                                <JsonDisplay data={log.newValue} />
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
