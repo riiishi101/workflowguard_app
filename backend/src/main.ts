@@ -5,6 +5,7 @@ import * as compression from 'compression';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { AllExceptionsFilter } from './all-exceptions.filter';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -47,6 +48,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   
+  // Enable cookie parser
+  app.use(cookieParser());
+
   // Enable global validation
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

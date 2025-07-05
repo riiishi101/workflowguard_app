@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res, UseGuards } from '@nestjs/common';
-import { Response } from 'express';
+import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res, UseGuards, Req } from '@nestjs/common';
+import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import axios from 'axios';
 import { Public } from './public.decorator';
@@ -94,23 +94,40 @@ export class AuthController {
       const email = userRes.data.user || userRes.data.email;
       const portalId = userRes.data.portalId;
 
+      let user;
       if (!email && portalId) {
         // Use portalId as a fallback unique identifier (synthetic email)
         const syntheticEmail = `portal-${portalId}@hubspot.test`;
-        const user = await this.authService.findOrCreateUser(syntheticEmail);
+        user = await this.authService.findOrCreateUser(syntheticEmail);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-        return res.redirect('https://www.workflowguard.pro/dashboard');
-      }
-
-      if (!email) {
+      } else if (!email) {
         // Log the HubSpot response for debugging
         console.error('HubSpot /integrations/v1/me response:', userRes.data);
         return res.status(400).json({ message: 'Could not retrieve user email or portalId from HubSpot', hubspotResponse: userRes.data });
+      } else {
+        // Find or create user in your DB
+        user = await this.authService.findOrCreateUser(email);
+        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
       }
 
-      // Find or create user in your DB
-      const user = await this.authService.findOrCreateUser(email);
-      await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+      // Generate JWT
+      const jwt = this.authService['jwtService'].sign({ sub: user.id, email: user.email, role: user.role });
+      console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length);
+
+      // Set JWT as HttpOnly, Secure cookie
+      const isProduction = process.env.NODE_ENV === 'production';
+      console.log('Setting JWT cookie, production:', isProduction, 'domain:', isProduction ? '.workflowguard.pro' : 'undefined');
+      res.cookie('jwt', jwt, {
+        httpOnly: true,
+        secure: isProduction, // true in production, false in development
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+        domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for production
+      });
+
+      // Optionally, you can also send user info as a query param or just redirect
+      console.log('Redirecting to dashboard...');
       return res.redirect('https://www.workflowguard.pro/dashboard');
     } catch (error) {
       return res.status(500).json({ message: 'Token exchange or storage failed', error: error.response?.data || error.message });
@@ -239,5 +256,28 @@ export class AuthController {
     } catch (error) {
       return res.status(500).json({ message: 'Failed to create contact in HubSpot', error: error.response?.data || error.message });
     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getMe(@Req() req: Request) {
+    // req.user is set by JwtStrategy
+    console.log('GET /me - User from JWT:', req.user);
+    console.log('GET /me - Cookies:', req.cookies);
+    return { user: req.user };
+  }
+
+  @Public()
+  @Post('logout')
+  async logout(@Res() res: Response) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
+      domain: isProduction ? '.workflowguard.pro' : undefined,
+    });
+    return res.json({ message: 'Logged out successfully' });
   }
 }

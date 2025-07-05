@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 // --- Auth Context ---
 export interface User {
   id: string;
@@ -30,8 +32,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    // If no token in localStorage, check for JWT cookie
+    (async () => {
+      try {
+        console.log('Checking for JWT cookie authentication...');
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
+          credentials: 'include',
+        });
+        console.log('Auth /me response status:', res.status);
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Auth /me response data:', data);
+          setUser(data.user);
+          setToken(null); // No Bearer token, but user is authenticated via cookie
+        } else {
+          console.log('Auth /me failed:', res.status, res.statusText);
+        }
+      } catch (e) {
+        console.log('Auth /me error:', e);
+        // Not authenticated
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const login = (user: User, token: string) => {
@@ -41,7 +67,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('authToken', token);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Call backend to clear JWT cookie
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (e) {
+      // Ignore errors during logout
+    }
+    
     setUser(null);
     setToken(null);
     localStorage.removeItem('authUser');
