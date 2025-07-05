@@ -16,7 +16,7 @@ const WelcomeModal = ({
   onConnectHubSpot,
 }: WelcomeModalProps) => {
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="max-w-md p-8 bg-gray-50 border-0">
         <VisuallyHidden>
           <DialogTitle>Welcome to WorkflowGuard</DialogTitle>

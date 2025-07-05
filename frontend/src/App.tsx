@@ -30,15 +30,20 @@ const ModalsManager = () => {
     }
   }, [user, plan]);
 
+  // New: WelcomeModal opens ConnectHubSpotModal instead of redirecting
   const handleConnectHubSpot = () => {
-    // Redirect to backend OAuth endpoint
-    window.location.href = '/api/auth/hubspot/login';
+    setConnectOpen(true);
+  };
+
+  // Only ConnectHubSpotModal triggers OAuth redirect
+  const handleHubSpotOAuth = () => {
+    window.location.href = 'https://your-backend-url.onrender.com/auth/hubspot/login'; // TODO: Replace with your backend URL
   };
 
   return (
     <>
-      <WelcomeModal open={welcomeOpen} onClose={() => setWelcomeOpen(false)} onConnectHubSpot={handleConnectHubSpot} />
-      <ConnectHubSpotModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleConnectHubSpot} />
+      <WelcomeModal open={welcomeOpen} onClose={() => {}} onConnectHubSpot={handleConnectHubSpot} />
+      <ConnectHubSpotModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleHubSpotOAuth} />
     </>
   );
 };
