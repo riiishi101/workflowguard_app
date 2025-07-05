@@ -9,6 +9,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Get('hubspot')
   async initiateHubSpotOAuth(@Res() res: Response) {
     // This would redirect to HubSpot's OAuth consent page
