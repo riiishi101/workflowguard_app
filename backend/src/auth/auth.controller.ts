@@ -21,16 +21,19 @@ export class AuthController {
     // Use the callback endpoint that sets JWT cookies
     const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'https://workflowguard-app.onrender.com/api/auth/callback');
     const scopes = encodeURIComponent('crm.objects.companies.read crm.objects.contacts.read crm.objects.deals.read crm.schemas.companies.read crm.schemas.contacts.read crm.schemas.deals.read oauth');
+    const state = encodeURIComponent('workflowguard-oauth-' + Date.now());
     
-    const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUri}`;
+    const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
     
+    console.log('OAuth initiation - Redirecting to:', authUrl);
     res.redirect(authUrl);
   }
 
   @Public()
   @Get('/callback')
-  async hubspotOAuthCallback(@Query('code') code: string, @Query() allQueryParams: any, @Req() req: Request, @Res() res: Response) {
+  async hubspotOAuthCallback(@Query('code') code: string, @Query('state') state: string, @Query() allQueryParams: any, @Req() req: Request, @Res() res: Response) {
     console.log('OAuth callback called with code:', code ? 'present' : 'missing');
+    console.log('OAuth callback - State parameter:', state);
     console.log('OAuth callback - All query parameters:', allQueryParams);
     console.log('OAuth callback - Request headers:', req.headers);
     console.log('OAuth callback - Request URL:', req.url);
