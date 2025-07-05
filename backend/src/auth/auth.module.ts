@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { SsoConfigController } from './sso-config.controller';
 import { AuditLogModule } from '../audit-log/audit-log.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuditLogModule } from '../audit-log/audit-log.module';
       signOptions: { expiresIn: '7d' },
     }),
     AuditLogModule,
+    UserModule,
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController, SsoConfigController],

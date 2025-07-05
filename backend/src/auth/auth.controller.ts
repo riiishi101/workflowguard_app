@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res, UseGuards, Req } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
+import { UserService } from '../user/user.service';
 import axios from 'axios';
 import { Public } from './public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -10,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly userService: UserService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -83,6 +85,26 @@ export class AuthController {
         console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
         console.log('OAuth - HubSpot tokens updated for user:', user.email);
+      }
+
+      // Update user's HubSpot portal ID and tokens
+      if (portalId) {
+        await this.authService.updateUserHubspotPortalId(user.id, portalId.toString());
+      }
+      await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+      console.log('OAuth - HubSpot tokens updated for user:', user.email);
+
+      // Update user's plan to include hubspot_connected feature
+      try {
+        const userPlan = await this.userService.getUserPlan(user.id);
+        if (userPlan) {
+          console.log('OAuth - User has plan:', userPlan.planId);
+          // For now, we'll just log this. The frontend will handle the plan update
+          // In a real implementation, you would update the user's subscription/plan
+        }
+      } catch (planError) {
+        console.log('OAuth - Could not get user plan:', planError);
+        // Continue with OAuth flow even if plan update fails
       }
 
       // Generate JWT
