@@ -61,6 +61,20 @@ export const useAuth = () => {
   return ctx;
 };
 
+// Hook to require authentication - redirects or shows appropriate UI
+export const useRequireAuth = () => {
+  const { user, loading } = useAuth();
+  
+  // If still loading, don't redirect yet
+  if (loading) {
+    return;
+  }
+  
+  // If no user, the WelcomeModal will be shown by ModalsManager in App.tsx
+  // No need to redirect since the modal will handle the flow
+  return user;
+};
+
 // --- Plan Context ---
 export interface Plan {
   name: string;
