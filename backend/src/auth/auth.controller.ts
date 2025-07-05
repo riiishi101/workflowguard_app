@@ -29,8 +29,12 @@ export class AuthController {
 
   @Public()
   @Get('/callback')
-  async hubspotOAuthCallback(@Query('code') code: string, @Res() res: Response) {
+  async hubspotOAuthCallback(@Query('code') code: string, @Query() allQueryParams: any, @Req() req: Request, @Res() res: Response) {
     console.log('OAuth callback called with code:', code ? 'present' : 'missing');
+    console.log('OAuth callback - All query parameters:', allQueryParams);
+    console.log('OAuth callback - Request headers:', req.headers);
+    console.log('OAuth callback - Request URL:', req.url);
+    
     if (!code) {
       console.log('OAuth callback: Missing code parameter');
       return res.status(400).json({ message: 'Missing code parameter' });
