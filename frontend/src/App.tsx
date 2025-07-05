@@ -45,24 +45,46 @@ const ModalsManager = () => {
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  const { plan } = usePlan();
   const location = useLocation();
 
-  // User onboarding logic: if authenticated but no workflows selected, redirect to /select-workflows
-  React.useEffect(() => {
-    if (user) {
-      const selected = localStorage.getItem('selectedWorkflows');
+  // Helper: Check if user has selected workflows (onboarding complete)
+  const hasSelectedWorkflows = React.useMemo(() => {
+    const selected = localStorage.getItem('selectedWorkflows');
+    try {
       const workflows = selected ? JSON.parse(selected) : [];
-      if ((!workflows || workflows.length === 0) && location.pathname !== '/select-workflows') {
-        window.location.replace('/select-workflows');
-      }
+      return Array.isArray(workflows) && workflows.length > 0;
+    } catch {
+      return false;
     }
-  }, [user, location.pathname]);
+  }, [user, location.key]);
+
+  // Centralized user flow logic
+  React.useEffect(() => {
+    // 1. Not authenticated: show WelcomeModal (handled by ModalsManager)
+    if (!user) return;
+
+    // 2. Authenticated but not connected to HubSpot: show ConnectHubSpotModal (handled by ModalsManager)
+    if (user && (!plan || !(plan.features && plan.features.includes('hubspot_connected')))) return;
+
+    // 3. Authenticated, connected, but no workflows selected: redirect to onboarding
+    if (user && plan && plan.features.includes('hubspot_connected') && !hasSelectedWorkflows && location.pathname !== '/select-workflows') {
+      window.location.replace('/select-workflows');
+      return;
+    }
+
+    // 4. If on /select-workflows but onboarding is complete, go to dashboard
+    if (user && plan && plan.features.includes('hubspot_connected') && hasSelectedWorkflows && location.pathname === '/select-workflows') {
+      window.location.replace('/dashboard');
+      return;
+    }
+  }, [user, plan, hasSelectedWorkflows, location.pathname]);
 
   return (
     <>
       <ModalsManager />
       <Routes>
-        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/select-workflows"} replace />} />
+        {/* WelcomeModal and ConnectHubSpotModal are handled globally */}
         <Route path="/select-workflows" element={<WorkflowSelection />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
