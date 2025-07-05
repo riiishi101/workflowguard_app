@@ -99,8 +99,7 @@ export class AuthController {
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
-        // Temporarily remove domain restriction to test
-        // domain: isProduction ? '.workflowguard.pro' : undefined,
+        domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for cross-subdomain access
       });
       console.log('JWT cookie set successfully');
 
@@ -255,8 +254,7 @@ export class AuthController {
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
-      // Temporarily remove domain restriction to test
-      // domain: isProduction ? '.workflowguard.pro' : undefined,
+      domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for cross-subdomain access
     });
     return res.json({ message: 'Logged out successfully' });
   }
@@ -323,6 +321,7 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
+      domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for cross-subdomain access
     });
     
     console.log('Manual auth - JWT cookie set successfully');
