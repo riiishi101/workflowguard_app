@@ -99,7 +99,7 @@ export class AuthController {
         sameSite: 'none', // Allow cross-site cookies
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
-        // Remove domain restriction for now
+        // No domain restriction to allow cross-domain cookies
       });
       console.log('JWT cookie set successfully');
 
@@ -254,7 +254,7 @@ export class AuthController {
       secure: isProduction,
       sameSite: 'none', // Allow cross-site cookies
       path: '/',
-      // Remove domain restriction for now
+      // No domain restriction to allow cross-domain cookies
     });
     return res.json({ message: 'Logged out successfully' });
   }
@@ -321,7 +321,7 @@ export class AuthController {
       sameSite: 'none', // Allow cross-site cookies
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
-      // Remove domain restriction for now
+      // No domain restriction to allow cross-domain cookies
     });
     
     console.log('Manual auth - JWT cookie set successfully');
