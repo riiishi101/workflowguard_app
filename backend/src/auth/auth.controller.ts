@@ -4,10 +4,14 @@ import { AuthService } from './auth.service';
 import axios from 'axios';
 import { Public } from './public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Public()
   @Get('hubspot')
@@ -111,20 +115,23 @@ export class AuthController {
       }
 
       // Generate JWT
-      const jwt = this.authService['jwtService'].sign({ sub: user.id, email: user.email, role: user.role });
+      const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
       console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length);
 
       // Set JWT as HttpOnly, Secure cookie
       const isProduction = process.env.NODE_ENV === 'production';
       console.log('Setting JWT cookie, production:', isProduction, 'domain:', isProduction ? '.workflowguard.pro' : 'undefined');
+      console.log('User email:', user.email, 'User ID:', user.id);
       res.cookie('jwt', jwt, {
         httpOnly: true,
         secure: isProduction, // true in production, false in development
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
-        domain: isProduction ? '.workflowguard.pro' : undefined, // Set domain for production
+        // Temporarily remove domain restriction to test
+        // domain: isProduction ? '.workflowguard.pro' : undefined,
       });
+      console.log('JWT cookie set successfully');
 
       // Optionally, you can also send user info as a query param or just redirect
       console.log('Redirecting to dashboard...');
@@ -276,8 +283,28 @@ export class AuthController {
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
-      domain: isProduction ? '.workflowguard.pro' : undefined,
+      // Temporarily remove domain restriction to test
+      // domain: isProduction ? '.workflowguard.pro' : undefined,
     });
     return res.json({ message: 'Logged out successfully' });
+  }
+
+  @Public()
+  @Get('debug')
+  async debug(@Req() req: Request) {
+    return {
+      cookies: req.cookies,
+      headers: {
+        authorization: req.headers.authorization,
+        cookie: req.headers.cookie,
+      },
+      userAgent: req.headers['user-agent'],
+    };
+  }
+
+  @Public()
+  @Get('test')
+  async test() {
+    return { message: 'Auth test endpoint working', timestamp: new Date().toISOString() };
   }
 }
