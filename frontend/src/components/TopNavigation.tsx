@@ -4,6 +4,7 @@ import WorkflowGuardLogo from "./WorkflowGuardLogo";
 import { cn } from "@/lib/utils";
 import { HelpCircle, Settings, AlertTriangle } from "lucide-react";
 import { useAuth } from './AuthContext';
+import { useEffect, useState } from 'react';
 
 interface TopNavigationProps {
   minimal?: boolean;
@@ -12,6 +13,20 @@ interface TopNavigationProps {
 const TopNavigation = ({ minimal = false }: TopNavigationProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [firstWorkflowId, setFirstWorkflowId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Try to get the first selected workflow from localStorage
+    try {
+      const selected = localStorage.getItem('selectedWorkflows');
+      if (selected) {
+        const arr = JSON.parse(selected);
+        if (Array.isArray(arr) && arr.length > 0) {
+          setFirstWorkflowId(arr[0]);
+        }
+      }
+    } catch {}
+  }, []);
 
   if (minimal) {
     return (
@@ -37,7 +52,7 @@ const TopNavigation = ({ minimal = false }: TopNavigationProps) => {
 
   const navItems = [
     { label: "Dashboard", path: "/dashboard" },
-    { label: "Workflow History", path: "/workflow-history" },
+    ...(firstWorkflowId ? [{ label: "Workflow History", path: `/workflow-history/${firstWorkflowId}` }] : []),
     ...(user?.role === 'admin' ? [
       { label: "Overage Dashboard", path: "/overages" },
       { label: "Analytics", path: "/analytics" },
