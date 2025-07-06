@@ -88,11 +88,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       // Ignore errors during logout
     }
-    
     setUser(null);
     setToken(null);
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('authToken');
+    localStorage.clear();
+    sessionStorage.clear();
+    // Redirect to HubSpot app marketplace listing
+    window.location.href = 'https://app.hubspot.com/ecosystem/marketplace/apps';
   };
 
   return (
