@@ -10,6 +10,9 @@ import NotFound from './pages/NotFound';
 import Footer from './components/Footer';
 import WorkflowHistory from './pages/WorkflowHistory';
 import HelpSupport from './pages/HelpSupport';
+import OverageDashboard from './pages/OverageDashboard';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import RealtimeDashboard from './pages/RealtimeDashboard';
 
 // Helper: Show Welcome/Connect modals based on context
 const ModalsManager = () => {
@@ -123,6 +126,9 @@ const AppRoutes = () => {
         <Route path="/workflow-history" element={<WorkflowHistory />} />
         <Route path="/workflow-history/:workflowId" element={<WorkflowHistory />} />
         <Route path="/help" element={<HelpSupport />} />
+        <Route path="/overages" element={<OverageDashboard />} />
+        <Route path="/analytics" element={<AnalyticsDashboard />} />
+        <Route path="/realtime-dashboard" element={<RealtimeDashboard />} />
         {/* Add more routes as needed */}
         <Route path="*" element={<NotFound />} />
       </Routes>
