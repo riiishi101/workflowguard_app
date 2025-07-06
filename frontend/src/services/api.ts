@@ -111,7 +111,7 @@ class ApiService {
   }
 
   async getWorkflowById(id: string) {
-    return { id, name: 'Demo Workflow', status: 'active', hubspotId: 'hs-1', ownerId: 'mock-user-id', createdAt: '2024-06-01', updatedAt: '2024-06-10' };
+    return this.request(`/workflows/${id}`);
   }
 
   async getWorkflowByHubspotId(hubspotId: string) {
