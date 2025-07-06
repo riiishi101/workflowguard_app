@@ -123,15 +123,6 @@ const HelpSupport = () => {
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-12">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input
-            placeholder="Search for articles, topics, or FAQs..."
-            className="pl-10 py-3 text-base"
-          />
-        </div>
-
         {/* FAQ Section Only */}
         <div className="mb-12">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Frequently Asked Questions</h2>
