@@ -39,6 +39,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'https://www.workflowguard.pro',
+      'https://workflowguard.pro',
       'http://localhost:3000',
       'http://localhost:8080',
       process.env.FRONTEND_URL
@@ -68,6 +69,6 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 WorkflowGuard API running on port ${port}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://www.workflowguard.pro'}`);
 }
 bootstrap();

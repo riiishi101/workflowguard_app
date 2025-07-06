@@ -21,7 +21,7 @@ export class AuthController {
     // This would redirect to HubSpot's OAuth consent page
     const clientId = process.env.HUBSPOT_CLIENT_ID;
     // Use the callback endpoint that sets JWT cookies
-    const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'https://workflowguard-app.onrender.com/api/auth/callback');
+    const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'https://www.workflowguard.pro/api/auth/callback');
     const scopes = encodeURIComponent('crm.objects.companies.read crm.objects.contacts.read crm.objects.deals.read crm.schemas.companies.read crm.schemas.contacts.read crm.schemas.deals.read oauth');
     const state = encodeURIComponent('workflowguard-oauth-' + Date.now());
     

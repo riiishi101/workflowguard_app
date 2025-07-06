@@ -16,7 +16,7 @@ interface CreateWebhookDto {
   secret?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://www.workflowguard.pro/api';
 
 class ApiService {
   private token: string | null = null;
