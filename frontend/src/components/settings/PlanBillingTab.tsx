@@ -33,16 +33,44 @@ const PlanBillingTab = () => {
   }, []);
 
   if (loading) return <div className="py-8 text-center text-gray-500">Loading plan...</div>;
-  if (error) return <div className="py-8 text-center text-red-500">{error}</div>;
-  if (!plan) return null;
+
+  // Show error message/CTA above the cards, but always render the pricing section
+  let errorBanner = null;
+  if (error) {
+    let message = error;
+    let action = null;
+    if (error.toLowerCase().includes('unauthorized')) {
+      message = 'Your session has expired. Please log in again.';
+      action = <Button className="mt-2 ml-2" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>Log In</Button>;
+    } else if (error.toLowerCase().includes('user not found')) {
+      message = "We couldn't find your account. Please reconnect your HubSpot account or contact support.";
+      action = <Button className="mt-2 ml-2" onClick={() => window.location.href = '/api/auth/hubspot'}>Reconnect Account</Button>;
+    } else {
+      message = 'Something went wrong. Please try again or contact support.';
+    }
+    errorBanner = <div className="py-4 text-center text-red-500">{message}{action}</div>;
+  }
+
+  // Use default plan info if not loaded
+  const planData = plan || {
+    planId: 'starter',
+    status: 'active',
+    price: 0,
+    workflowsMonitoredCount: 0,
+    maxWorkflows: 25,
+    historyDays: 30,
+    nextBillingDate: null,
+    hubspotPortalId: null,
+  };
 
   // HubSpot manage subscription URL
-  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = plan?.hubspotPortalId
-    ? `https://app.hubspot.com/ecosystem/${plan.hubspotPortalId}/marketplace/apps`
+  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = planData?.hubspotPortalId
+    ? `https://app.hubspot.com/ecosystem/${planData.hubspotPortalId}/marketplace/apps`
     : 'https://app.hubspot.com/ecosystem/marketplace/apps';
 
   return (
     <div className="space-y-6">
+      {errorBanner}
       {/* Subscription Overview */}
       <Card>
         <CardHeader className="p-6 pb-0 flex flex-col items-start">
@@ -71,8 +99,8 @@ const PlanBillingTab = () => {
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <div className="flex items-center gap-3 mb-1">
-            <span className="text-2xl font-bold text-gray-900">{plan.planId.charAt(0).toUpperCase() + plan.planId.slice(1)} Plan</span>
-            {plan.status === 'trial' && (
+            <span className="text-2xl font-bold text-gray-900">{planData.planId.charAt(0).toUpperCase() + planData.planId.slice(1)} Plan</span>
+            {planData.status === 'trial' && (
             <Badge
               variant="secondary"
               className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
@@ -81,26 +109,26 @@ const PlanBillingTab = () => {
             </Badge>
             )}
           </div>
-          <div className="text-gray-600 text-base mb-6">{plan.price ? `$${plan.price}/month` : ''}</div>
+          <div className="text-gray-600 text-base mb-6">{planData.price ? `$${planData.price}/month` : ''}</div>
 
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
               <span className="text-base text-gray-700 font-medium">Workflows Monitored</span>
-              <span className="text-base font-semibold text-gray-900">{plan.workflowsMonitoredCount}/{plan.maxWorkflows ?? '∞'}</span>
+              <span className="text-base font-semibold text-gray-900">{planData.workflowsMonitoredCount}/{planData.maxWorkflows ?? '∞'}</span>
             </div>
-            <Progress value={plan.maxWorkflows ? (plan.workflowsMonitoredCount / plan.maxWorkflows) * 100 : 0} className="h-2 w-full my-3" />
+            <Progress value={planData.maxWorkflows ? (planData.workflowsMonitoredCount / planData.maxWorkflows) * 100 : 0} className="h-2 w-full my-3" />
           </div>
 
           <div className="flex items-center justify-between mb-6">
             <span className="text-base text-gray-700 font-medium">Version History</span>
-            <span className="text-base font-semibold text-gray-900">{plan.historyDays ? `${plan.historyDays} days retained` : 'Unlimited'}</span>
+            <span className="text-base font-semibold text-gray-900">{planData.historyDays ? `${planData.historyDays} days retained` : 'Unlimited'}</span>
           </div>
 
           <hr className="my-4 border-gray-200" />
 
           <div className="flex items-center justify-between">
             <span className="text-base text-gray-500">Next billing on:</span>
-            <span className="text-base font-semibold text-gray-900">{plan.nextBillingDate ? new Date(plan.nextBillingDate).toLocaleDateString() : 'N/A'}</span>
+            <span className="text-base font-semibold text-gray-900">{planData.nextBillingDate ? new Date(planData.nextBillingDate).toLocaleDateString() : 'N/A'}</span>
           </div>
 
           {/* Info box below the button */}
@@ -123,7 +151,7 @@ const PlanBillingTab = () => {
           <RoleGuard roles={['admin']}>
           <Button
             className="bg-blue-600 text-white"
-            onClick={() => window.open(`https://app.hubspot.com/billing/${plan.hubspotPortalId || ''}`, '_blank')}
+            onClick={() => window.open(`https://app.hubspot.com/billing/${planData.hubspotPortalId || ''}`, '_blank')}
           >
             View Invoices in HubSpot
           </Button>
