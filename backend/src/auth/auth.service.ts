@@ -130,4 +130,11 @@ export class AuthService {
     await this.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
     return access_token;
   }
+
+  async updateUserRole(userId: string, role: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+  }
 }

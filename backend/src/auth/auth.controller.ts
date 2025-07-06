@@ -444,4 +444,42 @@ export class AuthController {
     // Redirect to dashboard
     return res.redirect('https://www.workflowguard.pro/dashboard');
   }
+
+  @Public()
+  @Get('dev-upgrade-portal-user-to-admin')
+  async devUpgradePortalUserToAdmin(@Res() res: Response) {
+    // Find the existing portal user and upgrade to admin
+    const portalEmail = 'portal-243202415@hubspot.test';
+    let user = await this.authService.validateUser(portalEmail);
+    
+    if (!user) {
+      // If user doesn't exist, create it as admin
+      user = await this.authService.findOrCreateAdminUser(portalEmail, 'Portal Admin User');
+      await this.authService.updateUserHubspotPortalId(user.id, '243202415');
+      await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
+    } else {
+      // Update existing user to admin role
+      user = await this.authService.updateUserRole(user.id, 'admin');
+    }
+    
+    // Generate JWT
+    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    console.log('Dev upgrade portal user - Generated JWT for admin user:', user.email, 'User ID:', user.id, 'Role:', user.role);
+    
+    // Set JWT as HttpOnly, Secure cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('jwt', jwt, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'none', // Allow cross-site cookies
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+      // No domain restriction to allow cross-domain cookies
+    });
+    
+    console.log('Dev upgrade portal user - JWT cookie set successfully');
+    
+    // Redirect to dashboard
+    return res.redirect('https://www.workflowguard.pro/dashboard');
+  }
 }

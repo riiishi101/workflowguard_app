@@ -58,6 +58,12 @@ const Index = () => {
               >
                 Login as Basic User (Viewer)
               </a>
+              <a 
+                href="https://www.workflowguard.pro/api/auth/dev-upgrade-portal-user-to-admin"
+                className="block bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-colors"
+              >
+                Upgrade Current Portal User to Admin
+              </a>
             </div>
           </div>
 
