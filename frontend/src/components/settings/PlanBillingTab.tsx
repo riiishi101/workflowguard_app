@@ -142,9 +142,11 @@ const PlanBillingTab = () => {
           </div>
 
           {/* Info box below the button */}
-          <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900">
-            <HelpCircle className="w-5 h-5 mr-2 inline-block align-text-bottom" />
-            All subscription changes are managed in your HubSpot account. Clicking the button above will open HubSpot's subscription management page.
+          <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900 flex items-center">
+            <Info className="w-5 h-5 mr-3 text-blue-500 flex-shrink-0" />
+            <span className="align-middle">
+              All subscription changes are managed in your HubSpot account. Clicking the button above will open HubSpot's subscription management page.
+            </span>
           </Alert>
         </CardContent>
       </Card>
@@ -168,14 +170,6 @@ const PlanBillingTab = () => {
           </RoleGuard>
         </CardContent>
       </Card>
-
-      {/* Subscription Management Info */}
-      <Alert variant="info" className="mb-4 flex items-center">
-        <Info className="w-5 h-5 mr-2 text-blue-500" />
-        <span>
-          <b>Manage your subscription in HubSpot:</b> To upgrade, downgrade, or cancel your plan, use the <b>Select Plan</b> or <b>Current Plan</b> buttons below. This will open HubSpot's subscription management page in a new tab.
-        </span>
-      </Alert>
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-3 gap-6">
