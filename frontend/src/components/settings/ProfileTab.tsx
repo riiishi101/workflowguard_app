@@ -86,7 +86,15 @@ const ProfileTab = () => {
   };
 
   if (loading) return <div className="py-8 text-center text-gray-500">Loading profile...</div>;
-  if (error) return <div className="py-8 text-center text-red-500">{error}</div>;
+
+  // Use default/empty profile if error
+  const profileData = error ? {
+    fullName: '',
+    email: '',
+    jobTitle: '',
+    timezone: '',
+    language: '',
+  } : profile;
 
   return (
     <div className="space-y-6">
@@ -97,8 +105,8 @@ const ProfileTab = () => {
           <AvatarFallback className="text-lg">JS</AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">{profile.fullName}</h2>
-          <p className="text-gray-600">{profile.email}</p>
+          <h2 className="text-xl font-semibold text-gray-900">{profileData.fullName}</h2>
+          <p className="text-gray-600">{profileData.email}</p>
         </div>
       </div>
 
@@ -112,7 +120,7 @@ const ProfileTab = () => {
             <Label htmlFor="full-name">Full Name</Label>
             <Input
               id="full-name"
-              value={profile.fullName}
+              value={profileData.fullName}
               onChange={(e) => handleInputChange("fullName", e.target.value)}
               className="mt-1"
             />
@@ -126,7 +134,7 @@ const ProfileTab = () => {
             <div className="flex items-center gap-2 mt-1">
               <Input
                 id="email"
-                value={profile.email}
+                value={profileData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 className="flex-1"
               />
@@ -140,7 +148,7 @@ const ProfileTab = () => {
             <Label htmlFor="job-title">Job Title</Label>
             <Input
               id="job-title"
-              value={profile.jobTitle}
+              value={profileData.jobTitle}
               onChange={(e) => handleInputChange("jobTitle", e.target.value)}
               className="mt-1"
             />
@@ -157,7 +165,7 @@ const ProfileTab = () => {
           <div>
             <Label htmlFor="timezone">Time Zone</Label>
             <Select
-              value={profile.timezone}
+              value={profileData.timezone}
               onValueChange={(value) => handleInputChange("timezone", value)}
             >
               <SelectTrigger className="mt-1">
@@ -183,7 +191,7 @@ const ProfileTab = () => {
           <div>
             <Label htmlFor="language">Display Language</Label>
             <Select
-              value={profile.language}
+              value={profileData.language}
               onValueChange={(value) => handleInputChange("language", value)}
             >
               <SelectTrigger className="mt-1">
