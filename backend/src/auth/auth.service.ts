@@ -60,6 +60,30 @@ export class AuthService {
     return user;
   }
 
+  async findOrCreateAdminUser(email: string, name?: string) {
+    let user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          name,
+          role: 'admin',
+        },
+      });
+    } else {
+      // If user exists, update to admin role for development testing
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { role: 'admin' },
+      });
+    }
+
+    return user;
+  }
+
   async validateJwtPayload(payload: { sub: string; email: string; role: string }) {
     return this.prisma.user.findUnique({ where: { id: payload.sub } });
   }
