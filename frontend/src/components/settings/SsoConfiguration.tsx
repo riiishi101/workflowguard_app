@@ -358,7 +358,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                 </Label>
                 <div className="flex items-center space-x-3">
                   <Input
-                    value="https://app.workflowguard.ai/saml/metadata"
+                    value="https://www.workflowguard.pro/saml/metadata"
                     readOnly
                     className="bg-gray-50"
                     disabled={!canEdit}
@@ -368,7 +368,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                     size="sm"
                     onClick={() =>
                       copyToClipboard(
-                        "https://app.workflowguard.ai/saml/metadata",
+                        "https://www.workflowguard.pro/saml/metadata",
                       )
                     }
                     disabled={!canEdit}
@@ -383,7 +383,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                 </Label>
                 <div className="flex items-center space-x-3">
                   <Input
-                    value="https://app.workflowguard.ai/saml/acs"
+                    value="https://www.workflowguard.pro/saml/acs"
                     readOnly
                     className="bg-gray-50"
                     disabled={!canEdit}
@@ -392,7 +392,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      copyToClipboard("https://app.workflowguard.ai/saml/acs")
+                      copyToClipboard("https://www.workflowguard.pro/saml/acs")
                     }
                     disabled={!canEdit}
                   >
@@ -406,7 +406,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                 </Label>
                 <div className="flex items-center space-x-3">
                   <Input
-                    value="https://app.workflowguard.ai/saml/slo"
+                    value="https://www.workflowguard.pro/saml/slo"
                     readOnly
                     className="bg-gray-50"
                     disabled={!canEdit}
@@ -415,7 +415,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      copyToClipboard("https://app.workflowguard.ai/saml/slo")
+                      copyToClipboard("https://www.workflowguard.pro/saml/slo")
                     }
                     disabled={!canEdit}
                   >

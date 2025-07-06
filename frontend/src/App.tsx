@@ -45,7 +45,7 @@ const ModalsManager = () => {
 
   // Only ConnectHubSpotModal triggers OAuth redirect
   const handleHubSpotOAuth = () => {
-    window.location.href = 'https://www.workflowguard.pro/api/auth/hubspot';
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/hubspot`;
   };
 
   return (
