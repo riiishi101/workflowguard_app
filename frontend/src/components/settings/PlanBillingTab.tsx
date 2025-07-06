@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Download, HelpCircle } from "lucide-react";
+import { CheckCircle, Download, HelpCircle, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import apiService from '@/services/api';
@@ -169,6 +169,14 @@ const PlanBillingTab = () => {
         </CardContent>
       </Card>
 
+      {/* Subscription Management Info */}
+      <Alert variant="info" className="mb-4 flex items-center">
+        <Info className="w-5 h-5 mr-2 text-blue-500" />
+        <span>
+          <b>Manage your subscription in HubSpot:</b> To upgrade, downgrade, or cancel your plan, use the <b>Select Plan</b> or <b>Current Plan</b> buttons below. This will open HubSpot's subscription management page in a new tab.
+        </span>
+      </Alert>
+
       {/* Pricing Cards */}
       <div className="grid grid-cols-3 gap-6">
         {plans.map((p) => (
@@ -196,18 +204,16 @@ const PlanBillingTab = () => {
                   </div>
                 ))}
               </div>
+              {/* Plan Action Button at the bottom of the card */}
+              <div className="mt-6 flex justify-center">
+                {planData.planId === p.id ? (
+                  <Button disabled className="w-full bg-gray-200 text-gray-600 cursor-not-allowed">Current Plan</Button>
+                ) : (
+                  <Button className="w-full bg-blue-600 text-white" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>Select Plan</Button>
+                )}
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
-      {/* Plan Action Buttons Row */}
-      <div className="flex flex-row justify-between gap-6 mt-4">
-        {plans.map((p) => (
-          planData.planId === p.id ? (
-            <Button key={p.id} disabled className="w-full bg-gray-200 text-gray-600 cursor-not-allowed">Current Plan</Button>
-          ) : (
-            <Button key={p.id} className="w-full bg-blue-600 text-white" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>Select Plan</Button>
-          )
         ))}
       </div>
     </div>
