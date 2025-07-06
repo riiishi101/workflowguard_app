@@ -96,6 +96,14 @@ const AppRoutes = () => {
     <>
       <ModalsManager />
       <Routes>
+        {/* Default route - redirect based on user state */}
+        <Route path="/" element={
+          <Navigate to={
+            !user ? "/" : // Stay on root if not authenticated (modals will handle)
+            !hasSelectedWorkflows ? "/select-workflows" : 
+            "/dashboard"
+          } replace />
+        } />
         {/* WelcomeModal and ConnectHubSpotModal are handled globally */}
         <Route path="/select-workflows" element={<WorkflowSelection />} />
         <Route path="/dashboard" element={<Dashboard />} />

@@ -36,7 +36,7 @@ import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import { saveAs } from 'file-saver';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import RoleGuard from '../components/RoleGuard';
 
 const WorkflowHistoryDetail = () => {
@@ -628,6 +628,9 @@ const WorkflowHistoryDetail = () => {
       <Dialog open={showAuditLogModal} onOpenChange={setShowAuditLogModal}>
         <DialogContent className="max-w-lg">
           <DialogTitle>Audit Log Details</DialogTitle>
+          <DialogDescription>
+            Detailed information about the selected audit log entry.
+          </DialogDescription>
           {selectedAuditLog && (
             <div className="space-y-2 mt-4">
               <div><strong>Action:</strong> {selectedAuditLog.action}</div>

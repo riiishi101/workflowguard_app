@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import WorkflowGuardLogo from "./WorkflowGuardLogo";
 import { Lock, Info } from "lucide-react";
@@ -20,6 +20,9 @@ const ConnectHubSpotModal = ({
       <DialogContent className="max-w-md p-8 bg-gray-50 border-0">
         <VisuallyHidden>
           <DialogTitle>Connect Your HubSpot Account</DialogTitle>
+          <DialogDescription>
+            Authorize WorkflowGuard to access your HubSpot Workflows for automatic version control.
+          </DialogDescription>
         </VisuallyHidden>
         <div className="text-center space-y-6">
           <div className="flex justify-center">

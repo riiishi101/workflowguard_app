@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -28,6 +28,9 @@ const RollbackConfirmModal = ({
         <DialogContent className="max-w-lg p-0">
           <VisuallyHidden>
             <DialogTitle>Confirm Rollback to Latest Snapshot</DialogTitle>
+            <DialogDescription>
+              Confirm rollback of workflow '{workflowName}' to its latest saved snapshot. This action cannot be undone.
+            </DialogDescription>
           </VisuallyHidden>
 
           {/* Header */}

@@ -22,7 +22,7 @@ import apiService from '@/services/api';
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 
@@ -465,6 +465,9 @@ const UserPermissionsTab = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Invite New User</DialogTitle>
+            <DialogDescription>
+              Send an invitation to a new user to join your WorkflowGuard account.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -505,6 +508,9 @@ const UserPermissionsTab = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>User Profile</DialogTitle>
+            <DialogDescription>
+              View and edit user profile information and permissions.
+            </DialogDescription>
           </DialogHeader>
           {profileUser && (
             <div className="space-y-4">
