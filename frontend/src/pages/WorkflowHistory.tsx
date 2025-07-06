@@ -53,6 +53,10 @@ const WorkflowHistory = () => {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [lastBulkDeleted, setLastBulkDeleted] = useState<any[]>([]);
 
+  if (!workflowId) {
+    return <EmptyWorkflowHistory />;
+  }
+
   // Fetch workflow and versions from backend
   useEffect(() => {
     if (!workflowId) return;

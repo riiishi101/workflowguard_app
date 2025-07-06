@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Footer from './components/Footer';
 import WorkflowHistory from './pages/WorkflowHistory';
+import HelpSupport from './pages/HelpSupport';
 
 // Helper: Show Welcome/Connect modals based on context
 const ModalsManager = () => {
@@ -119,7 +120,9 @@ const AppRoutes = () => {
         <Route path="/select-workflows" element={<WorkflowSelection />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/workflow-history" element={<WorkflowHistory />} />
         <Route path="/workflow-history/:workflowId" element={<WorkflowHistory />} />
+        <Route path="/help" element={<HelpSupport />} />
         {/* Add more routes as needed */}
         <Route path="*" element={<NotFound />} />
       </Routes>

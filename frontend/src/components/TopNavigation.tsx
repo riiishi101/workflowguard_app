@@ -52,7 +52,7 @@ const TopNavigation = ({ minimal = false }: TopNavigationProps) => {
 
   const navItems = [
     { label: "Dashboard", path: "/dashboard" },
-    ...(firstWorkflowId ? [{ label: "Workflow History", path: `/workflow-history/${firstWorkflowId}` }] : []),
+    { label: "Workflow History", path: firstWorkflowId ? `/workflow-history/${firstWorkflowId}` : "/workflow-history" },
     ...(user?.role === 'admin' ? [
       { label: "Overage Dashboard", path: "/overages" },
       { label: "Analytics", path: "/analytics" },
