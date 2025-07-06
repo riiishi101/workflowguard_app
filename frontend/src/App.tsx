@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import WorkflowSelection from './pages/WorkflowSelection';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+import Footer from './components/Footer';
 
 // Helper: Show Welcome/Connect modals based on context
 const ModalsManager = () => {
@@ -56,9 +57,18 @@ const ModalsManager = () => {
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { plan } = usePlan();
   const location = useLocation();
+
+  // Show spinner or blank while loading auth state
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span className="text-gray-500 text-lg">Loading...</span>
+      </div>
+    );
+  }
 
   // Helper: Check if user has selected workflows (onboarding complete)
   const hasSelectedWorkflows = React.useMemo(() => {
@@ -117,13 +127,14 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-        <AuthProvider>
+    <AuthProvider>
       <PlanProvider>
-          <Router>
+        <Router>
           <AppRoutes />
-          </Router>
+          <Footer />
+        </Router>
       </PlanProvider>
-        </AuthProvider>
+    </AuthProvider>
   );
 };
 
