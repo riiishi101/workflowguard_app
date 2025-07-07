@@ -15,8 +15,9 @@ import { useToast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import PremiumModal from "@/components/PremiumModal";
 
-const WebhooksConfiguration = ({ canEdit = true, planChecked = true }) => {
+const WebhooksConfiguration = ({ canEdit = true, planChecked = true, setActiveTab }) => {
   const { toast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const [webhooks, setWebhooks] = useState<any[]>([]);
@@ -125,19 +126,24 @@ const WebhooksConfiguration = ({ canEdit = true, planChecked = true }) => {
     setViewingWebhook(null);
   };
 
+  const handleGoToPlan = () => setActiveTab && setActiveTab('plan-billing');
+
   if (!planChecked || loading) return <div className="py-8 text-center text-gray-500">Loading webhooks...</div>;
   if (error) return <div className="py-8 text-center text-red-500">{error}</div>;
 
+  if (!canEdit) {
+    return (
+      <PremiumModal
+        isOpen={true}
+        onUpgrade={handleGoToPlan}
+        onCloseAndGoToPlan={handleGoToPlan}
+        message="Webhooks are available on the Enterprise plan. Upgrade to unlock this feature."
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {!canEdit && (
-        <Alert className="border-orange-200 bg-orange-50 flex items-center gap-2">
-          <Lock className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
-            Webhooks are available on the Enterprise Plan. Upgrade to add, edit, or delete webhooks.
-          </AlertDescription>
-        </Alert>
-      )}
       {/* Header */}
       <div className="flex items-center justify-between pt-10 pb-6">
         <div>

@@ -25,8 +25,9 @@ import { Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { PremiumModal } from '@/components/PremiumModal';
 
-const UserPermissionsTab = () => {
+const UserPermissionsTab = ({ setActiveTab }) => {
   const { toast } = useToast();
   const [userList, setUserList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -250,18 +251,22 @@ const UserPermissionsTab = () => {
     }
   };
 
-  if (!planChecked || loading) return <div className="py-8 text-center text-gray-500">Loading...</div>;
+  const handleGoToPlan = () => setActiveTab && setActiveTab('plan-billing');
+
+  if (!planChecked) return null;
+  if (!canEdit) {
+    return (
+      <PremiumModal
+        isOpen={true}
+        onUpgrade={handleGoToPlan}
+        onCloseAndGoToPlan={handleGoToPlan}
+        message="User permissions are available on the Enterprise plan. Upgrade to unlock this feature."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {!canEdit && (
-        <Alert className="border-orange-200 bg-orange-50 flex items-center gap-2">
-          <Lock className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
-            User Permissions are available on the Enterprise Plan. Upgrade to manage user roles and permissions.
-          </AlertDescription>
-        </Alert>
-      )}
       {/* Role Descriptions */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">

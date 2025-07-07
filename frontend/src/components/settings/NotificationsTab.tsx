@@ -9,6 +9,7 @@ import { Lock } from "lucide-react";
 import UpgradeRequiredModal from '../UpgradeRequiredModal';
 import apiService from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
+import PremiumModal from '../PremiumModal';
 
 interface NotificationSettings {
   notificationsEnabled: boolean;
@@ -19,7 +20,7 @@ interface NotificationSettings {
   criticalActionModified: boolean;
 }
 
-const NotificationsTab = () => {
+const NotificationsTab = ({ setActiveTab }) => {
   const { toast } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationEmail, setNotificationEmail] = useState("");
@@ -80,13 +81,17 @@ const NotificationsTab = () => {
     // Optionally, navigate back to settings or another tab
   };
 
+  const handleGoToPlan = () => setActiveTab && setActiveTab('plan-billing');
+
   if (!planChecked || loading) return null;
 
   if (showUpgradeModal) {
     return (
-      <UpgradeRequiredModal
+      <PremiumModal
         isOpen={showUpgradeModal}
-        onClose={handleCloseModal}
+        onUpgrade={handleGoToPlan}
+        onCloseAndGoToPlan={handleGoToPlan}
+        message="Custom notifications are available on the Professional plan. Upgrade to unlock this feature."
       />
     );
   }

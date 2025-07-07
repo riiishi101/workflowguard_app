@@ -3,10 +3,12 @@ import { X, Lock, Check } from 'lucide-react';
 
 interface PremiumModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onCloseAndGoToPlan: () => void;
+  onUpgrade: () => void;
+  message?: string;
 }
 
-const PremiumModal = ({ isOpen, onClose }: PremiumModalProps) => {
+const PremiumModal = ({ isOpen, onCloseAndGoToPlan, onUpgrade, message }: PremiumModalProps) => {
   if (!isOpen) return null;
 
   return (
@@ -14,7 +16,7 @@ const PremiumModal = ({ isOpen, onClose }: PremiumModalProps) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
         {/* Close button */}
         <button 
-          onClick={onClose}
+          onClick={onCloseAndGoToPlan}
           className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
         >
           <X size={24} />
@@ -34,7 +36,7 @@ const PremiumModal = ({ isOpen, onClose }: PremiumModalProps) => {
 
         {/* Subtitle */}
         <p className="text-gray-600 text-center mb-8 leading-relaxed">
-          Get instant notifications and stay ahead of critical changes
+          {message || 'Get instant notifications and stay ahead of critical changes'}
         </p>
 
         {/* Features list */}
@@ -56,18 +58,18 @@ const PremiumModal = ({ isOpen, onClose }: PremiumModalProps) => {
         {/* Upgrade button */}
         <button
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors mb-6"
-          onClick={() => window.location.href = '/settings?tab=plan-billing'}
+          onClick={onUpgrade}
         >
           Upgrade Now
         </button>
 
         {/* Bottom links */}
         <div className="flex justify-between items-center text-sm">
-          <button className="text-blue-600 hover:text-blue-700 font-medium">
+          <button className="text-blue-600 hover:text-blue-700 font-medium" onClick={onUpgrade}>
             View Plan Details
           </button>
           <button 
-            onClick={onClose}
+            onClick={onCloseAndGoToPlan}
             className="text-gray-500 hover:text-gray-700 font-medium"
           >
             Back to Settings

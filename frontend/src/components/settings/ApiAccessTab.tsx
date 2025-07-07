@@ -17,6 +17,7 @@ import WebhooksConfiguration from "./WebhooksConfiguration";
 import { useToast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import React from 'react';
+import PremiumModal from "@/components/PremiumModal";
 
 interface ApiKeyMeta {
   id: string;
@@ -33,7 +34,7 @@ interface ApiKeyCreateResponse {
   key: string;
 }
 
-const ApiAccessTab = () => {
+const ApiAccessTab = ({ setActiveTab }) => {
   const { toast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState("api-access");
   const [apiKeys, setApiKeys] = useState<ApiKeyMeta[]>([]);
@@ -142,32 +143,22 @@ const ApiAccessTab = () => {
     toast({ title: 'Copied', description: `${label} copied to clipboard.` });
   };
 
+  const handleGoToPlan = () => setActiveTab && setActiveTab('plan-billing');
+
   if (!planChecked || loading) return <div className="py-8 text-center text-gray-500">Loading...</div>;
+  if (!canEdit) {
+    return (
+      <PremiumModal
+        isOpen={true}
+        onUpgrade={handleGoToPlan}
+        onCloseAndGoToPlan={handleGoToPlan}
+        message="API access is available on the Enterprise plan. Upgrade to unlock this feature."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {!canEdit && (
-        <Alert className="border-orange-200 bg-orange-50 flex items-center gap-2">
-          <Lock className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
-            API Access is available on the Enterprise Plan. Upgrade to generate and manage API keys.
-          </AlertDescription>
-        </Alert>
-      )}
-      {/* Show raw API key modal */}
-      {showKeyModal && newRawKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-8 relative">
-            <h2 className="text-lg font-semibold mb-4">Your New API Key</h2>
-            <p className="mb-4 text-gray-700">Copy and save this key now. You won't be able to see it again!</p>
-            <div className="bg-gray-100 rounded px-4 py-2 font-mono text-sm break-all mb-4">{newRawKey}</div>
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => {navigator.clipboard.writeText(newRawKey); toast({ title: 'Copied', description: 'API key copied to clipboard.' });}} disabled={!canEdit}>Copy</Button>
-              <Button variant="outline" onClick={() => { setShowKeyModal(false); setNewRawKey(null); }} disabled={!canEdit}>Close</Button>
-            </div>
-          </div>
-        </div>
-      )}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList className="bg-gray-100">
           <TabsTrigger value="api-access">API Access</TabsTrigger>
@@ -194,7 +185,7 @@ const ApiAccessTab = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>API Keys</CardTitle>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleGenerateKey} disabled={!canEdit}>
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleGenerateKey}>
                 <Plus className="w-4 h-4 mr-2" />
                 Generate New Key
               </Button>
@@ -230,7 +221,7 @@ const ApiAccessTab = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteKey(key.id)} disabled={!canEdit}>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteKey(key.id)}>
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
                           </div>
@@ -241,7 +232,7 @@ const ApiAccessTab = () => {
                 </Table>
               )}
               <div className="mt-4">
-                <Button variant="outline" className="text-blue-600" asChild disabled={!canEdit}>
+                <Button variant="outline" className="text-blue-600" asChild>
                   <a href="https://docs.workflowguard.com/api" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View API Documentation
@@ -257,8 +248,8 @@ const ApiAccessTab = () => {
                 <h2 className="text-lg font-semibold mb-4">Delete API Key?</h2>
                 <p className="mb-6">Are you sure you want to delete this API key? This action cannot be undone.</p>
                 <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setConfirmDeleteId(null)} disabled={deleting || !canEdit}>Cancel</Button>
-                  <Button className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2" onClick={confirmDelete} disabled={deleting || !canEdit}>
+                  <Button variant="outline" onClick={() => setConfirmDeleteId(null)} disabled={deleting}>Cancel</Button>
+                  <Button className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2" onClick={confirmDelete} disabled={deleting}>
                     {deleting && <Loader2 className="w-4 h-4 animate-spin" />} Delete
                   </Button>
                 </div>
@@ -273,6 +264,20 @@ const ApiAccessTab = () => {
           <WebhooksConfiguration canEdit={canEdit} planChecked={planChecked} />
         </TabsContent>
       </Tabs>
+      {/* Show raw API key modal */}
+      {showKeyModal && newRawKey && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-8 relative">
+            <h2 className="text-lg font-semibold mb-4">Your New API Key</h2>
+            <p className="mb-4 text-gray-700">Copy and save this key now. You won't be able to see it again!</p>
+            <div className="bg-gray-100 rounded px-4 py-2 font-mono text-sm break-all mb-4">{newRawKey}</div>
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => {navigator.clipboard.writeText(newRawKey); toast({ title: 'Copied', description: 'API key copied to clipboard.' });}}>Copy</Button>
+              <Button variant="outline" onClick={() => { setShowKeyModal(false); setNewRawKey(null); }}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

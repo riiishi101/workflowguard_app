@@ -105,21 +105,21 @@ const Settings = () => {
               <PlanBillingTab />
             </TabsContent>
             <TabsContent value="notifications">
-              <NotificationsTab />
+              <NotificationsTab setActiveTab={setActiveTab} />
             </TabsContent>
             <RoleGuard roles={['admin']}>
               <TabsContent value="user-permissions">
-                <UserPermissionsTab />
+                <UserPermissionsTab setActiveTab={setActiveTab} />
               </TabsContent>
             </RoleGuard>
             <RoleGuard roles={['admin', 'restorer']}>
               <TabsContent value="audit-log">
-                <AuditLogTab />
+                <AuditLogTab setActiveTab={setActiveTab} />
               </TabsContent>
             </RoleGuard>
             <RoleGuard roles={['admin']}>
               <TabsContent value="api-access">
-                <ApiAccessTab />
+                <ApiAccessTab setActiveTab={setActiveTab} />
               </TabsContent>
             </RoleGuard>
             <TabsContent value="profile">
@@ -133,7 +133,7 @@ const Settings = () => {
               All invoices and billing history are managed in your HubSpot account.
             </p>
             <Button
-              onClick={() => window.open(`https://app.hubspot.com/billing/${plan.hubspotPortalId || ''}`, '_blank')}
+              onClick={() => window.open(`https://app.hubspot.com/billing/${plan?.hubspotPortalId || ''}`, '_blank')}
               className="bg-blue-600 text-white mb-4"
             >
               View Invoices in HubSpot
