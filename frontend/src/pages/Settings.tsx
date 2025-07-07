@@ -25,6 +25,9 @@ const Settings = () => {
   const { plan, loading } = usePlan();
   const [activeTab, setActiveTab] = useState("plan-billing");
 
+  // Debug log for user and plan
+  console.log('Settings debug:', { user, plan });
+
   const HUBSPOT_MANAGE_SUBSCRIPTION_URL = plan?.hubspotPortalId
     ? `https://app.hubspot.com/ecosystem/${plan?.hubspotPortalId}/marketplace/apps`
     : 'https://app.hubspot.com/ecosystem/marketplace/apps';
