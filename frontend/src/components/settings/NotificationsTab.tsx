@@ -9,7 +9,7 @@ import { Lock } from "lucide-react";
 import UpgradeRequiredModal from '../UpgradeRequiredModal';
 import apiService from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
-import PremiumModal from '../PremiumModal';
+import PremiumModal from "../UpgradeRequiredModal";
 
 interface NotificationSettings {
   notificationsEnabled: boolean;

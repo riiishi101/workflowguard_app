@@ -17,7 +17,7 @@ import WebhooksConfiguration from "./WebhooksConfiguration";
 import { useToast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import React from 'react';
-import PremiumModal from "@/components/PremiumModal";
+import PremiumModal from "../UpgradeRequiredModal";
 
 interface ApiKeyMeta {
   id: string;

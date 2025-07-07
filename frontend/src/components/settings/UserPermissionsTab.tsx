@@ -25,7 +25,7 @@ import { Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { PremiumModal } from '@/components/PremiumModal';
+import PremiumModal from "../UpgradeRequiredModal";
 
 const UserPermissionsTab = ({ setActiveTab }) => {
   const { toast } = useToast();

@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import PremiumModal from "@/components/PremiumModal";
+import PremiumModal from "../UpgradeRequiredModal";
 
 const WebhooksConfiguration = ({ canEdit = true, planChecked = true, setActiveTab }) => {
   const { toast } = useToast();
