@@ -21,18 +21,18 @@ import RoleGuard from '../components/RoleGuard';
 
 const Settings = () => {
   useRequireAuth();
-  const { user } = useAuth();
-  const { plan, loading } = usePlan();
+  const { user, loading } = useAuth();
+  const { plan } = usePlan();
   const [activeTab, setActiveTab] = useState("plan-billing");
 
   // Debug log for user and plan
   console.log('Settings debug:', { user, plan });
 
-  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = plan?.hubspotPortalId
-    ? `https://app.hubspot.com/ecosystem/${plan?.hubspotPortalId}/marketplace/apps`
+  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = user?.hubspotPortalId
+    ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
     : 'https://app.hubspot.com/ecosystem/marketplace/apps';
 
-  const showPortalWarning = !plan?.hubspotPortalId;
+  const showPortalWarning = !user?.hubspotPortalId;
 
   if (loading) return null;
 
@@ -67,7 +67,7 @@ const Settings = () => {
         <RoleGuard roles={['admin']}>
           <div className="mb-8 flex items-center gap-4">
             <h2 className="text-lg font-semibold mr-4">User Management (Admin Only)</h2>
-            <Button onClick={() => alert('User management feature coming soon!')}>Manage Users</Button>
+            <Button onClick={() => setActiveTab('user-permissions')}>Manage Users</Button>
           </div>
         </RoleGuard>
 
@@ -115,12 +115,12 @@ const Settings = () => {
             </RoleGuard>
             <RoleGuard roles={['admin', 'restorer']}>
               <TabsContent value="audit-log">
-                <AuditLogTab setActiveTab={setActiveTab} />
+                <AuditLogTab />
               </TabsContent>
             </RoleGuard>
             <RoleGuard roles={['admin']}>
               <TabsContent value="api-access">
-                <ApiAccessTab setActiveTab={setActiveTab} />
+                <ApiAccessTab />
               </TabsContent>
             </RoleGuard>
             <TabsContent value="profile">
@@ -134,7 +134,7 @@ const Settings = () => {
               All invoices and billing history are managed in your HubSpot account.
             </p>
             <Button
-              onClick={() => window.open(`https://app.hubspot.com/billing/${plan?.hubspotPortalId || ''}`, '_blank')}
+              onClick={() => window.open(`https://app.hubspot.com/billing/${user?.hubspotPortalId || ''}`, '_blank')}
               className="bg-blue-600 text-white mb-4"
             >
               View Invoices in HubSpot
