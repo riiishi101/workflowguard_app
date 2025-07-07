@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import PremiumModal from "../UpgradeRequiredModal";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const WebhooksConfiguration = ({ canEdit = true, planChecked = true, setActiveTab }) => {
   const { toast } = useToast();
@@ -133,12 +133,15 @@ const WebhooksConfiguration = ({ canEdit = true, planChecked = true, setActiveTa
 
   if (!canEdit) {
     return (
-      <PremiumModal
-        isOpen={true}
-        onUpgrade={handleGoToPlan}
-        onCloseAndGoToPlan={handleGoToPlan}
-        message="Webhooks are available on the Enterprise plan. Upgrade to unlock this feature."
-      />
+      <Card className="p-8 flex flex-col items-center justify-center text-center">
+        <CardHeader>
+          <CardTitle>Upgrade to Enterprise Plan</CardTitle>
+          <CardDescription>Get access to advanced webhook integrations and automation features.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setActiveTab && setActiveTab('plan-billing')}>Upgrade Now</Button>
+        </CardContent>
+      </Card>
     );
   }
 

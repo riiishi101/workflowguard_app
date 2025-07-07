@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, Trash2, Eye, AlertTriangle, ExternalLink, Copy, Loader2, Lock } from "lucide-react";
 import SsoConfiguration from "./SsoConfiguration";
@@ -17,7 +17,6 @@ import WebhooksConfiguration from "./WebhooksConfiguration";
 import { useToast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import React from 'react';
-import PremiumModal from "../UpgradeRequiredModal";
 
 interface ApiKeyMeta {
   id: string;
@@ -148,12 +147,15 @@ const ApiAccessTab = ({ setActiveTab }) => {
   if (!planChecked || loading) return <div className="py-8 text-center text-gray-500">Loading...</div>;
   if (!canEdit) {
     return (
-      <PremiumModal
-        isOpen={true}
-        onUpgrade={handleGoToPlan}
-        onCloseAndGoToPlan={handleGoToPlan}
-        message="API access is available on the Enterprise plan. Upgrade to unlock this feature."
-      />
+      <Card className="p-8 flex flex-col items-center justify-center text-center">
+        <CardHeader>
+          <CardTitle>Upgrade to Enterprise Plan</CardTitle>
+          <CardDescription>Get access to API access and integrations with advanced features.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setActiveTab && setActiveTab('plan-billing')}>Upgrade Now</Button>
+        </CardContent>
+      </Card>
     );
   }
 
