@@ -6,10 +6,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
+    const request = ctx.getRequest();
     const response = ctx.getResponse();
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
 
-    this.logger.error('Unhandled exception', exception as any);
+    this.logger.error('Unhandled exception', {
+      exception,
+      method: request?.method,
+      url: request?.originalUrl || request?.url,
+      headers: request?.headers,
+      cookies: request?.cookies,
+      body: request?.body,
+      query: request?.query,
+    });
 
     response.status(status).json({
       statusCode: status,
