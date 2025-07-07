@@ -120,7 +120,7 @@ const Settings = () => {
             </RoleGuard>
             <RoleGuard roles={['admin']}>
               <TabsContent value="api-access">
-                <ApiAccessTab />
+                <ApiAccessTab setActiveTab={setActiveTab} />
               </TabsContent>
             </RoleGuard>
             <TabsContent value="profile">

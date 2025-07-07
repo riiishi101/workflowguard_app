@@ -17,7 +17,7 @@ import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-const WebhooksConfiguration = ({ canEdit = true, planChecked = true, setActiveTab }) => {
+const WebhooksConfiguration = ({ canEdit = true, planChecked = true, setActiveTab = () => {} }) => {
   const { toast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const [webhooks, setWebhooks] = useState<any[]>([]);

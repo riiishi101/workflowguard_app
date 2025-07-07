@@ -33,7 +33,7 @@ interface ApiKeyCreateResponse {
   key: string;
 }
 
-const ApiAccessTab = ({ setActiveTab }) => {
+const ApiAccessTab = ({ setActiveTab = () => {} }) => {
   const { toast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState("api-access");
   const [apiKeys, setApiKeys] = useState<ApiKeyMeta[]>([]);
@@ -41,7 +41,7 @@ const ApiAccessTab = ({ setActiveTab }) => {
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [lastDeletedKey, setLastDeletedKey] = useState<any | null>(null);
+  const [lastDeletedKey, setLastDeletedKey] = useState<ApiKeyMeta | null>(null);
   const undoTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [newRawKey, setNewRawKey] = useState<string | null>(null);
@@ -98,11 +98,6 @@ const ApiAccessTab = ({ setActiveTab }) => {
     }
   };
 
-  const handleRevealKey = (id: string) => {
-    setApiKeys(keys => keys.map(k => k.id === id ? { ...k, revealed: !k.revealed } : k));
-    toast({ title: 'API Key Revealed', description: 'API key visibility toggled.' });
-  };
-
   const handleDeleteKey = (id: string) => {
     setConfirmDeleteId(id);
   };
@@ -118,14 +113,13 @@ const ApiAccessTab = ({ setActiveTab }) => {
       toast({
         title: 'API Key Deleted',
         description: 'The API key has been deleted.',
-        action: {
-          label: 'Undo',
-          onClick: () => {
+        action: (
+          <button onClick={() => {
             if (deletedKey) setApiKeys(prev => [deletedKey, ...prev]);
             setLastDeletedKey(null);
             if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
-          },
-        },
+          }}>Undo</button>
+        ),
       });
       // Remove undo after 5 seconds
       undoTimeoutRef.current = setTimeout(() => setLastDeletedKey(null), 5000);
@@ -142,7 +136,7 @@ const ApiAccessTab = ({ setActiveTab }) => {
     toast({ title: 'Copied', description: `${label} copied to clipboard.` });
   };
 
-  const handleGoToPlan = () => setActiveTab && setActiveTab('plan-billing');
+  const handleGoToPlan = () => setActiveTab && setActiveTab();
 
   if (!planChecked || loading) return <div className="py-8 text-center text-gray-500">Loading...</div>;
   if (!canEdit) {
@@ -153,7 +147,7 @@ const ApiAccessTab = ({ setActiveTab }) => {
           <CardDescription>Get access to API access and integrations with advanced features.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setActiveTab && setActiveTab('plan-billing')}>Upgrade Now</Button>
+          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleGoToPlan}>Upgrade Now</Button>
         </CardContent>
       </Card>
     );
