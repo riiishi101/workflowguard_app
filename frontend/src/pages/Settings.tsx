@@ -26,7 +26,7 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState("plan-billing");
 
   const HUBSPOT_MANAGE_SUBSCRIPTION_URL = plan?.hubspotPortalId
-    ? `https://app.hubspot.com/ecosystem/${plan.hubspotPortalId}/marketplace/apps`
+    ? `https://app.hubspot.com/ecosystem/${plan?.hubspotPortalId}/marketplace/apps`
     : 'https://app.hubspot.com/ecosystem/marketplace/apps';
 
   const showPortalWarning = !plan?.hubspotPortalId;
@@ -43,9 +43,7 @@ const Settings = () => {
   ];
 
   const handleTabClick = (tab) => {
-    if (tab.always || (tab.feature && plan.features.includes(tab.feature))) {
-      setActiveTab(tab.key);
-    }
+    setActiveTab(tab.key);
   };
 
   return (
