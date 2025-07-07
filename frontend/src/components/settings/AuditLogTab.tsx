@@ -176,9 +176,7 @@ const AuditLogTab = ({ setActiveTab }) => {
 
   return (
     <div className="space-y-6">
-      {!showUpgradeBanner && (
-        // ... rest of the tab content ...
-      )}
+      {/* ... actual tab content ... */}
     </div>
   );
 };
