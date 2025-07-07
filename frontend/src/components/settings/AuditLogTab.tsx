@@ -65,6 +65,9 @@ const AuditLogTab = ({ setActiveTab }) => {
   const [highlightedLogId, setHighlightedLogId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Debug log for plan and gating state
+  console.log('AuditLogTab debug:', { plan, showUpgradeBanner });
+
   useEffect(() => {
     const fetchAuditLogs = async () => {
       setLoading(true);
