@@ -84,6 +84,10 @@ export class AuditLogService {
   }
 
   async findAdvanced(where: any): Promise<AuditLog[]> {
+    // Remove undefined/null keys
+    Object.keys(where).forEach(
+      (key) => (where[key] === undefined || where[key] === null) && delete where[key]
+    );
     return this.prisma.auditLog.findMany({
       where,
       include: { user: true },
