@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { format, subDays } from 'date-fns';
 import { io, Socket } from "socket.io-client";
 import { useToast } from '@/components/ui/use-toast';
+import { Link } from "react-router-dom";
 
 // Define the audit log type
 interface AuditLog {
@@ -37,6 +38,7 @@ interface AuditLog {
   ipAddress?: string;
   timestamp?: string;
   createdAt?: string;
+  entityName?: string;
 }
 
 // Simple JSON display component
@@ -172,14 +174,165 @@ const AuditLogTab = ({ setActiveTab }) => {
         isOpen={showUpgradeBanner}
         onUpgrade={handleGoToPlan}
         onCloseAndGoToPlan={handleGoToPlan}
-        message="Audit logs are available on the Enterprise plan. Upgrade to unlock this feature."
+        message="Upgrade to Enterprise Plan\nGet access to comprehensive audit logs and advanced security features"
       />
     );
   }
 
+  // Helper to format timestamp
+  const formatTimestamp = (ts) => {
+    if (!ts) return '-';
+    const d = new Date(ts);
+    return d.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+  };
+
+  // Helper to style action badge
+  const getActionBadge = (action) => {
+    const a = action?.toLowerCase() || '';
+    if (a.includes('delete')) return 'bg-red-100 text-red-800';
+    if (a.includes('create')) return 'bg-green-100 text-green-800';
+    if (a.includes('update') || a.includes('modify')) return 'bg-blue-100 text-blue-800';
+    return 'bg-gray-100 text-gray-800';
+  };
+
+  // Helper to bold new value if changed
+  const renderValue = (val, bold = false) => {
+    if (!val) return '-';
+    if (typeof val === 'object') return <JsonDisplay data={val} />;
+    return bold ? <span className="font-bold">{val}</span> : val;
+  };
+
   return (
     <div className="space-y-6">
-      {/* ... actual tab content ... */}
+      {/* Section Title and Subtitle */}
+      <div>
+        <h2 className="text-xl font-semibold mb-1">Comprehensive App Activity Log</h2>
+        <p className="text-gray-600 text-sm mb-4">Track all changes and actions performed in your workflows</p>
+      </div>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 items-center mb-4">
+        {/* Date Range Filter */}
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Date Range" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Time</SelectItem>
+            <SelectItem value="today">Today</SelectItem>
+            <SelectItem value="week">Last 7 days</SelectItem>
+            <SelectItem value="month">Last 30 days</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* User Filter (static for now) */}
+        <Select value={userFilter} onValueChange={setUserFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All Users" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Users</SelectItem>
+            {/* Add dynamic user list if available */}
+          </SelectContent>
+        </Select>
+        {/* Action Filter */}
+        <Select value={actionFilter} onValueChange={setActionFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All Actions" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Actions</SelectItem>
+            <SelectItem value="create">Create</SelectItem>
+            <SelectItem value="update">Update</SelectItem>
+            <SelectItem value="delete">Delete</SelectItem>
+            <SelectItem value="restore">Restore</SelectItem>
+            <SelectItem value="sync">Sync</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* Entity Type Filter */}
+        <Select value={entityFilter} onValueChange={setEntityFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All Entities" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Entities</SelectItem>
+            <SelectItem value="workflow">Workflow</SelectItem>
+            <SelectItem value="user">User</SelectItem>
+            <SelectItem value="notification_settings">Notification Settings</SelectItem>
+            <SelectItem value="sso_config">SSO Config</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" className="text-blue-600" onClick={() => exportAuditLogsToCSV(auditLogs)}>
+          <Download className="w-4 h-4 mr-2" />
+          Export Log
+        </Button>
+      </div>
+
+      {/* Loading/Error States */}
+      {loading && <div className="text-center py-8">Loading audit logs...</div>}
+      {error && (
+        <div className="text-center text-red-500 py-8">{error}</div>
+      )}
+
+      {/* Audit Log Table */}
+      {!loading && !error && (
+        <div className="border border-gray-200 rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHead>TIMESTAMP</TableHead>
+                <TableHead>USER</TableHead>
+                <TableHead>ACTION</TableHead>
+                <TableHead>WORKFLOW NAME</TableHead>
+                <TableHead>OLD VALUE</TableHead>
+                <TableHead>NEW VALUE</TableHead>
+                <TableHead>IP ADDRESS</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {auditLogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-gray-500">
+                    No audit logs found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                auditLogs.map((log: any) => (
+                  <TableRow key={log.id} className={`hover:bg-gray-50 ${log.id === highlightedLogId ? 'bg-yellow-100 animate-pulse' : ''}`}>
+                    <TableCell className="font-mono text-sm text-gray-600">
+                      {formatTimestamp(log.timestamp || log.createdAt)}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {log.user?.name || log.userId || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getActionBadge(log.action)}`}>
+                        {log.action}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {log.entityType === 'workflow' && log.entityId ? (
+                        <a href={`#`} className="text-blue-600 hover:underline font-medium">
+                          {log.entityName || log.entityId}
+                        </a>
+                      ) : (
+                        log.entityName || log.entityId || '-'
+                      )}
+                    </TableCell>
+                    <TableCell className="text-gray-600 max-w-xs truncate">
+                      {renderValue(log.oldValue)}
+                    </TableCell>
+                    <TableCell className="font-medium max-w-xs truncate">
+                      {renderValue(log.newValue, true)}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-gray-600">
+                      {log.ipAddress || "-"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };
