@@ -484,4 +484,32 @@ export class AuthController {
     // Redirect to dashboard
     return res.redirect('https://www.workflowguard.pro/dashboard');
   }
+
+  @Public()
+  @Get('dev-auth-restorer')
+  async devAuthRestorer(@Res() res: Response) {
+    // Create or find a test restorer user with HubSpot connection
+    const user = await this.authService.findOrCreateUser('restorer-test@workflowguard.pro', 'Test Restorer User');
+    // Update user to restorer role
+    await this.authService.updateUserRole(user.id, 'restorer');
+    // Update user with HubSpot connection
+    await this.authService.updateUserHubspotPortalId(user.id, '243202415');
+    await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
+    // Generate JWT
+    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: 'restorer' });
+    console.log('Dev auth restorer - Generated JWT for restorer user:', user.email, 'User ID:', user.id, 'Role: restorer');
+    // Set JWT as HttpOnly, Secure cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('jwt', jwt, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'none', // Allow cross-site cookies
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+      // No domain restriction to allow cross-domain cookies
+    });
+    console.log('Dev auth restorer - JWT cookie set successfully');
+    // Redirect to dashboard
+    return res.redirect('https://www.workflowguard.pro/dashboard');
+  }
 }
