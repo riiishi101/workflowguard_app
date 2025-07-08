@@ -4,7 +4,7 @@ import { User, Prisma } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { NotificationService } from '../notification/notification.service';
-import { PLAN_CONFIG } from '../plan-config';
+import { PLAN_CONFIG, PlanId } from '../plan-config';
 import { randomBytes, createHash } from 'crypto';
 import { EmailService } from '../services/email.service';
 import * as bcrypt from 'bcrypt';
@@ -93,7 +93,7 @@ export class UserService {
   }
 
   async getPlanById(planId: string) {
-    return (this.prisma as any).plan.findUnique({ where: { id: planId } });
+    return PLAN_CONFIG[planId as PlanId] || PLAN_CONFIG.starter;
   }
 
   async updateUserPlan(userId: string, newPlanId: string, actorUserId: string) {
@@ -341,5 +341,14 @@ export class UserService {
       } as any,
     });
     return { success: true, message: 'Password reset successful.' };
+  }
+
+  async countActiveInstalls(since: Date): Promise<number> {
+    return this.prisma.user.count({
+      where: {
+        hubspotPortalId: { not: null },
+        lastActiveAt: { gte: since },
+      },
+    });
   }
 }

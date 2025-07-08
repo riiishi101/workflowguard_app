@@ -75,6 +75,7 @@ export class AuthController {
         const syntheticEmail = `portal-${portalId}@hubspot.test`;
         user = await this.authService.findOrCreateUser(syntheticEmail);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+        await this.authService.updateUserLastActive(user.id);
       } else if (!email) {
         // Log the HubSpot response for debugging
         console.error('HubSpot /integrations/v1/me response:', userRes.data);
@@ -85,6 +86,7 @@ export class AuthController {
         console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
         console.log('OAuth - HubSpot tokens updated for user:', user.email);
+        await this.authService.updateUserLastActive(user.id);
       }
 
       // Update user's HubSpot portal ID and tokens

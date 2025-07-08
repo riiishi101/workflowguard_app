@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, UseGuards, Req, Query, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, UseGuards, Req, Query, Put, Res } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UpdateNotificationSettingsDto } from './dto';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
@@ -6,7 +6,7 @@ import { Roles } from '../auth/roles.decorator';
 import { PlanFeature, PlanFeatureGuard } from '../auth/roles.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PLAN_CONFIG } from '../plan-config';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('users')
@@ -95,17 +95,20 @@ export class UserController {
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const user = await this.userService.findOneWithSubscription(userId);
     if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    
+    // Default to starter plan if no subscription exists
     const planId = user.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan = await this.userService.getPlanById(planId);
     const workflowsMonitoredCount = await this.userService.getWorkflowCountByOwner(userId);
+    
     return {
       planId,
       status: user.subscription?.status || 'active',
       trialEndDate: user.subscription?.trialEndDate,
       nextBillingDate: user.subscription?.nextBillingDate,
-      features: plan?.features,
-      maxWorkflows: plan?.maxWorkflows,
-      historyDays: plan?.historyDays,
+      features: plan?.features || [],
+      maxWorkflows: plan?.maxWorkflows || 25,
+      historyDays: plan?.historyDays || 30,
       workflowsMonitoredCount,
       hubspotPortalId: user?.hubspotPortalId || null,
     };
@@ -219,5 +222,14 @@ export class UserController {
     } else {
       throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('active-installs')
+  async getActiveInstalls(@Res() res: Response) {
+    const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const count = await this.userService.countActiveInstalls(THIRTY_DAYS_AGO);
+    return res.status(200).json({ activeInstalls: count });
   }
 }

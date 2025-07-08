@@ -48,11 +48,14 @@ export class AuthService {
     });
 
     if (!user) {
+      const now = new Date();
       user = await this.prisma.user.create({
         data: {
           email,
           name,
           role: 'viewer',
+          firstInstalledAt: now,
+          lastActiveAt: now,
         },
       });
     }
@@ -135,6 +138,13 @@ export class AuthService {
     return this.prisma.user.update({
       where: { id: userId },
       data: { role },
+    });
+  }
+
+  async updateUserLastActive(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { lastActiveAt: new Date() },
     });
   }
 }

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -17,6 +17,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { EmailModule } from './email/email.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { LastActiveInterceptor } from './auth/last-active.interceptor';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { MetricsModule } from './metrics/metrics.module';
     AppService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: LastActiveInterceptor },
   ],
 })
 export class AppModule {}

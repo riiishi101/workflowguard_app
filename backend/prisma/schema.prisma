@@ -24,6 +24,8 @@ model User {
   language      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  firstInstalledAt DateTime?
+  lastActiveAt     DateTime?
   workflows     Workflow[]
   auditLogs     AuditLog[]
   subscription  Subscription?
