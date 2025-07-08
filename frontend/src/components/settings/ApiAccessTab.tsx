@@ -33,7 +33,11 @@ interface ApiKeyCreateResponse {
   key: string;
 }
 
-const ApiAccessTab = ({ setActiveTab = () => {} }) => {
+type ApiAccessTabProps = {
+  setActiveTab: (tab: string) => void;
+};
+
+const ApiAccessTab: React.FC<ApiAccessTabProps> = ({ setActiveTab }) => {
   const { toast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState("api-access");
   const [apiKeys, setApiKeys] = useState<ApiKeyMeta[]>([]);
@@ -136,7 +140,7 @@ const ApiAccessTab = ({ setActiveTab = () => {} }) => {
     toast({ title: 'Copied', description: `${label} copied to clipboard.` });
   };
 
-  const handleGoToPlan = () => setActiveTab && setActiveTab();
+  const handleGoToPlan = () => setActiveTab('plan-billing');
 
   if (!planChecked || loading) return <div className="py-8 text-center text-gray-500">Loading...</div>;
   if (!canEdit) {
