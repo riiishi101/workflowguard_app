@@ -27,7 +27,7 @@ const EmptyDashboard = () => {
   const [versions, setVersions] = useState([]);
 
   const handleAddWorkflow = () => {
-    window.location.href = "https://www.workflowguard.pro/workflow-selection";
+    navigate('/select-workflows');
   };
 
   return (

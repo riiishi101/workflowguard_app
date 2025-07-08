@@ -7,7 +7,7 @@ const EmptyWorkflowHistory = () => {
   const navigate = useNavigate();
 
   const handleCreateWorkflow = () => {
-    navigate("/workflow-selection");
+    navigate('/select-workflows');
   };
 
   const handleGoToHubSpot = () => {
