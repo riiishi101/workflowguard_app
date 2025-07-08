@@ -41,60 +41,87 @@ export class AuthController {
     console.log('OAuth callback - Request URL:', req.url);
     
     if (!code) {
-      console.log('OAuth callback: Missing code parameter');
-      return res.status(400).json({ message: 'Missing code parameter' });
+      const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+      const errorMsg = encodeURIComponent('Missing code parameter. Please try connecting to HubSpot again from the app.');
+      return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
     }
 
     try {
       console.log('OAuth callback: Starting token exchange...');
       // Exchange code for access token
-      const tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
-        params: {
-          grant_type: 'authorization_code',
-          client_id: process.env.HUBSPOT_CLIENT_ID,
-          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
-          redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
-          code,
-        },
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
+      let tokenRes;
+      try {
+        tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
+          params: {
+            grant_type: 'authorization_code',
+            client_id: process.env.HUBSPOT_CLIENT_ID,
+            client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+            redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
+            code,
+          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+      } catch (tokenErr) {
+        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const errorMsg = encodeURIComponent('Failed to exchange code for access token. Please try again or contact support.');
+        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
+      }
 
       console.log('OAuth callback: Token exchange successful');
       const { access_token, refresh_token, expires_in } = tokenRes.data;
 
       // Fetch user email and portalId from HubSpot
-      const userRes = await axios.get('https://api.hubapi.com/integrations/v1/me', {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
+      let userRes;
+      try {
+        userRes = await axios.get('https://api.hubapi.com/integrations/v1/me', {
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+      } catch (userErr) {
+        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const errorMsg = encodeURIComponent('Failed to fetch user info from HubSpot. Please try again or contact support.');
+        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
+      }
       const email = userRes.data.user || userRes.data.email;
       const portalId = userRes.data.portalId;
 
       let user;
-      if (!email && portalId) {
-        // Use portalId as a fallback unique identifier (synthetic email)
-        const syntheticEmail = `portal-${portalId}@hubspot.test`;
-        user = await this.authService.findOrCreateUser(syntheticEmail);
-        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-        await this.authService.updateUserLastActive(user.id);
-      } else if (!email) {
-        // Log the HubSpot response for debugging
-        console.error('HubSpot /integrations/v1/me response:', userRes.data);
-        return res.status(400).json({ message: 'Could not retrieve user email or portalId from HubSpot', hubspotResponse: userRes.data });
-      } else {
-        // Find or create user in your DB
-        user = await this.authService.findOrCreateUser(email);
-        console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
-        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-        console.log('OAuth - HubSpot tokens updated for user:', user.email);
-        await this.authService.updateUserLastActive(user.id);
+      try {
+        if (!email && portalId) {
+          // Use portalId as a fallback unique identifier (synthetic email)
+          const syntheticEmail = `portal-${portalId}@hubspot.test`;
+          user = await this.authService.findOrCreateUser(syntheticEmail);
+          await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+          await this.authService.updateUserLastActive(user.id);
+        } else if (!email) {
+          const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+          const errorMsg = encodeURIComponent('Could not retrieve user email or portalId from HubSpot. Please try again or contact support.');
+          return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
+        } else {
+          // Find or create user in your DB
+          user = await this.authService.findOrCreateUser(email);
+          console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
+          await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+          console.log('OAuth - HubSpot tokens updated for user:', user.email);
+          await this.authService.updateUserLastActive(user.id);
+        }
+      } catch (userDbErr) {
+        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const errorMsg = encodeURIComponent('Failed to create or update user in the database. Please try again or contact support.');
+        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
       // Update user's HubSpot portal ID and tokens
-      if (portalId) {
-        await this.authService.updateUserHubspotPortalId(user.id, portalId.toString());
+      try {
+        if (portalId) {
+          await this.authService.updateUserHubspotPortalId(user.id, portalId.toString());
+        }
+        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+        console.log('OAuth - HubSpot tokens updated for user:', user.email);
+      } catch (tokenDbErr) {
+        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const errorMsg = encodeURIComponent('Failed to update user tokens. Please try again or contact support.');
+        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
-      await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-      console.log('OAuth - HubSpot tokens updated for user:', user.email);
 
       // Update user's plan to include hubspot_connected feature
       try {
@@ -102,7 +129,6 @@ export class AuthController {
         if (userPlan) {
           console.log('OAuth - User has plan:', userPlan.planId);
           // For now, we'll just log this. The frontend will handle the plan update
-          // In a real implementation, you would update the user's subscription/plan
         }
       } catch (planError) {
         console.log('OAuth - Could not get user plan:', planError);
@@ -110,29 +136,40 @@ export class AuthController {
       }
 
       // Generate JWT
-      const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-      console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
+      let jwt;
+      try {
+        jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+        console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
+      } catch (jwtErr) {
+        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const errorMsg = encodeURIComponent('Failed to generate authentication token. Please try again or contact support.');
+        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
+      }
 
       // Set JWT as HttpOnly, Secure cookie
       const isProduction = process.env.NODE_ENV === 'production';
-      console.log('Setting JWT cookie, production:', isProduction);
-      console.log('User email:', user.email, 'User ID:', user.id);
-      res.cookie('jwt', jwt, {
-        httpOnly: true,
-        secure: isProduction, // true in production, false in development
-        sameSite: 'none', // Allow cross-site cookies
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/',
-        // No domain restriction to allow cross-domain cookies
-      });
-      console.log('JWT cookie set successfully');
+      try {
+        res.cookie('jwt', jwt, {
+          httpOnly: true,
+          secure: isProduction, // true in production, false in development
+          sameSite: 'none', // Allow cross-site cookies
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/',
+        });
+        console.log('JWT cookie set successfully');
+      } catch (cookieErr) {
+        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const errorMsg = encodeURIComponent('Failed to set authentication cookie. Please try again or contact support.');
+        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
+      }
 
       // Optionally, you can also send user info as a query param or just redirect
       console.log('Redirecting to dashboard...');
       return res.redirect('https://www.workflowguard.pro/dashboard');
     } catch (error) {
-      console.log('OAuth callback error:', error.response?.data || error.message);
-      return res.status(500).json({ message: 'Token exchange or storage failed', error: error.response?.data || error.message });
+      const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+      const errorMsg = encodeURIComponent('Unexpected error during HubSpot connection. Please try again or contact support.');
+      return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
     }
   }
 
