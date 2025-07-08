@@ -24,9 +24,23 @@ const Settings = () => {
   const { user, loading } = useAuth();
   const { plan } = usePlan();
   const [activeTab, setActiveTab] = useState("plan-billing");
+  
+  // Ensure plan always has a valid structure to prevent controlled/uncontrolled Tabs warning
+  const safePlan = plan || {
+    name: 'Starter',
+    features: ['basic_monitoring', 'email_support'],
+    status: 'active'
+  };
+  const safeSetActiveTab = (tab) => {
+    if (typeof tab === 'string' && tab) {
+      setActiveTab(tab);
+    } else {
+      setActiveTab('plan-billing');
+    }
+  };
 
   // Debug log for user and plan
-  console.log('Settings debug:', { user, plan });
+  console.log('Settings debug:', { user, plan: safePlan });
 
   const HUBSPOT_MANAGE_SUBSCRIPTION_URL = user?.hubspotPortalId
     ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
@@ -71,31 +85,31 @@ const Settings = () => {
           </div>
         </RoleGuard>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={safeSetActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-6 bg-gray-50 p-1 rounded-lg">
-            <TabsTrigger key="plan-billing" value="plan-billing" onClick={() => handleTabClick({ key: 'plan-billing', always: true })}>
+            <TabsTrigger key="plan-billing" value="plan-billing" onClick={() => safeSetActiveTab('plan-billing')}>
               My Plan & Billing
             </TabsTrigger>
-            <TabsTrigger key="profile" value="profile" onClick={() => handleTabClick({ key: 'profile', always: true })}>
+            <TabsTrigger key="profile" value="profile" onClick={() => safeSetActiveTab('profile')}>
               My Profile
             </TabsTrigger>
-            {plan.features.includes('custom_notifications') && (
-              <TabsTrigger key="notifications" value="notifications" onClick={() => handleTabClick({ key: 'notifications', feature: 'custom_notifications' })}>
+            {safePlan.features.includes('custom_notifications') && (
+              <TabsTrigger key="notifications" value="notifications" onClick={() => safeSetActiveTab('notifications')}>
                 Notifications
               </TabsTrigger>
             )}
             <RoleGuard roles={['admin']}>
-              <TabsTrigger key="user-permissions" value="user-permissions" onClick={() => handleTabClick({ key: 'user-permissions', feature: 'user_permissions' })}>
+              <TabsTrigger key="user-permissions" value="user-permissions" onClick={() => safeSetActiveTab('user-permissions')}>
                 User Permissions
               </TabsTrigger>
             </RoleGuard>
             <RoleGuard roles={['admin', 'restorer']}>
-              <TabsTrigger key="audit-log" value="audit-log" onClick={() => handleTabClick({ key: 'audit-log', feature: 'audit_logs' })}>
+              <TabsTrigger key="audit-log" value="audit-log" onClick={() => safeSetActiveTab('audit-log')}>
                 Audit Log
               </TabsTrigger>
             </RoleGuard>
             <RoleGuard roles={['admin']}>
-              <TabsTrigger key="api-access" value="api-access" onClick={() => handleTabClick({ key: 'api-access', feature: 'api_access' })}>
+              <TabsTrigger key="api-access" value="api-access" onClick={() => safeSetActiveTab('api-access')}>
                 API Access
               </TabsTrigger>
             </RoleGuard>
@@ -106,11 +120,11 @@ const Settings = () => {
               <PlanBillingTab />
             </TabsContent>
             <TabsContent value="notifications">
-              <NotificationsTab setActiveTab={setActiveTab} />
+              <NotificationsTab setActiveTab={safeSetActiveTab} />
             </TabsContent>
             <RoleGuard roles={['admin']}>
               <TabsContent value="user-permissions">
-                <UserPermissionsTab setActiveTab={setActiveTab} />
+                <UserPermissionsTab setActiveTab={safeSetActiveTab} />
               </TabsContent>
             </RoleGuard>
             <RoleGuard roles={['admin', 'restorer']}>
@@ -120,7 +134,7 @@ const Settings = () => {
             </RoleGuard>
             <RoleGuard roles={['admin']}>
               <TabsContent value="api-access">
-                <ApiAccessTab setActiveTab={setActiveTab} />
+                <ApiAccessTab setActiveTab={safeSetActiveTab} />
               </TabsContent>
             </RoleGuard>
             <TabsContent value="profile">
