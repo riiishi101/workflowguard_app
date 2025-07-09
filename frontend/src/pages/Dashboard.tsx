@@ -78,7 +78,7 @@ const STATUS_COLORS = {
 
 const Dashboard = () => {
   useRequireAuth();
-  const { plan, loading } = usePlan();
+  const { plan, hasFeature, isTrialing } = usePlan();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -94,40 +94,18 @@ const Dashboard = () => {
   const [showRollbackModal, setShowRollbackModal] = useState(false);
   const [rollbackWorkflow, setRollbackWorkflow] = useState<Workflow | null>(null);
 
+  const canAddMoreWorkflows = hasFeature('unlimited_workflows') || hasFeature('advanced_monitoring');
+
   useEffect(() => {
     fetchWorkflows();
   }, []);
 
-  // Fallback: Load selected workflows from localStorage if API returns none
   useEffect(() => {
-    if (!loading && workflows.length === 0) {
-      const stored = localStorage.getItem('selectedWorkflows');
-      if (stored) {
-        try {
-        const selected = JSON.parse(stored);
-        if (Array.isArray(selected) && selected.length > 0) {
-          setWorkflows(selected.map(id => ({
-            id,
-            name: `Workflow ${id}`,
-            hubspotId: id,
-            ownerId: '',
-            createdAt: '',
-            updatedAt: '',
-            owner: { email: 'user@example.com' },
-            versions: []
-          })));
-        } else {
-          setWorkflows([]); // Explicitly set to empty to trigger empty state
-          }
-        } catch (err) {
-          console.error('Error parsing stored workflows:', err);
-          setWorkflows([]);
-        }
-      } else {
-        setWorkflows([]); // Explicitly set to empty to trigger empty state
-      }
+    if (!plan && workflows.length === 0) {
+      // Remove fallback: do not load from localStorage, just show empty state
+      setWorkflows([]); // Explicitly set to empty to trigger empty state
     }
-  }, [loading, workflows.length]);
+  }, [plan, workflows.length]);
 
   const fetchWorkflows = async () => {
     try {
@@ -294,7 +272,7 @@ const Dashboard = () => {
     setShowRollbackModal(false);
   };
 
-  if (loading || workflowsLoading) {
+  if (workflowsLoading) {
     return (
       <div className="min-h-screen bg-white">
         <TopNavigation />
@@ -321,11 +299,9 @@ const Dashboard = () => {
     );
   }
 
-  if (!loading && !error && workflows.length === 0) {
+  if (!plan && !error && workflows.length === 0) {
     return <EmptyDashboard />;
   }
-
-  const isAtLimit = plan && plan.maxWorkflows !== null && plan.workflowsMonitoredCount >= plan.maxWorkflows;
 
   return (
     <div className="min-h-screen bg-white">
@@ -405,8 +381,8 @@ const Dashboard = () => {
             <div className="flex items-center gap-3">
               <RoleGuard roles={['admin', 'restorer']}>
                 <Button
-                  onClick={isAtLimit ? () => setShowUpgradeModal(true) : handleAddWorkflow}
-                  disabled={isAtLimit || actionLoading}
+                  onClick={canAddMoreWorkflows ? handleAddWorkflow : () => setShowUpgradeModal(true)}
+                  disabled={!canAddMoreWorkflows || actionLoading}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Workflow
@@ -611,6 +587,10 @@ const Dashboard = () => {
         <UpgradeRequiredModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
+          feature="more workflows"
+          isTrialing={isTrialing()}
+          planId={plan?.planId}
+          trialPlanId={plan?.trialPlanId}
         />
 
         <CreateNewWorkflowModal

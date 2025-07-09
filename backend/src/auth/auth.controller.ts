@@ -391,162 +391,20 @@ export class AuthController {
     return res.redirect('https://www.workflowguard.pro/dashboard');
   }
 
-  @Public()
-  @Get('manual-auth-with-hubspot')
-  async manualAuthWithHubSpot(@Res() res: Response) {
-    // Create or find a test user with HubSpot connection
-    const user = await this.authService.findOrCreateUser('test-hubspot@workflowguard.pro', 'Test HubSpot User');
-    
-    // Update user with HubSpot connection
-    await this.authService.updateUserHubspotPortalId(user.id, '243202415');
-    await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
-    
-    // Generate JWT
-    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-    console.log('Manual auth with HubSpot - Generated JWT for user:', user.email, 'User ID:', user.id);
-    
-    // Set JWT as HttpOnly, Secure cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('jwt', jwt, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'none', // Allow cross-site cookies
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-      // No domain restriction to allow cross-domain cookies
-    });
-    
-    console.log('Manual auth with HubSpot - JWT cookie set successfully');
-    
-    // Redirect to dashboard
-    return res.redirect('https://www.workflowguard.pro/dashboard');
-  }
-
-  @Public()
-  @Get('dev-auth-admin')
-  async devAuthAdmin(@Res() res: Response) {
-    // Create or find a test admin user with HubSpot connection
-    const user = await this.authService.findOrCreateAdminUser('admin-test@workflowguard.pro', 'Test Admin User');
-    
-    // Update user with HubSpot connection
-    await this.authService.updateUserHubspotPortalId(user.id, '243202415');
-    await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
-    
-    // Generate JWT
-    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-    console.log('Dev auth admin - Generated JWT for admin user:', user.email, 'User ID:', user.id, 'Role:', user.role);
-    
-    // Set JWT as HttpOnly, Secure cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('jwt', jwt, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'none', // Allow cross-site cookies
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-      // No domain restriction to allow cross-domain cookies
-    });
-    
-    console.log('Dev auth admin - JWT cookie set successfully');
-    
-    // Redirect to dashboard
-    return res.redirect('https://www.workflowguard.pro/dashboard');
-  }
-
-  @Public()
-  @Get('dev-auth-viewer')
-  async devAuthViewer(@Res() res: Response) {
-    // Create or find a test viewer user with HubSpot connection
-    const user = await this.authService.findOrCreateUser('viewer-test@workflowguard.pro', 'Test Viewer User');
-    
-    // Update user with HubSpot connection
-    await this.authService.updateUserHubspotPortalId(user.id, '243202415');
-    await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
-    
-    // Generate JWT
-    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-    console.log('Dev auth viewer - Generated JWT for viewer user:', user.email, 'User ID:', user.id, 'Role:', user.role);
-    
-    // Set JWT as HttpOnly, Secure cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('jwt', jwt, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'none', // Allow cross-site cookies
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-      // No domain restriction to allow cross-domain cookies
-    });
-    
-    console.log('Dev auth viewer - JWT cookie set successfully');
-    
-    // Redirect to dashboard
-    return res.redirect('https://www.workflowguard.pro/dashboard');
-  }
-
-  @Public()
-  @Get('dev-upgrade-portal-user-to-admin')
-  async devUpgradePortalUserToAdmin(@Res() res: Response) {
-    // Find the existing portal user and upgrade to admin
-    const portalEmail = 'portal-243202415@hubspot.test';
-    let user = await this.authService.validateUser(portalEmail);
-    
-    if (!user) {
-      // If user doesn't exist, create it as admin
-      user = await this.authService.findOrCreateAdminUser(portalEmail, 'Portal Admin User');
-      await this.authService.updateUserHubspotPortalId(user.id, '243202415');
-      await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
-    } else {
-      // Update existing user to admin role
-      user = await this.authService.updateUserRole(user.id, 'admin');
+  @Post('hubspot/deauthorize')
+  async handleHubspotDeauth(@Body() body: any, @Res() res: any) {
+    // TODO: Validate the request (e.g., check client secret or signature if required by HubSpot)
+    const { portalId, userId } = body;
+    if (!portalId) {
+      return res.status(400).json({ message: 'Missing portalId in request body' });
     }
-    
-    // Generate JWT
-    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-    console.log('Dev upgrade portal user - Generated JWT for admin user:', user.email, 'User ID:', user.id, 'Role:', user.role);
-    
-    // Set JWT as HttpOnly, Secure cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('jwt', jwt, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'none', // Allow cross-site cookies
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-      // No domain restriction to allow cross-domain cookies
-    });
-    
-    console.log('Dev upgrade portal user - JWT cookie set successfully');
-    
-    // Redirect to dashboard
-    return res.redirect('https://www.workflowguard.pro/dashboard');
-  }
-
-  @Public()
-  @Get('dev-auth-restorer')
-  async devAuthRestorer(@Res() res: Response) {
-    // Create or find a test restorer user with HubSpot connection
-    const user = await this.authService.findOrCreateUser('restorer-test@workflowguard.pro', 'Test Restorer User');
-    // Update user to restorer role
-    await this.authService.updateUserRole(user.id, 'restorer');
-    // Update user with HubSpot connection
-    await this.authService.updateUserHubspotPortalId(user.id, '243202415');
-    await this.authService.updateUserHubspotTokens(user.id, 'test-access-token', 'test-refresh-token', 3600);
-    // Generate JWT
-    const jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: 'restorer' });
-    console.log('Dev auth restorer - Generated JWT for restorer user:', user.email, 'User ID:', user.id, 'Role: restorer');
-    // Set JWT as HttpOnly, Secure cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('jwt', jwt, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'none', // Allow cross-site cookies
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-      // No domain restriction to allow cross-domain cookies
-    });
-    console.log('Dev auth restorer - JWT cookie set successfully');
-    // Redirect to dashboard
-    return res.redirect('https://www.workflowguard.pro/dashboard');
+    try {
+      const result = await this.authService.handleHubspotDeauth(portalId, userId);
+      console.log(`Received HubSpot deauthorization for portalId: ${portalId}, userId: ${userId}`);
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error('Error handling HubSpot deauthorization:', err);
+      return res.status(500).json({ message: 'Failed to handle deauthorization', error: err.message });
+    }
   }
 }

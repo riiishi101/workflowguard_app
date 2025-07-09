@@ -3,20 +3,32 @@ import { X, Lock, Check } from 'lucide-react';
 
 interface PremiumModalProps {
   isOpen: boolean;
-  onCloseAndGoToPlan: () => void;
-  onUpgrade: () => void;
+  onClose: () => void;
+  feature?: string;
+  isTrialing?: boolean;
+  planId?: string;
+  trialPlanId?: string;
   message?: string;
 }
 
-const PremiumModal = ({ isOpen, onCloseAndGoToPlan, onUpgrade, message }: PremiumModalProps) => {
+const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanId, message }: PremiumModalProps) => {
   if (!isOpen) return null;
+
+  let displayMessage = message;
+  if (!displayMessage) {
+    if (isTrialing && trialPlanId === 'professional') {
+      displayMessage = `This feature is part of the Professional plan. Enjoy full access during your free trial! Upgrade to keep using it after your trial ends.`;
+    } else {
+      displayMessage = `Upgrade your plan to unlock ${feature || 'this feature'}.`;
+    }
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
         {/* Close button */}
         <button 
-          onClick={onCloseAndGoToPlan}
+          onClick={onClose}
           className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
         >
           <X size={24} />
@@ -36,7 +48,7 @@ const PremiumModal = ({ isOpen, onCloseAndGoToPlan, onUpgrade, message }: Premiu
 
         {/* Subtitle */}
         <p className="text-gray-600 text-center mb-8 leading-relaxed">
-          {message || 'Get instant notifications and stay ahead of critical changes'}
+          {displayMessage}
         </p>
 
         {/* Features list */}
@@ -58,18 +70,18 @@ const PremiumModal = ({ isOpen, onCloseAndGoToPlan, onUpgrade, message }: Premiu
         {/* Upgrade button */}
         <button
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors mb-6"
-          onClick={onUpgrade}
+          onClick={onClose}
         >
           Upgrade Now
         </button>
 
         {/* Bottom links */}
         <div className="flex justify-between items-center text-sm">
-          <button className="text-blue-600 hover:text-blue-700 font-medium" onClick={onUpgrade}>
+          <button className="text-blue-600 hover:text-blue-700 font-medium" onClick={onClose}>
             View Plan Details
           </button>
           <button 
-            onClick={onCloseAndGoToPlan}
+            onClick={onClose}
             className="text-gray-500 hover:text-gray-700 font-medium"
           >
             Back to Settings

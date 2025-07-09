@@ -22,6 +22,7 @@ import apiService from '@/services/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { usePlan } from "@/components/AuthContext";
 import { format } from 'date-fns';
+import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
 
 const dateRanges = [
   { value: "all", label: "All Time" },
@@ -40,7 +41,7 @@ const actionOptions = [
 
 const AuditLogTab = () => {
   const { user } = useAuth();
-  const { plan } = usePlan();
+  const { plan, hasFeature, isTrialing } = usePlan();
   const [dateRange, setDateRange] = useState("all");
   const [userFilter, setUserFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
@@ -108,17 +109,16 @@ const AuditLogTab = () => {
   ], [users]);
 
   // Gating: show upgrade prompt if plan does not include audit_logs
-  if (!plan?.features?.includes('audit_logs')) {
+  if (!hasFeature('audit_logs')) {
     return (
-      <Card className="p-8 flex flex-col items-center justify-center text-center">
-        <CardHeader>
-          <CardTitle>Upgrade to Enterprise Plan</CardTitle>
-          <CardDescription>Get access to comprehensive audit logs and advanced security features.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => window.open('/settings?tab=plan-billing', '_self')}>Upgrade Now</Button>
-        </CardContent>
-      </Card>
+      <UpgradeRequiredModal
+        isOpen={true}
+        onClose={() => {}}
+        feature="audit logs"
+        isTrialing={isTrialing()}
+        planId={plan?.planId}
+        trialPlanId={plan?.trialPlanId}
+      />
     );
   }
 

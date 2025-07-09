@@ -42,6 +42,31 @@ export class UserService {
   async findOne(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        password: true,
+        jobTitle: true,
+        timezone: true,
+        language: true,
+        createdAt: true,
+        updatedAt: true,
+        firstInstalledAt: true,
+        lastActiveAt: true,
+        hubspotPortalId: true,
+        hubspotAccessToken: true,
+        hubspotRefreshToken: true,
+        hubspotTokenExpiresAt: true,
+        resetToken: true,
+        resetTokenExpires: true,
+        planId: true,
+        trialStartDate: true,
+        trialEndDate: true,
+        isTrialActive: true,
+        trialPlanId: true,
+      },
     });
   }
 

@@ -232,4 +232,25 @@ export class UserController {
     const count = await this.userService.countActiveInstalls(THIRTY_DAYS_AGO);
     return res.status(200).json({ activeInstalls: count });
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/plan-status')
+  async getMyPlanStatus(@Req() req: Request) {
+    const userId = (req.user as any)?.sub;
+    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const user = await this.userService.findOne(userId);
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    const now = new Date();
+    let remainingTrialDays = null;
+    if (user.trialEndDate && user.isTrialActive) {
+      remainingTrialDays = Math.max(0, Math.ceil((user.trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+    return {
+      planId: user.planId,
+      isTrialActive: user.isTrialActive,
+      trialEndDate: user.trialEndDate,
+      trialPlanId: user.trialPlanId,
+      remainingTrialDays,
+    };
+  }
 }

@@ -9,6 +9,8 @@ import { Lock } from "lucide-react";
 import apiService from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { usePlan } from "@/components/AuthContext";
+import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
 
 interface NotificationSettings {
   notificationsEnabled: boolean;
@@ -21,6 +23,7 @@ interface NotificationSettings {
 
 const NotificationsTab = ({ setActiveTab }) => {
   const { toast } = useToast();
+  const { plan, hasFeature, isTrialing } = usePlan();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationEmail, setNotificationEmail] = useState("");
   const [notifications, setNotifications] = useState({
@@ -95,6 +98,19 @@ const NotificationsTab = ({ setActiveTab }) => {
           <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setActiveTab && setActiveTab('plan-billing')}>Upgrade Now</Button>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (!hasFeature('custom_notifications')) {
+    return (
+      <UpgradeRequiredModal
+        isOpen={true}
+        onClose={() => setActiveTab && setActiveTab('plan-billing')}
+        feature="custom notifications"
+        isTrialing={isTrialing()}
+        planId={plan?.planId}
+        trialPlanId={plan?.trialPlanId}
+      />
     );
   }
 

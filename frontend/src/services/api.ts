@@ -151,7 +151,7 @@ class ApiService {
   }
 
   async getWorkflowVersionById(id: string) {
-    return { id, workflowId: '1', versionNumber: 1, createdAt: '2024-06-01', snapshotType: 'auto', createdBy: 'mock-user-id', data: {} };
+    return this.request(`/workflow-versions/${id}`);
   }
 
   async getLatestWorkflowVersion(workflowId: string) {
@@ -159,20 +159,11 @@ class ApiService {
   }
 
   async getWorkflowHistory(workflowId: string) {
-    return [
-      { id: 'v1', workflowId, versionNumber: 1, createdAt: '2024-06-01', snapshotType: 'auto', createdBy: 'mock-user-id', data: {} },
-      { id: 'v2', workflowId, versionNumber: 2, createdAt: '2024-06-05', snapshotType: 'manual', createdBy: 'mock-user-id', data: {} },
-    ];
+    return this.request(`/workflow-versions/workflow/${workflowId}/history`);
   }
 
   async compareVersions(version1Id: string, version2Id: string) {
-    return {
-      added: ['Step A'],
-      removed: ['Step B'],
-      modified: ['Step C'],
-      left: { id: version1Id, data: {} },
-      right: { id: version2Id, data: {} },
-    };
+    return this.request(`/workflow-versions/compare/${version1Id}/${version2Id}`);
   }
 
   async deleteWorkflowVersion(id: string) {
@@ -209,7 +200,7 @@ class ApiService {
   }
 
   async getAuditLogById(id: string) {
-    return { id, action: 'create', entityType: 'workflow', entityId: '1', userId: 'mock-user-id', createdAt: '2024-06-01', oldValue: null, newValue: { name: 'Demo Workflow' } };
+    return this.request(`/audit-logs/${id}`);
   }
 
   async getAuditLogsByUser(userId: string) {
@@ -517,12 +508,6 @@ class ApiService {
     });
   }
 
-  async sendTestEmail() {
-    return this.request('/email/test', {
-      method: 'POST',
-    });
-  }
-
   async sendWelcomeEmailToSelf(data: {
     planId: string;
     workflowLimit: number;
@@ -557,12 +542,6 @@ class ApiService {
 
   async getUserRooms() {
     return this.request('/realtime/rooms');
-  }
-
-  async testRealtimeConnection() {
-    return this.request('/realtime/test', {
-      method: 'POST',
-    });
   }
 
   async sendNotificationToUser(data: {

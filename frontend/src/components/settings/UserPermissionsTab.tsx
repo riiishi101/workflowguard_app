@@ -25,6 +25,8 @@ import { Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { usePlan } from "@/components/AuthContext";
+import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
 
 const UserPermissionsTab = ({ setActiveTab }) => {
   const { toast } = useToast();
@@ -48,6 +50,7 @@ const UserPermissionsTab = ({ setActiveTab }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<any | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const { plan, hasFeature, isTrialing } = usePlan();
 
   useEffect(() => {
     async function checkPlan() {
@@ -253,17 +256,16 @@ const UserPermissionsTab = ({ setActiveTab }) => {
   const handleGoToPlan = () => setActiveTab && setActiveTab('plan-billing');
 
   if (!planChecked) return null;
-  if (!canEdit) {
+  if (!hasFeature('user_permissions')) {
     return (
-      <Card className="p-8 flex flex-col items-center justify-center text-center">
-        <CardHeader>
-          <CardTitle>Upgrade to Enterprise Plan</CardTitle>
-          <CardDescription>Get access to advanced user management and permissions features.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setActiveTab && setActiveTab('plan-billing')}>Upgrade Now</Button>
-        </CardContent>
-      </Card>
+      <UpgradeRequiredModal
+        isOpen={true}
+        onClose={() => {}}
+        feature="user permissions"
+        isTrialing={isTrialing()}
+        planId={plan?.planId}
+        trialPlanId={plan?.trialPlanId}
+      />
     );
   }
 

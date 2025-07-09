@@ -143,7 +143,6 @@ const WorkflowSelection = () => {
   const handleStartProtecting = async () => {
     setActionLoading(true);
     try {
-      localStorage.setItem('selectedWorkflows', JSON.stringify(selectedWorkflows));
       toast({
         title: "Workflows Protected!",
         description: `${selectedWorkflows.length} workflows are now being monitored.`,
@@ -163,7 +162,6 @@ const WorkflowSelection = () => {
   const handleSkip = async () => {
     setActionLoading(true);
     try {
-      localStorage.setItem('selectedWorkflows', '[]');
       toast({
         title: "Skipped",
         description: "You can select workflows to protect later from the dashboard.",

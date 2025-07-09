@@ -9,6 +9,8 @@ import { useState, useEffect } from 'react';
 import apiService from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 import RoleGuard from '../components/RoleGuard';
+import { usePlan } from "@/components/AuthContext";
+import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
 
 const AnalyticsDashboard = () => {
   const [dateRange, setDateRange] = useState('30days');
@@ -19,6 +21,7 @@ const AnalyticsDashboard = () => {
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
+  const { plan: authPlan, hasFeature, isTrialing } = usePlan();
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -44,6 +47,19 @@ const AnalyticsDashboard = () => {
     setRefreshing(true);
     fetchAnalytics();
   };
+
+  if (!hasFeature('advanced_monitoring')) {
+    return (
+      <UpgradeRequiredModal
+        isOpen={true}
+        onClose={() => window.location.href = '/settings?tab=plan-billing'}
+        feature="advanced analytics"
+        isTrialing={isTrialing()}
+        planId={authPlan?.planId}
+        trialPlanId={authPlan?.trialPlanId}
+      />
+    );
+  }
 
   return (
     <RoleGuard roles={['admin', 'restorer']}>

@@ -24,12 +24,13 @@ import {
   Loader2,
 } from "lucide-react";
 import EmptyWorkflowHistory from '../components/EmptyWorkflowHistory';
-import { useRequireAuth } from '../components/AuthContext';
+import { useRequireAuth, usePlan } from '../components/AuthContext';
 import RoleGuard from '../components/RoleGuard';
 import { useToast } from '@/components/ui/use-toast';
 import React from 'react';
 import apiService from '@/services/api';
 import { saveAs } from 'file-saver';
+import UpgradeRequiredModal from "../components/UpgradeRequiredModal";
 
 const WorkflowHistory = () => {
   useRequireAuth();
@@ -52,6 +53,7 @@ const WorkflowHistory = () => {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [lastBulkDeleted, setLastBulkDeleted] = useState<any[]>([]);
+  const { plan, hasFeature, isTrialing } = usePlan();
 
   if (!workflowId) {
     return <EmptyWorkflowHistory />;
@@ -106,6 +108,8 @@ const WorkflowHistory = () => {
 
   const selectedCount = versions.filter((v) => v.selected).length;
   const selectedVersions = versions.filter((v) => v.selected);
+
+  const canCompareVersions = hasFeature('advanced_monitoring') || hasFeature('unlimited_workflows');
 
   const handleCompareVersions = () => {
     if (selectedCount === 2) {
@@ -467,15 +471,21 @@ const WorkflowHistory = () => {
               <p className="text-sm text-gray-600">
                 ✓ {selectedCount} versions selected
                 {selectedCount === 1 && " (select 1 more to compare)"}
-                {selectedCount === 2 && " (ready to compare)"}
+                {selectedCount === 2 && (
+                  canCompareVersions ? (
+                    <button onClick={handleCompareVersions} className="btn btn-primary">Compare Selected Versions</button>
+                  ) : (
+                    <UpgradeRequiredModal
+                      isOpen={true}
+                      onClose={() => {}}
+                      feature="version comparison"
+                      isTrialing={isTrialing()}
+                      planId={plan?.planId}
+                      trialPlanId={plan?.trialPlanId}
+                    />
+                  )
+                )}
               </p>
-              <Button
-                onClick={handleCompareVersions}
-                disabled={selectedCount !== 2}
-                className="bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Compare Selected Versions
-              </Button>
             </div>
           )}
         </div>

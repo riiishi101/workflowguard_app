@@ -295,4 +295,16 @@ export class HubSpotBillingService {
       return false;
     }
   }
+
+  async updateUserPlansForPortal(portalId: string, newPlanId: string): Promise<void> {
+    // Find all users with this portalId
+    const users = await this.prisma.user.findMany({ where: { hubspotPortalId: portalId } });
+    for (const user of users) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { planId: newPlanId, isTrialActive: false } as any, // End trial if upgrading/downgrading
+      });
+      this.logger.log(`Updated user ${user.email} (${user.id}) to plan ${newPlanId} via HubSpot webhook.`);
+    }
+  }
 } 

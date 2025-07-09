@@ -17,33 +17,27 @@ import apiService from '@/services/api';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert } from '@/components/ui/alert';
 import RoleGuard from '../../components/RoleGuard';
+import { usePlan } from '../../components/AuthContext';
 
 const PlanBillingTab = () => {
   const { toast } = useToast();
-  const [plan, setPlan] = useState<any>(null);
+  const { plan } = usePlan();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    apiService.getMyPlan()
-      .then((data) => setPlan(data))
-      .catch((e) => setError(e.message || 'Failed to load plan'))
-      .finally(() => setLoading(false));
-  }, []);
+    setLoading(false); // Plan is loaded from context now
+  }, [plan]);
 
   if (loading) return <div className="py-8 text-center text-gray-500">Loading plan...</div>;
 
   // Use default plan info if not loaded
   const planData = plan || {
     planId: 'starter',
-    status: 'active',
-    price: 0,
-    workflowsMonitoredCount: 0,
-    maxWorkflows: 25,
-    historyDays: 30,
-    nextBillingDate: null,
-    hubspotPortalId: null,
+    isTrialActive: false,
+    trialEndDate: undefined,
+    trialPlanId: undefined,
+    remainingTrialDays: undefined,
   };
 
   // HubSpot manage subscription URL
@@ -79,8 +73,48 @@ const PlanBillingTab = () => {
     },
   ];
 
+  // Trial banner logic
+  const showTrialBanner = planData.isTrialActive && planData.trialPlanId === 'professional';
+  const showTrialExpiredBanner = !planData.isTrialActive && planData.trialPlanId === 'professional' && planData.planId === 'starter';
+
   return (
     <div className="space-y-6">
+      {/* Trial Banner */}
+      {showTrialBanner && (
+        <div className="bg-blue-100 border border-blue-300 text-blue-900 rounded-lg px-6 py-4 flex items-center justify-between">
+          <div>
+            <span className="font-semibold">You are currently on a 21-day Professional Plan trial!</span>
+            {typeof planData.remainingTrialDays === 'number' && (
+              <span className="ml-2">{planData.remainingTrialDays} days remaining.</span>
+            )}
+          </div>
+          <a
+            href={HUBSPOT_MANAGE_SUBSCRIPTION_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+          >
+            Upgrade Now
+          </a>
+        </div>
+      )}
+      {/* Trial Expired Banner */}
+      {showTrialExpiredBanner && (
+        <div className="bg-yellow-100 border border-yellow-300 text-yellow-900 rounded-lg px-6 py-4 flex items-center justify-between">
+          <div>
+            <span className="font-semibold">Your Professional trial has ended.</span>
+            <span className="ml-2">You are now on the Starter plan. Upgrade to unlock all features!</span>
+          </div>
+          <a
+            href={HUBSPOT_MANAGE_SUBSCRIPTION_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-4 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium"
+          >
+            Upgrade Now
+          </a>
+        </div>
+      )}
       {/* Subscription Overview */}
       <Card>
         <CardHeader className="p-6 pb-0 flex flex-col items-start">
@@ -109,14 +143,24 @@ const PlanBillingTab = () => {
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <div className="flex items-center gap-3 mb-1">
-            <span className="text-2xl font-bold text-gray-900">{planData.planId.charAt(0).toUpperCase() + planData.planId.slice(1)} Plan</span>
-            {planData.status === 'trial' && (
-            <Badge
-              variant="secondary"
-              className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
-            >
-              Trial
-            </Badge>
+            <span className="text-2xl font-bold text-gray-900">
+              {planData.planId.charAt(0).toUpperCase() + planData.planId.slice(1)} Plan
+            </span>
+            {showTrialBanner && (
+              <Badge
+                variant="secondary"
+                className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
+              >
+                Trial
+              </Badge>
+            )}
+            {showTrialExpiredBanner && (
+              <Badge
+                variant="secondary"
+                className="bg-yellow-100 text-yellow-800 text-base px-3 py-1 rounded-full font-semibold"
+              >
+                Trial Ended
+              </Badge>
             )}
           </div>
           <div className="text-gray-600 text-base mb-6">{planData.price ? `$${planData.price}/month` : ''}</div>
@@ -124,21 +168,21 @@ const PlanBillingTab = () => {
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
               <span className="text-base text-gray-700 font-medium">Workflows Monitored</span>
-              <span className="text-base font-semibold text-gray-900">{planData.workflowsMonitoredCount}/{planData.maxWorkflows ?? '∞'}</span>
+              <span className="text-base font-semibold text-gray-900">{/* You may want to fetch this from planData if available */}</span>
             </div>
-            <Progress value={planData.maxWorkflows ? (planData.workflowsMonitoredCount / planData.maxWorkflows) * 100 : 0} className="h-2 w-full my-3" />
+            <Progress value={0} className="h-2 w-full my-3" />
           </div>
 
           <div className="flex items-center justify-between mb-6">
             <span className="text-base text-gray-700 font-medium">Version History</span>
-            <span className="text-base font-semibold text-gray-900">{planData.historyDays ? `${planData.historyDays} days retained` : 'Unlimited'}</span>
+            <span className="text-base font-semibold text-gray-900">{/* You may want to fetch this from planData if available */}</span>
           </div>
 
           <hr className="my-4 border-gray-200" />
 
           <div className="flex items-center justify-between">
             <span className="text-base text-gray-500">Next billing on:</span>
-            <span className="text-base font-semibold text-gray-900">{planData.nextBillingDate ? new Date(planData.nextBillingDate).toLocaleDateString() : 'N/A'}</span>
+            <span className="text-base font-semibold text-gray-900">N/A</span>
           </div>
 
           {/* Info box below the button */}
@@ -171,10 +215,10 @@ const PlanBillingTab = () => {
         </CardContent>
       </Card>
 
-      {/* Pricing Cards */}
+      {/* Plan Cards */}
       <div className="grid grid-cols-3 gap-6">
         {plans.map((p) => (
-          <Card key={p.id} className={`h-full flex flex-col ${planData.planId === p.id ? 'border-blue-500 border-2' : ''}`}>
+          <Card key={p.id} className={`h-full flex flex-col ${planData.planId === p.id || (showTrialBanner && p.id === 'professional') ? 'border-blue-500 border-2' : ''}`}>
             <CardHeader>
               <CardTitle className="text-xl">{p.name}</CardTitle>
               <div className="text-3xl font-bold">
@@ -200,8 +244,10 @@ const PlanBillingTab = () => {
               </div>
               {/* Plan Action Button at the bottom of the card */}
               <div className="mt-6 flex justify-center">
-                {planData.planId === p.id ? (
-                  <Button disabled className="w-full bg-gray-200 text-gray-600 cursor-not-allowed">Current Plan</Button>
+                {(planData.planId === p.id || (showTrialBanner && p.id === 'professional')) ? (
+                  <Button disabled className="w-full bg-gray-200 text-gray-600 cursor-not-allowed">
+                    {showTrialBanner && p.id === 'professional' ? 'Current Plan (Trial)' : 'Current Plan'}
+                  </Button>
                 ) : (
                   <Button className="w-full bg-blue-600 text-white" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>Select Plan</Button>
                 )}

@@ -124,43 +124,59 @@ export const useRequireAuth = () => {
 };
 
 // --- Plan Context ---
-export interface Plan {
-  name: string;
-  features: string[];
-  status: string;
+export interface PlanStatus {
+  planId: string;
+  isTrialActive: boolean;
+  trialEndDate?: string;
+  trialPlanId?: string;
+  remainingTrialDays?: number;
 }
 
 interface PlanContextType {
-  plan: Plan | null;
-  setPlan: (plan: Plan) => void;
+  plan: PlanStatus | null;
+  setPlan: (plan: PlanStatus) => void;
+  isTrialing: () => boolean;
+  hasFeature: (feature: string) => boolean;
 }
 
 const PlanContext = createContext<PlanContextType | undefined>(undefined);
 
 export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [plan, setPlan] = useState<Plan | null>(null);
+  const [plan, setPlan] = useState<PlanStatus | null>(null);
 
   useEffect(() => {
-    // Optionally restore from localStorage or set a default plan
-    const storedPlan = localStorage.getItem('userPlan');
-    if (storedPlan) {
-      setPlan(JSON.parse(storedPlan));
-    } else {
-      setPlan({
-        name: 'Free',
-        features: ['basic_usage'],
-        status: 'active',
-      });
+    async function fetchPlanStatus() {
+      try {
+        const res = await fetch('/api/users/me/plan-status', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch plan status');
+        const data = await res.json();
+        setPlan(data);
+      } catch (e) {
+        setPlan({ planId: 'starter', isTrialActive: false });
+      }
     }
+    fetchPlanStatus();
   }, []);
 
-  const updatePlan = (plan: Plan) => {
-    setPlan(plan);
-    localStorage.setItem('userPlan', JSON.stringify(plan));
+  const isTrialing = () => !!plan?.isTrialActive;
+
+  // Example feature map for demo; in production, fetch from backend or config
+  const planFeatures: Record<string, string[]> = {
+    starter: ['basic_monitoring', 'email_support'],
+    professional: ['advanced_monitoring', 'priority_support', 'custom_notifications'],
+    enterprise: ['unlimited_workflows', 'advanced_monitoring', '24_7_support', 'api_access', 'user_permissions', 'audit_logs'],
+  };
+
+  const hasFeature = (feature: string) => {
+    if (!plan) return false;
+    if (plan.isTrialActive && plan.trialPlanId) {
+      return planFeatures[plan.trialPlanId]?.includes(feature);
+    }
+    return planFeatures[plan.planId]?.includes(feature);
   };
 
   return (
-    <PlanContext.Provider value={{ plan, setPlan: updatePlan }}>
+    <PlanContext.Provider value={{ plan, setPlan, isTrialing, hasFeature }}>
       {children}
     </PlanContext.Provider>
   );

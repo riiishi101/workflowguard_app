@@ -38,6 +38,11 @@ model User {
   hubspotTokenExpiresAt DateTime?
   resetToken    String?
   resetTokenExpires DateTime?
+  planId         String?   @default("starter")
+  trialStartDate DateTime?
+  trialEndDate   DateTime?
+  isTrialActive  Boolean?  @default(false)
+  trialPlanId    String?
 }
 
 model Workflow {

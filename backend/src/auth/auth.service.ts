@@ -49,6 +49,8 @@ export class AuthService {
 
     if (!user) {
       const now = new Date();
+      const trialDays = 21;
+      const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
       user = await this.prisma.user.create({
         data: {
           email,
@@ -56,7 +58,12 @@ export class AuthService {
           role: 'viewer',
           firstInstalledAt: now,
           lastActiveAt: now,
-        },
+          planId: 'starter',
+          trialStartDate: now,
+          trialEndDate: trialEnd,
+          isTrialActive: true,
+          trialPlanId: 'professional',
+        } as any,
       });
     }
 
@@ -146,5 +153,26 @@ export class AuthService {
       where: { id: userId },
       data: { lastActiveAt: new Date() },
     });
+  }
+
+  async handleHubspotDeauth(portalId: string, userId?: string) {
+    // Find all users with this portalId
+    const users = await this.prisma.user.findMany({ where: { hubspotPortalId: portalId } });
+    for (const user of users) {
+      // Anonymize user email and remove HubSpot tokens
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: `anonymized+${user.id}@hubspot-deauth.local`,
+          hubspotAccessToken: null,
+          hubspotRefreshToken: null,
+          hubspotTokenExpiresAt: null,
+          hubspotPortalId: null,
+        },
+      });
+      // Optionally, log or audit this action
+      console.log(`Anonymized user ${user.id} for HubSpot portalId ${portalId}`);
+    }
+    return { message: `Deauthorized and anonymized ${users.length} user(s) for portalId ${portalId}` };
   }
 }

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import WorkflowGuardLogo from "./WorkflowGuardLogo";
 import { Lock, Info } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import React, { useState } from "react";
 
 interface ConnectHubSpotModalProps {
   open: boolean;
@@ -15,6 +16,17 @@ const ConnectHubSpotModal = ({
   onClose,
   onConnect,
 }: ConnectHubSpotModalProps) => {
+  const [error, setError] = useState<string | null>(null);
+
+  // Listen for OAuth errors in the URL (e.g., /?oauth_error=...)
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("oauth_error");
+    if (oauthError) {
+      setError(decodeURIComponent(oauthError));
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-8 bg-gray-50 border-0">
@@ -76,8 +88,17 @@ const ConnectHubSpotModal = ({
             </div>
           </div>
 
+          {error && (
+            <div className="bg-red-100 text-red-800 rounded p-3 mb-2 text-sm font-medium border border-red-200" data-testid="oauth-error">
+              {error}
+            </div>
+          )}
+
           <Button
-            onClick={onConnect}
+            onClick={() => {
+              setError(null);
+              onConnect();
+            }}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2"
           >
             <img

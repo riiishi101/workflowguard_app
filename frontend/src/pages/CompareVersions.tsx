@@ -25,49 +25,6 @@ import RoleGuard from '../components/RoleGuard';
 import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data for versions
-const allVersions = [
-  {
-    id: "1",
-    date: "June 15, 2025, 2:30 PM",
-    creator: "John Smith",
-    type: "Manual Snapshot",
-  },
-  {
-    id: "2",
-    date: "June 20, 2025, 3:45 PM",
-    creator: "Sarah Johnson",
-    type: "Current Version",
-  },
-  {
-    id: "3",
-    date: "June 19, 2025, 1:30 PM",
-    creator: "Mike Wilson",
-    type: "On-Publish Save",
-  },
-];
-
-// Mock workflow data for comparison
-const workflowVersionsData = {
-  "1": {
-    steps: [
-      { type: "email", title: "Send Welcome Email", icon: Mail },
-      { type: "delay", title: "Wait 5 days", icon: Clock },
-      { type: "email", title: "Send Follow-up Email", icon: Mail },
-      { type: "meeting", title: "Schedule Meeting", icon: Calendar },
-    ],
-  },
-  "2": {
-    steps: [
-      { type: "email", title: "Send Welcome Email", icon: Mail },
-      { type: "delay", title: "Wait 7 days", icon: Clock },
-      { type: "email", title: "Send Follow-up Email", icon: Mail },
-      { type: "meeting", title: "Schedule Meeting", icon: Calendar },
-      { type: "email", title: "Send Thank You Email", icon: Mail, isNew: true },
-    ],
-  },
-};
-
 const CompareVersions = () => {
   useRequireAuth();
   const navigate = useNavigate();
@@ -152,13 +109,6 @@ const CompareVersions = () => {
     }
   };
 
-  const versionASteps =
-    workflowVersionsData[versionA as keyof typeof workflowVersionsData] ||
-    workflowVersionsData["1"];
-  const versionBSteps =
-    workflowVersionsData[versionB as keyof typeof workflowVersionsData] ||
-    workflowVersionsData["2"];
-
   const handleBackToHistory = () => {
     navigate("/workflow-history");
   };
@@ -215,7 +165,7 @@ const CompareVersions = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {allVersions.map((version) => (
+                  {versionAData && versionAData.map((version: any) => (
                     <SelectItem key={version.id} value={version.id}>
                       {version.date}
                     </SelectItem>
@@ -233,7 +183,7 @@ const CompareVersions = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {allVersions.map((version) => (
+                  {versionBData && versionBData.map((version: any) => (
                     <SelectItem key={version.id} value={version.id}>
                       {version.date}
                     </SelectItem>

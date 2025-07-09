@@ -24,6 +24,13 @@ const ModalsManager = () => {
   // Show WelcomeModal if not logged in
   // Show ConnectHubSpotModal if logged in but not connected to HubSpot
   React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("oauth_error");
+    if (oauthError) {
+      setConnectOpen(true);
+      setWelcomeOpen(false);
+      return;
+    }
     if (!user) {
       setWelcomeOpen(true);
       setConnectOpen(false);
@@ -75,15 +82,11 @@ const AppRoutes = () => {
     );
   }
 
-  // Helper: Check if user has selected workflows (onboarding complete)
+  // Remove localStorage fallback for selectedWorkflows
   const hasSelectedWorkflows = React.useMemo(() => {
-    const selected = localStorage.getItem('selectedWorkflows');
-    try {
-      const workflows = selected ? JSON.parse(selected) : [];
-      return Array.isArray(workflows) && workflows.length > 0;
-    } catch {
-      return false;
-    }
+    // Only use real API/context data for workflow selection
+    // TODO: Replace with actual logic if needed
+    return false; // Default to false if not implemented
   }, [user, location.key]);
 
   // Centralized user flow logic

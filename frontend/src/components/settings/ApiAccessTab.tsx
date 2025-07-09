@@ -17,6 +17,8 @@ import WebhooksConfiguration from "./WebhooksConfiguration";
 import { useToast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import React from 'react';
+import { usePlan } from "@/components/AuthContext";
+import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
 
 interface ApiKeyMeta {
   id: string;
@@ -51,6 +53,7 @@ const ApiAccessTab: React.FC<ApiAccessTabProps> = ({ setActiveTab }) => {
   const [newRawKey, setNewRawKey] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
   const [planChecked, setPlanChecked] = useState(false);
+  const { plan, hasFeature, isTrialing } = usePlan();
 
   useEffect(() => {
     async function checkPlan() {
@@ -143,17 +146,16 @@ const ApiAccessTab: React.FC<ApiAccessTabProps> = ({ setActiveTab }) => {
   const handleGoToPlan = () => setActiveTab('plan-billing');
 
   if (!planChecked || loading) return <div className="py-8 text-center text-gray-500">Loading...</div>;
-  if (!canEdit) {
+  if (!hasFeature('api_access')) {
     return (
-      <Card className="p-8 flex flex-col items-center justify-center text-center">
-        <CardHeader>
-          <CardTitle>Upgrade to Enterprise Plan</CardTitle>
-          <CardDescription>Get access to API access and integrations with advanced features.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleGoToPlan}>Upgrade Now</Button>
-        </CardContent>
-      </Card>
+      <UpgradeRequiredModal
+        isOpen={true}
+        onClose={() => {}}
+        feature="API access"
+        isTrialing={isTrialing()}
+        planId={plan?.planId}
+        trialPlanId={plan?.trialPlanId}
+      />
     );
   }
 
