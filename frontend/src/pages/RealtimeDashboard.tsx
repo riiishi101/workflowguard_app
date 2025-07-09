@@ -307,24 +307,19 @@ export default function RealTimeDashboard() {
                 Recent Notifications
               </h3>
               <div className="space-y-1">
-                <NotificationItem
-                  type="System Alert"
-                  severity="Critical"
-                  message="High CPU usage detected on server 01"
-                  time="2 minutes ago"
-                />
-                <NotificationItem
-                  type="Billing Update"
-                  severity="High"
-                  message="Monthly subscription payment processed successfully"
-                  time="15 minutes ago"
-                />
-                <NotificationItem
-                  type="Usage Warning"
-                  severity="Medium"
-                  message="Storage capacity reaching 80% threshold"
-                  time="1 hour ago"
-                />
+                {liveNotifications.length === 0 ? (
+                  <div className="text-gray-500 text-sm">No notifications.</div>
+                ) : (
+                  liveNotifications.map((notif, idx) => (
+                    <NotificationItem
+                      key={notif.id || idx}
+                      type={notif.type}
+                      severity={notif.severity || 'Medium'}
+                      message={notif.message}
+                      time={notif.time || ''}
+                    />
+                  ))
+                )}
               </div>
             </div>
 
@@ -355,36 +350,19 @@ export default function RealTimeDashboard() {
                 All Notifications
               </h3>
               <div className="space-y-1">
-                <NotificationItem
-                  type="System Alert"
-                  severity="Critical"
-                  message="High CPU usage detected on server 01"
-                  time="2 minutes ago"
-                />
-                <NotificationItem
-                  type="Billing Update"
-                  severity="High"
-                  message="Monthly subscription payment processed successfully"
-                  time="15 minutes ago"
-                />
-                <NotificationItem
-                  type="Usage Warning"
-                  severity="Medium"
-                  message="Storage capacity reaching 80% threshold"
-                  time="1 hour ago"
-                />
-                <NotificationItem
-                  type="System Alert"
-                  severity="Critical"
-                  message="Database connection timeout detected"
-                  time="2 hours ago"
-                />
-                <NotificationItem
-                  type="Security Alert"
-                  severity="High"
-                  message="Multiple failed login attempts detected"
-                  time="3 hours ago"
-                />
+                {liveNotifications.length === 0 ? (
+                  <div className="text-gray-500 text-sm">No notifications.</div>
+                ) : (
+                  liveNotifications.map((notif, idx) => (
+                    <NotificationItem
+                      key={notif.id || idx}
+                      type={notif.type}
+                      severity={notif.severity || 'Medium'}
+                      message={notif.message}
+                      time={notif.time || ''}
+                    />
+                  ))
+                )}
               </div>
             </div>
           </TabsContent>
