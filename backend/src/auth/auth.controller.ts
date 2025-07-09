@@ -52,15 +52,15 @@ export class AuthController {
       let tokenRes;
       try {
         tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
-          params: {
-            grant_type: 'authorization_code',
-            client_id: process.env.HUBSPOT_CLIENT_ID,
-            client_secret: process.env.HUBSPOT_CLIENT_SECRET,
-            redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
-            code,
-          },
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
+        params: {
+          grant_type: 'authorization_code',
+          client_id: process.env.HUBSPOT_CLIENT_ID,
+          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+          redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
+          code,
+        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
       } catch (tokenErr) {
         const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
         const errorMsg = encodeURIComponent('Failed to exchange code for access token. Please try again or contact support.');
@@ -74,8 +74,8 @@ export class AuthController {
       let userRes;
       try {
         userRes = await axios.get('https://api.hubapi.com/integrations/v1/me', {
-          headers: { Authorization: `Bearer ${access_token}` },
-        });
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
       } catch (userErr) {
         const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
         const errorMsg = encodeURIComponent('Failed to fetch user info from HubSpot. Please try again or contact support.');
@@ -86,23 +86,23 @@ export class AuthController {
 
       let user;
       try {
-        if (!email && portalId) {
-          // Use portalId as a fallback unique identifier (synthetic email)
-          const syntheticEmail = `portal-${portalId}@hubspot.test`;
-          user = await this.authService.findOrCreateUser(syntheticEmail);
-          await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-          await this.authService.updateUserLastActive(user.id);
-        } else if (!email) {
+      if (!email && portalId) {
+        // Use portalId as a fallback unique identifier (synthetic email)
+        const syntheticEmail = `portal-${portalId}@hubspot.test`;
+        user = await this.authService.findOrCreateUser(syntheticEmail);
+        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+        await this.authService.updateUserLastActive(user.id);
+      } else if (!email) {
           const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
           const errorMsg = encodeURIComponent('Could not retrieve user email or portalId from HubSpot. Please try again or contact support.');
           return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
-        } else {
-          // Find or create user in your DB
-          user = await this.authService.findOrCreateUser(email);
-          console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
-          await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-          console.log('OAuth - HubSpot tokens updated for user:', user.email);
-          await this.authService.updateUserLastActive(user.id);
+      } else {
+        // Find or create user in your DB
+        user = await this.authService.findOrCreateUser(email);
+        console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
+        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+        console.log('OAuth - HubSpot tokens updated for user:', user.email);
+        await this.authService.updateUserLastActive(user.id);
         }
       } catch (userDbErr) {
         const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
@@ -112,11 +112,11 @@ export class AuthController {
 
       // Update user's HubSpot portal ID and tokens
       try {
-        if (portalId) {
-          await this.authService.updateUserHubspotPortalId(user.id, portalId.toString());
-        }
-        await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-        console.log('OAuth - HubSpot tokens updated for user:', user.email);
+      if (portalId) {
+        await this.authService.updateUserHubspotPortalId(user.id, portalId.toString());
+      }
+      await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+      console.log('OAuth - HubSpot tokens updated for user:', user.email);
       } catch (tokenDbErr) {
         const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
         const errorMsg = encodeURIComponent('Failed to update user tokens. Please try again or contact support.');
@@ -139,7 +139,7 @@ export class AuthController {
       let jwt;
       try {
         jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-        console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
+      console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
       } catch (jwtErr) {
         const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
         const errorMsg = encodeURIComponent('Failed to generate authentication token. Please try again or contact support.');
@@ -149,14 +149,14 @@ export class AuthController {
       // Set JWT as HttpOnly, Secure cookie
       const isProduction = process.env.NODE_ENV === 'production';
       try {
-        res.cookie('jwt', jwt, {
-          httpOnly: true,
-          secure: isProduction, // true in production, false in development
-          sameSite: 'none', // Allow cross-site cookies
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-          path: '/',
-        });
-        console.log('JWT cookie set successfully');
+      res.cookie('jwt', jwt, {
+        httpOnly: true,
+        secure: isProduction, // true in production, false in development
+        sameSite: 'none', // Allow cross-site cookies
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      });
+      console.log('JWT cookie set successfully');
       } catch (cookieErr) {
         const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
         const errorMsg = encodeURIComponent('Failed to set authentication cookie. Please try again or contact support.');

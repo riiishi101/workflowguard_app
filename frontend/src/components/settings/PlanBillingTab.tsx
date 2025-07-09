@@ -149,12 +149,12 @@ const PlanBillingTab = () => {
               {planData.planId.charAt(0).toUpperCase() + planData.planId.slice(1)} Plan
             </span>
             {showTrialBanner && (
-              <Badge
-                variant="secondary"
-                className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
-              >
-                Trial
-              </Badge>
+            <Badge
+              variant="secondary"
+              className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
+            >
+              Trial
+            </Badge>
             )}
             {showTrialExpiredBanner && (
               <Badge
@@ -197,8 +197,8 @@ const PlanBillingTab = () => {
             <div className="flex items-center">
               <Info className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0" />
               <span className="text-sm">
-                All subscription changes are managed in your HubSpot account. Clicking the button above will open HubSpot's subscription management page.
-              </span>
+              All subscription changes are managed in your HubSpot account. Clicking the button above will open HubSpot's subscription management page.
+            </span>
             </div>
           </Alert>
         </CardContent>

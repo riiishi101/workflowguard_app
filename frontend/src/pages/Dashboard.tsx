@@ -103,7 +103,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!plan && workflows.length === 0) {
       // Remove fallback: do not load from localStorage, just show empty state
-      setWorkflows([]); // Explicitly set to empty to trigger empty state
+        setWorkflows([]); // Explicitly set to empty to trigger empty state
     }
   }, [plan, workflows.length]);
 

@@ -1,7 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuditLogController } from './audit-log.controller';
 import { AuditLogService } from './audit-log.service';
 import { UserService } from '../user/user.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuditLogController } from './audit-log.controller';
 
 describe('AuditLogController', () => {
   let controller: AuditLogController;
@@ -24,4 +24,4 @@ describe('AuditLogController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
-});
+}); 
