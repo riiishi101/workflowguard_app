@@ -18,10 +18,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Alert } from '@/components/ui/alert';
 import RoleGuard from '../../components/RoleGuard';
 import { usePlan } from '../../components/AuthContext';
+import { useAuth } from '../../components/AuthContext';
 
 const PlanBillingTab = () => {
   const { toast } = useToast();
   const { plan } = usePlan();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,8 +43,8 @@ const PlanBillingTab = () => {
   };
 
   // HubSpot manage subscription URL
-  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = planData?.hubspotPortalId
-    ? `https://app.hubspot.com/ecosystem/${planData.hubspotPortalId}/marketplace/apps`
+  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = user?.hubspotPortalId
+    ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
     : 'https://app.hubspot.com/ecosystem/marketplace/apps';
 
   // Plan definitions for display
@@ -163,7 +165,12 @@ const PlanBillingTab = () => {
               </Badge>
             )}
           </div>
-          <div className="text-gray-600 text-base mb-6">{planData.price ? `$${planData.price}/month` : ''}</div>
+          <div className="text-gray-600 text-base mb-6">
+            {(() => {
+              const currentPlan = plans.find(p => p.id === planData.planId);
+              return currentPlan && currentPlan.price ? `$${currentPlan.price}/month` : '';
+            })()}
+          </div>
 
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
@@ -186,11 +193,13 @@ const PlanBillingTab = () => {
           </div>
 
           {/* Info box below the button */}
-          <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900 flex items-center">
-            <Info className="w-5 h-5 mr-3 text-blue-500 flex-shrink-0" />
-            <span className="align-middle">
-              All subscription changes are managed in your HubSpot account. Clicking the button above will open HubSpot's subscription management page.
-            </span>
+          <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900 p-4">
+            <div className="flex items-center">
+              <Info className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0" />
+              <span className="text-sm">
+                All subscription changes are managed in your HubSpot account. Clicking the button above will open HubSpot's subscription management page.
+              </span>
+            </div>
           </Alert>
         </CardContent>
       </Card>
