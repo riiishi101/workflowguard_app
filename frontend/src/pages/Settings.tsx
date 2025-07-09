@@ -26,11 +26,13 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState("plan-billing");
   
   // Ensure plan always has a valid structure to prevent controlled/uncontrolled Tabs warning
-  const safePlan = plan || {
-    name: 'Starter',
-    features: ['basic_monitoring', 'email_support'],
-    status: 'active'
-  };
+  const safePlan = plan && Array.isArray(plan.features)
+    ? plan
+    : {
+        name: 'Starter',
+        features: [],
+        status: 'active'
+      };
   const safeSetActiveTab = (tab) => {
     if (typeof tab === 'string' && tab) {
       setActiveTab(tab);
@@ -93,7 +95,7 @@ const Settings = () => {
             <TabsTrigger key="profile" value="profile" onClick={() => safeSetActiveTab('profile')}>
               My Profile
             </TabsTrigger>
-            {safePlan.features.includes('custom_notifications') && (
+            {Array.isArray(safePlan.features) && safePlan.features.includes('custom_notifications') && (
               <TabsTrigger key="notifications" value="notifications" onClick={() => safeSetActiveTab('notifications')}>
                 Notifications
               </TabsTrigger>
