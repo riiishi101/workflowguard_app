@@ -20,12 +20,7 @@ npx prisma migrate deploy
 echo "🔧 Generating Prisma client..."
 npx prisma generate
 
-# Health check before starting
-echo "🏥 Running health check..."
-timeout 30 sh -c 'until curl -f http://localhost:3000/health; do sleep 1; done' || {
-  echo "❌ Health check failed"
-  exit 1
-}
+# Removed pre-start health check here
 
 echo "✅ All systems ready! Starting application..."
 npm run start:prod 
