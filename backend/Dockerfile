@@ -21,6 +21,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install curl for health checks in the production image
+RUN apk add --no-cache curl
+
 COPY package*.json ./
 RUN npm install --omit=dev
 
