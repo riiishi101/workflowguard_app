@@ -155,6 +155,7 @@ export class AuthController {
         sameSite: 'none', // Allow cross-site cookies
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
+        domain: '.workflowguard.pro', // Ensure cookie is sent to all subdomains
       });
       console.log('JWT cookie set successfully');
       } catch (cookieErr) {
@@ -355,6 +356,7 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
+      domain: '.workflowguard.pro', // Ensure cookie is sent to all subdomains
     });
     
     return res.json({ 
@@ -382,7 +384,7 @@ export class AuthController {
       sameSite: 'none', // Allow cross-site cookies
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
-      // No domain restriction to allow cross-domain cookies
+      domain: '.workflowguard.pro', // Ensure cookie is sent to all subdomains
     });
     
     console.log('Manual auth - JWT cookie set successfully');
