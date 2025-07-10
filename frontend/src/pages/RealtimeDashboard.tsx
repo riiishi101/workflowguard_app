@@ -373,29 +373,19 @@ export default function RealTimeDashboard() {
                 Recent Updates
               </h3>
               <div className="space-y-4">
-                <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                  <div>
-                    <div className="font-medium text-gray-900 mb-1">
-                      Workflow Monitoring Enhanced
+                {liveUpdates.length === 0 ? (
+                  <div className="text-gray-500 text-sm">No updates.</div>
+                ) : (
+                  liveUpdates.map((update, idx) => (
+                    <div key={update.id || idx} className="flex items-start justify-between py-3 border-b border-gray-100">
+                      <div>
+                        <div className="font-medium text-gray-900 mb-1">{update.title}</div>
+                        <div className="text-sm text-gray-600">{update.message}</div>
+                      </div>
+                      <div className="text-xs text-gray-500">{update.time || ''}</div>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Improved real-time monitoring capabilities with better
-                      performance
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-500">5 minutes ago</span>
-                </div>
-                <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                  <div>
-                    <div className="font-medium text-gray-900 mb-1">
-                      Security Patch Applied
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Latest security updates have been successfully deployed
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-500">1 hour ago</span>
-                </div>
+                  ))
+                )}
               </div>
             </div>
           </TabsContent>

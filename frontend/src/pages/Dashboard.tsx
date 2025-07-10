@@ -93,6 +93,8 @@ const Dashboard = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showRollbackModal, setShowRollbackModal] = useState(false);
   const [rollbackWorkflow, setRollbackWorkflow] = useState<Workflow | null>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const canAddMoreWorkflows = hasFeature('unlimited_workflows') || hasFeature('advanced_monitoring');
 
@@ -134,6 +136,22 @@ const Dashboard = () => {
       console.error("Error fetching workflows:", err);
     } finally {
       setWorkflowsLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const data = await apiService.getBusinessIntelligence();
+      setAnalytics(data);
+    } catch (err) {
+      toast({
+        title: "Analytics Error",
+        description: err?.message || "Failed to load analytics.",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -197,25 +215,40 @@ const Dashboard = () => {
   
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    
     setActionLoading(true);
-    try {
-      // In production, this would call an API to delete workflows
-    setWorkflows(workflows.filter(w => !selectedIds.includes(w.id)));
+    let successCount = 0;
+    let failedCount = 0;
+    const failedNames: string[] = [];
+    const newWorkflows = [...workflows];
+    await Promise.all(selectedIds.map(async (id) => {
+      try {
+        await apiService.deleteWorkflow(id);
+        // Remove from local state
+        const idx = newWorkflows.findIndex(w => w.id === id);
+        if (idx !== -1) newWorkflows.splice(idx, 1);
+        successCount++;
+      } catch (err: any) {
+        failedCount++;
+        const wf = workflows.find(w => w.id === id);
+        failedNames.push(wf?.name || id);
+      }
+    }));
+    setWorkflows(newWorkflows);
     setSelectedIds([]);
+    if (successCount > 0) {
       toast({
         title: "Workflows Deleted",
-        description: `${selectedIds.length} workflow(s) have been deleted.`,
+        description: `${successCount} workflow(s) have been deleted.`,
       });
-    } catch (err: any) {
+    }
+    if (failedCount > 0) {
       toast({
-        title: "Error",
-        description: "Failed to delete workflows. Please try again.",
+        title: "Delete Failed",
+        description: `Failed to delete: ${failedNames.join(", ")}`,
         variant: "destructive",
       });
-    } finally {
-      setActionLoading(false);
     }
+    setActionLoading(false);
   };
 
   const handleAddWorkflow = () => {
@@ -262,22 +295,35 @@ const Dashboard = () => {
   // Handler for rollback logic
   const handleConfirmRollback = async () => {
     if (!rollbackWorkflow) return;
-    // TODO: Replace with real API call
-    toast({
-      title: "Rollback Triggered",
-      description: `Workflow '${rollbackWorkflow.name}' will be rolled back to the latest snapshot.`,
-    });
-    // Optionally update state/UI here
-    setRollbackWorkflow(null);
-    setShowRollbackModal(false);
+    setActionLoading(true);
+    try {
+      await apiService.rollbackWorkflow(rollbackWorkflow.id);
+      toast({
+        title: "Rollback Successful",
+        description: `Workflow '${rollbackWorkflow.name}' was rolled back to the latest version.`,
+      });
+      fetchWorkflows();
+    } catch (err: any) {
+      toast({
+        title: "Rollback Failed",
+        description: err?.message || "Failed to rollback workflow.",
+        variant: "destructive",
+      });
+    } finally {
+      setRollbackWorkflow(null);
+      setShowRollbackModal(false);
+      setActionLoading(false);
+    }
   };
 
-  if (workflowsLoading) {
+  if (workflowsLoading || analyticsLoading) {
     return (
       <div className="min-h-screen bg-white">
         <TopNavigation />
         <main className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-center min-h-[60vh]">
-          <LoadingSpinner />
+          <div aria-live="polite" aria-busy="true">
+            <LoadingSpinner role="status" data-testid="loading-spinner" />
+          </div>
         </main>
       </div>
     );
@@ -289,7 +335,7 @@ const Dashboard = () => {
         <TopNavigation />
         <main className="max-w-7xl mx-auto px-6 py-8">
           <div className="text-center py-12">
-            <p className="text-red-500 mb-4">{error}</p>
+            <p className="text-red-500 mb-4" aria-live="assertive">{error}</p>
             <Button onClick={fetchWorkflows} variant="outline">
               Try Again
           </Button>
@@ -336,14 +382,13 @@ const Dashboard = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{workflows.length}</div>
-              <div className="text-sm text-gray-600">Active Workflows</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.activeUsers ?? workflows.length}</div>
+              <div className="text-sm text-gray-600">Active Users</div>
               <div className="text-xs text-gray-500 mt-1">
-                Monitored workflows
+                Users with at least one workflow
               </div>
             </div>
           </div>
-
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -351,12 +396,11 @@ const Dashboard = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">99.9%</div>
-              <div className="text-sm text-gray-600">Total Uptime</div>
-              <div className="text-xs text-gray-500 mt-1">Last 30 days</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.conversionRate != null ? `${analytics.overview.conversionRate}%` : 'N/A'}</div>
+              <div className="text-sm text-gray-600">Conversion Rate</div>
+              <div className="text-xs text-gray-500 mt-1">Users with overages / total users</div>
             </div>
           </div>
-
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -364,10 +408,10 @@ const Dashboard = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{plan?.maxWorkflows || 500}</div>
-              <div className="text-sm text-gray-600">Monitored Services</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.totalUsers ?? 500}</div>
+              <div className="text-sm text-gray-600">Total Users</div>
               <div className="text-xs text-gray-500 mt-1">
-                Max. plan capacity
+                Registered users
               </div>
             </div>
           </div>
@@ -488,7 +532,7 @@ const Dashboard = () => {
                         <div className="text-gray-500 mb-6">
                           Try adjusting your search or filters.
                         </div>
-                        <Button variant="default" size="lg" onClick={handleAddWorkflow}>
+                        <Button variant="default" size="lg" onClick={handleAddWorkflow} aria-label="Add Workflow">
                           + Add Workflow
                         </Button>
                       </div>
@@ -498,13 +542,16 @@ const Dashboard = () => {
                   paginatedWorkflows.map((workflow, idx) => {
                     const lastModifiedBy = getLastModifiedBy(workflow);
                     return (
-                      <tr key={workflow.id} className="hover:bg-gray-50" tabIndex={0} aria-rowindex={idx + 2}>
+                      <tr key={workflow.id} className="hover:bg-gray-50" tabIndex={0} aria-rowindex={idx + 2}
+                          aria-label={`Workflow row for ${workflow.name}`}
+                      >
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(workflow.id)}
                             onChange={() => handleSelectOne(workflow.id)}
                             aria-label={`Select workflow ${workflow.name}`}
+                            tabIndex={0}
                           />
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">

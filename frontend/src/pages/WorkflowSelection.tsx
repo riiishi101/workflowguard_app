@@ -143,6 +143,7 @@ const WorkflowSelection = () => {
   const handleStartProtecting = async () => {
     setActionLoading(true);
     try {
+      await apiService.setMonitoredWorkflows(selectedWorkflows);
       toast({
         title: "Workflows Protected!",
         description: `${selectedWorkflows.length} workflows are now being monitored.`,

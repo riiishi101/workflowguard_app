@@ -13,6 +13,7 @@ import HelpSupport from './pages/HelpSupport';
 import OverageDashboard from './pages/OverageDashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import RealtimeDashboard from './pages/RealtimeDashboard';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Helper: Show Welcome/Connect modals based on context
 const ModalsManager = () => {
@@ -35,9 +36,8 @@ const ModalsManager = () => {
       setWelcomeOpen(true);
       setConnectOpen(false);
     } else {
-      // Check if user has HubSpot connection by looking at plan features OR user data
-      const hasHubSpotConnection = plan?.features?.includes('hubspot_connected') || 
-                                  user.hubspotPortalId;
+      // Check if user has HubSpot connection by looking at user data
+      const hasHubSpotConnection = user.hubspotPortalId;
       
       if (!hasHubSpotConnection) {
         setWelcomeOpen(false);
@@ -95,16 +95,16 @@ const AppRoutes = () => {
     if (!user) return;
 
     // 2. Authenticated but not connected to HubSpot: show ConnectHubSpotModal (handled by ModalsManager)
-    if (user && (!plan || !(plan.features && plan.features.includes('hubspot_connected')))) return;
+    if (user && !user.hubspotPortalId) return;
 
     // 3. Authenticated, connected, but no workflows selected: redirect to onboarding
-    if (user && plan && plan.features.includes('hubspot_connected') && !hasSelectedWorkflows && location.pathname !== '/select-workflows') {
+    if (user && user.hubspotPortalId && !hasSelectedWorkflows && location.pathname !== '/select-workflows') {
       window.location.replace('/select-workflows');
       return;
     }
 
     // 4. If on /select-workflows but onboarding is complete, go to dashboard
-    if (user && plan && plan.features.includes('hubspot_connected') && hasSelectedWorkflows && location.pathname === '/select-workflows') {
+    if (user && user.hubspotPortalId && hasSelectedWorkflows && location.pathname === '/select-workflows') {
       window.location.replace('/dashboard');
       return;
     }
@@ -141,14 +141,16 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <PlanProvider>
-        <Router>
-          <AppRoutes />
-          <Footer />
-        </Router>
-      </PlanProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <PlanProvider>
+          <Router>
+            <AppRoutes />
+            <Footer />
+          </Router>
+        </PlanProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

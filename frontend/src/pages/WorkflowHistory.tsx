@@ -31,28 +31,51 @@ import React from 'react';
 import apiService from '@/services/api';
 import { saveAs } from 'file-saver';
 import UpgradeRequiredModal from "../components/UpgradeRequiredModal";
+import { useAuth } from '@/components/AuthContext';
+
+// TypeScript interfaces
+interface Workflow {
+  id: string;
+  name: string;
+  status: string;
+  hubspotId?: string;
+  // Add other fields as needed
+}
+
+interface WorkflowVersion {
+  id: string;
+  versionNumber: number;
+  snapshotType: string;
+  createdBy: string;
+  createdAt: string;
+  notes?: string;
+  data: any;
+  selected?: boolean;
+  // Add other fields as needed
+}
 
 const WorkflowHistory = () => {
   useRequireAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { workflowId } = useParams();
-  const [workflow, setWorkflow] = useState<any>(null);
-  const [versions, setVersions] = useState<any[]>([]);
+  const [workflow, setWorkflow] = useState<Workflow | null>(null);
+  const [versions, setVersions] = useState<WorkflowVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showViewDetails, setShowViewDetails] = useState(false);
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<any>(null);
+  const [selectedVersion, setSelectedVersion] = useState<WorkflowVersion | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [lastDeletedVersion, setLastDeletedVersion] = useState<any | null>(null);
+  const [lastDeletedVersion, setLastDeletedVersion] = useState<WorkflowVersion | null>(null);
   const undoTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [lastBulkDeleted, setLastBulkDeleted] = useState<any[]>([]);
+  const [lastBulkDeleted, setLastBulkDeleted] = useState<WorkflowVersion[]>([]);
   const { plan, hasFeature, isTrialing } = usePlan();
 
   if (!workflowId) {
@@ -69,8 +92,8 @@ const WorkflowHistory = () => {
       apiService.getWorkflowVersions(workflowId).catch((e: any) => { throw new Error(e.message || "Failed to load workflow versions"); })
     ])
       .then(([wf, vers]) => {
-        setWorkflow(wf);
-        setVersions(Array.isArray(vers) ? vers.map((v: any) => ({ ...v, selected: false })) : []);
+        setWorkflow(wf as Workflow);
+        setVersions(Array.isArray(vers) ? vers.map((v: WorkflowVersion) => ({ ...v, selected: false })) : []);
       })
       .catch((e: any) => setError(e.message || "Failed to load workflow or versions"))
       .finally(() => setLoading(false));
@@ -173,17 +196,17 @@ const WorkflowHistory = () => {
     }
   };
 
-  const handleViewDetails = (version: any) => {
+  const handleViewDetails = (version: WorkflowVersion) => {
     setSelectedVersion(version);
     setShowViewDetails(true);
   };
 
-  const handleCreateNew = (version: any) => {
+  const handleCreateNew = (version: WorkflowVersion) => {
     setSelectedVersion(version);
     setShowCreateNew(true);
   };
 
-  const handleRestore = async (version: any) => {
+  const handleRestore = async (version: WorkflowVersion) => {
     setShowRestore(true);
     setSelectedVersion(version);
   };
@@ -196,7 +219,7 @@ const WorkflowHistory = () => {
         workflowId: workflow.id,
         versionNumber: selectedVersion.versionNumber,
         snapshotType: 'restore',
-        createdBy: 'current-user-id', // Replace with real user id if available
+        createdBy: user?.id || 'system', // Use actual user id
         data: selectedVersion.data,
       });
       toast({
@@ -262,7 +285,7 @@ const WorkflowHistory = () => {
   };
 
   // Download workflow version JSON
-  const handleDownloadJSON = (version: any) => {
+  const handleDownloadJSON = (version: WorkflowVersion) => {
     if (!version || !version.data) {
       toast({ title: 'Error', description: 'No workflow data to download.', variant: 'destructive', duration: 5000 });
       return;

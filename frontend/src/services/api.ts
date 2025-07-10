@@ -1,3 +1,4 @@
+console.log('REAL API SERVICE MODULE LOADED');
 // Add type definitions
 interface Webhook {
   id: string;
@@ -36,7 +37,7 @@ class ApiService {
     // If no token, rely on JWT cookie authentication
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
     
     if (token) {
@@ -128,6 +129,12 @@ class ApiService {
   async deleteWorkflow(id: string) {
     return this.request(`/workflows/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async rollbackWorkflow(id: string) {
+    return this.request(`/workflows/${id}/rollback`, {
+      method: 'POST',
     });
   }
 
@@ -730,6 +737,13 @@ class ApiService {
   async syncWorkflowFromHubSpot(workflowId: string) {
     return this.request(`/workflows/${workflowId}/sync-from-hubspot`, {
       method: 'POST',
+    });
+  }
+
+  async setMonitoredWorkflows(workflowIds: string[]) {
+    return this.request('/users/me/monitored-workflows', {
+      method: 'POST',
+      body: JSON.stringify({ workflowIds }),
     });
   }
 }

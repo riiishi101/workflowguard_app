@@ -39,6 +39,41 @@ import { saveAs } from 'file-saver';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import RoleGuard from '../components/RoleGuard';
 
+// TypeScript interfaces
+interface WorkflowVersion {
+  id: string;
+  versionNumber: number;
+  version?: string;
+  dateTime?: string;
+  createdAt?: string;
+  modifiedBy?: {
+    name?: string;
+    email?: string;
+    initials?: string;
+  };
+  changeSummary?: string;
+  data?: any;
+  [key: string]: any;
+}
+
+interface AuditLog {
+  id: string;
+  action: string;
+  user?: {
+    name?: string;
+    email?: string;
+  };
+  userId?: string;
+  timestamp?: string;
+  details?: any;
+  entityType?: string;
+  entityId?: string;
+  oldValue?: any;
+  newValue?: any;
+  ipAddress?: string;
+  [key: string]: any;
+}
+
 const WorkflowHistoryDetail = () => {
   useRequireAuth();
   const { user } = useAuth();
@@ -48,20 +83,20 @@ const WorkflowHistoryDetail = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showRollbackModal, setShowRollbackModal] = useState(false);
   const [showViewDetailsModal, setShowViewDetailsModal] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState(null);
-  const [versions, setVersions] = useState([]);
+  const [selectedVersion, setSelectedVersion] = useState<WorkflowVersion | null>(null);
+  const [versions, setVersions] = useState<WorkflowVersion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedModifiedBy, setSelectedModifiedBy] = useState<string>("all");
   const [selectedDateRange, setSelectedDateRange] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState("");
   const [auditActionFilter, setAuditActionFilter] = useState('all');
   const [auditUserFilter, setAuditUserFilter] = useState('all');
-  const [selectedAuditLog, setSelectedAuditLog] = useState(null);
+  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
   const [auditCurrentPage, setAuditCurrentPage] = useState(1);
   const [auditRowsPerPage, setAuditRowsPerPage] = useState(10);
@@ -167,7 +202,7 @@ const WorkflowHistoryDetail = () => {
     saveAs(blob, 'audit-log.json');
   };
 
-  const handleAuditLogRowClick = (log) => {
+  const handleAuditLogRowClick = (log: AuditLog) => {
     setSelectedAuditLog(log);
     setShowAuditLogModal(true);
   };

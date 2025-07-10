@@ -24,6 +24,7 @@ import { useRequireAuth } from '../components/AuthContext';
 import RoleGuard from '../components/RoleGuard';
 import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '../components/AuthContext';
 
 const CompareVersions = () => {
   useRequireAuth();
@@ -40,6 +41,7 @@ const CompareVersions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Fetch version details from backend
   useEffect(() => {
@@ -98,7 +100,7 @@ const CompareVersions = () => {
         workflowId: version.workflowId,
         versionNumber: version.versionNumber,
         snapshotType: "restore",
-        createdBy: "current-user-id", // Replace with real user id
+        createdBy: user?.id || '',
         data: version.data,
       });
       toast({ title: 'Restore Successful', description: 'Workflow version has been restored.', variant: 'default', duration: 4000 });
