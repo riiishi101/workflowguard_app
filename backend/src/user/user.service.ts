@@ -376,4 +376,8 @@ export class UserService {
       },
     });
   }
+
+  async findByHubspotPortalId(portalId: string): Promise<User | null> {
+    return this.prisma.user.findFirst({ where: { hubspotPortalId: portalId } });
+  }
 }
