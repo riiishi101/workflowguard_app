@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y curl
+RUN apk add --no-cache curl
 
 COPY . .
 
