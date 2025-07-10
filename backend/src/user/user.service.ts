@@ -380,4 +380,28 @@ export class UserService {
   async findByHubspotPortalId(portalId: string): Promise<User | null> {
     return this.prisma.user.findFirst({ where: { hubspotPortalId: portalId } });
   }
+
+  async exportUserData(userId: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const workflows = await this.prisma.workflow.findMany({ where: { ownerId: userId } });
+    const workflowIds = workflows.map(w => w.id);
+    const workflowVersions = await this.prisma.workflowVersion.findMany({ where: { workflowId: { in: workflowIds } } });
+    const auditLogs = await this.prisma.auditLog.findMany({ where: { userId } });
+    const subscription = await this.prisma.subscription.findUnique({ where: { userId } });
+    const webhooks = await this.prisma.webhook.findMany({ where: { userId } });
+    const overages = await this.prisma.overage.findMany({ where: { userId } });
+    const notificationSettings = await this.prisma.notificationSettings.findUnique({ where: { userId } });
+    const apiKeys = await this.prisma.apiKey.findMany({ where: { userId } });
+    return {
+      user,
+      workflows,
+      workflowVersions,
+      auditLogs,
+      subscription,
+      webhooks,
+      overages,
+      notificationSettings,
+      apiKeys,
+    };
+  }
 }

@@ -253,4 +253,25 @@ export class UserController {
       remainingTrialDays,
     };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/export')
+  async exportMyData(@Req() req: Request, @Res() res: Response) {
+    const userId = (req.user as any)?.sub;
+    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const data = await this.userService.exportUserData(userId);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="user-data-${userId}.json"`);
+    res.send(JSON.stringify(data, null, 2));
+  }
+
+  @Get(':id/export')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async exportUserData(@Param('id') id: string, @Res() res: Response) {
+    const data = await this.userService.exportUserData(id);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.json"`);
+    res.send(JSON.stringify(data, null, 2));
+  }
 }
