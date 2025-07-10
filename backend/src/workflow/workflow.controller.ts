@@ -88,4 +88,16 @@ export class WorkflowController {
     const userId = (req.user as any)?.sub;
     return this.workflowService.snapshotFromHubSpot(id, userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/rollback')
+  async rollback(@Req() req: Request, @Param('id') id: string) {
+    try {
+      const userId = (req.user as any)?.sub;
+      await this.workflowService.rollback(id, userId);
+      return { message: 'Workflow rolled back successfully' };
+    } catch (error) {
+      throw new HttpException('Failed to rollback workflow', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

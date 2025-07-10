@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Dashboard from '../Dashboard';
 import * as apiService from '@/services/api';
@@ -110,9 +110,13 @@ describe('Dashboard', () => {
     );
     await waitFor(() => expect(screen.getByText('Test Workflow')).toBeInTheDocument());
     const searchInput = screen.getByPlaceholderText(/search workflows by name/i);
-    fireEvent.change(searchInput, { target: { value: 'Nonexistent' } });
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'Nonexistent' } });
+    });
     expect(screen.getByText('No workflows found')).toBeInTheDocument();
-    fireEvent.change(searchInput, { target: { value: 'Test' } });
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'Test' } });
+    });
     expect(screen.getByText('Test Workflow')).toBeInTheDocument();
   });
 
@@ -125,10 +129,14 @@ describe('Dashboard', () => {
     await waitFor(() => expect(screen.getByText('Test Workflow')).toBeInTheDocument());
     const statusSelect = screen.getByRole('combobox');
     // Change to Inactive
-    fireEvent.change(statusSelect, { target: { value: 'inactive' } });
+    await act(async () => {
+      fireEvent.change(statusSelect, { target: { value: 'inactive' } });
+    });
     expect(screen.getByText('No workflows found')).toBeInTheDocument();
     // Change back to Active
-    fireEvent.change(statusSelect, { target: { value: 'active' } });
+    await act(async () => {
+      fireEvent.change(statusSelect, { target: { value: 'active' } });
+    });
     expect(screen.getByText('Test Workflow')).toBeInTheDocument();
   });
 
@@ -142,10 +150,14 @@ describe('Dashboard', () => {
     await waitFor(() => expect(screen.getByText('Test Workflow')).toBeInTheDocument());
     // Select the workflow
     const checkbox = screen.getByLabelText(/select workflow test workflow/i);
-    fireEvent.click(checkbox);
+    await act(async () => {
+      fireEvent.click(checkbox);
+    });
     // Click delete (button is only visible when selected)
     const deleteButton = screen.getByText(/delete/i);
-    fireEvent.click(deleteButton);
+    await act(async () => {
+      fireEvent.click(deleteButton);
+    });
     await waitFor(() => expect(deleteSpy).toHaveBeenCalled());
   });
 
@@ -159,12 +171,16 @@ describe('Dashboard', () => {
     await waitFor(() => expect(screen.getByText('Test Workflow')).toBeInTheDocument());
     // Open rollback modal
     const rollbackButton = screen.getAllByLabelText(/rollback/i)[0];
-    await userEvent.click(rollbackButton);
+    await act(async () => {
+      await userEvent.click(rollbackButton);
+    });
     // Find all elements with 'Confirm Rollback' and click the button
     const confirmButtons = await screen.findAllByText(/confirm rollback/i, {}, { timeout: 2000 });
     const button = confirmButtons.find(el => el.nodeName === 'BUTTON');
     expect(button).toBeDefined();
-    await userEvent.click(button!);
+    await act(async () => {
+      await userEvent.click(button!);
+    });
     await waitFor(() => expect(rollbackSpy).toHaveBeenCalled());
   });
 }); 

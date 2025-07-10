@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import WorkflowHistory from '../WorkflowHistory';
 import apiService from '@/services/api';
 import { AuthProvider, PlanProvider } from '@/components/AuthContext';
@@ -30,7 +30,9 @@ describe('WorkflowHistory', () => {
       <MemoryRouter initialEntries={["/workflow-history/w1"]}>
         <AuthProvider>
           <PlanProvider>
-            <WorkflowHistory />
+            <Routes>
+              <Route path="/workflow-history/:workflowId" element={<WorkflowHistory />} />
+            </Routes>
           </PlanProvider>
         </AuthProvider>
       </MemoryRouter>
@@ -48,8 +50,11 @@ describe('WorkflowHistory', () => {
     
     // Wait for versions to be loaded and rendered
     await waitFor(() => {
-      expect(screen.getByText((_, node) => node?.textContent?.includes('Initial'))).toBeInTheDocument();
-      expect(screen.getByText((_, node) => node?.textContent?.includes('Update'))).toBeInTheDocument();
+      // Use a function matcher to find the text even if wrapped
+      const initial = screen.queryAllByText((content, node) => node?.textContent === 'Initial');
+      const update = screen.queryAllByText((content, node) => node?.textContent === 'Update');
+      expect(initial.length).toBeGreaterThan(0);
+      expect(update.length).toBeGreaterThan(0);
     });
     
     // Verify API calls were made
@@ -72,6 +77,16 @@ describe('WorkflowHistory', () => {
     
     renderWithAuth();
     
-    await waitFor(() => expect(screen.getByText('API Error')).toBeInTheDocument());
+    let errorFound = false;
+    try {
+      await waitFor(() => expect(screen.getByTestId('workflow-history-error')).toBeInTheDocument(), { timeout: 2000 });
+      errorFound = true;
+    } catch (e) {
+      // Print the DOM for debugging
+      // eslint-disable-next-line no-console
+      console.log('DEBUG DOM:');
+      screen.debug();
+    }
+    expect(errorFound).toBe(true);
   });
 }); 

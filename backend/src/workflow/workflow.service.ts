@@ -204,6 +204,42 @@ export class WorkflowService {
     return version;
   }
 
+  async rollback(id: string, userId: string): Promise<void> {
+    // Find the latest version for this workflow
+    const latestVersion = await this.prisma.workflowVersion.findFirst({
+      where: { workflowId: id },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!latestVersion) {
+      throw new NotFoundException('No version found to rollback to');
+    }
+    // Update the workflow's data to match the latest version
+    const oldWorkflow = await this.prisma.workflow.findUnique({ where: { id } });
+    let updateData: any = {};
+    if (latestVersion.data && typeof latestVersion.data === 'object' && !Array.isArray(latestVersion.data)) {
+      // Map fields from the version's data JSON to the Workflow model
+      if ('name' in latestVersion.data) updateData.name = latestVersion.data.name;
+      if ('hubspotId' in latestVersion.data) updateData.hubspotId = latestVersion.data.hubspotId;
+      // Add more fields as needed
+    }
+    if (Object.keys(updateData).length === 0) {
+      throw new NotFoundException('No valid fields found in version data to restore');
+    }
+    await this.prisma.workflow.update({
+      where: { id },
+      data: updateData,
+    });
+    // Audit log
+    await this.auditLogService.create({
+      userId,
+      action: 'rollback',
+      entityType: 'workflow',
+      entityId: id,
+      oldValue: oldWorkflow,
+      newValue: updateData,
+    });
+  }
+
   private isWorkflowChanged(hubspotData: any, latestVersion: any): boolean {
     if (!latestVersion) return true;
     // Compare the raw data (can be improved for deep diff)

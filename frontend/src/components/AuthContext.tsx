@@ -93,7 +93,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.clear();
     sessionStorage.clear();
     // Redirect to HubSpot app marketplace listing
-    window.location.href = 'https://app.hubspot.com/ecosystem/marketplace/apps';
+    if (typeof window !== 'undefined') {
+      window.location.href = 'https://app.hubspot.com/ecosystem/marketplace/apps';
+    }
   };
 
   return (

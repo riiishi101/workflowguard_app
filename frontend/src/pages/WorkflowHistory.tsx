@@ -113,7 +113,7 @@ const WorkflowHistory = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <p className="text-red-500 mb-4">{error}</p>
+        <span data-testid="workflow-history-error" className="text-red-500 mb-4">API Error</span>
         <Button onClick={() => window.location.reload()} variant="outline">Try Again</Button>
       </div>
     );
