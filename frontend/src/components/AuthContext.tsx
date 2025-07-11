@@ -10,6 +10,10 @@ export interface User {
   role: string;
   hubspotAccessToken?: string;
   hubspotPortalId?: string;
+  planId?: string; // Added for fallback
+  isTrialActive?: boolean; // Added for fallback
+  trialEndDate?: string; // Added for fallback
+  trialPlanId?: string; // Added for fallback
 }
 
 interface AuthContextType {
@@ -145,20 +149,59 @@ const PlanContext = createContext<PlanContextType | undefined>(undefined);
 
 export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [plan, setPlan] = useState<PlanStatus | null>(null);
+  const { user } = useAuth(); // Get user data from AuthContext
 
   useEffect(() => {
     async function fetchPlanStatus() {
       try {
+        // First try the plan-status endpoint
         const res = await fetch(`${API_BASE_URL}/users/me/plan-status`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Failed to fetch plan status');
-        const data = await res.json();
-        setPlan(data);
+        if (res.ok) {
+          const data = await res.json();
+          setPlan(data);
+          return;
+        }
+        
+        // If plan-status fails, use user data from successful /me endpoint as fallback
+        console.log('Plan-status endpoint failed, using user data fallback');
+        if (user) {
+          // Extract plan info from user data
+          const fallbackPlan: PlanStatus = {
+            planId: user.planId || 'starter',
+            isTrialActive: user.isTrialActive || false,
+            trialEndDate: user.trialEndDate || null,
+            trialPlanId: user.trialPlanId || null,
+            remainingTrialDays: user.trialEndDate ? 
+              Math.max(0, Math.ceil((new Date(user.trialEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 
+              undefined
+          };
+          setPlan(fallbackPlan);
+        } else {
+          // Ultimate fallback
+          setPlan({ planId: 'starter', isTrialActive: false });
+        }
       } catch (e) {
-        setPlan({ planId: 'starter', isTrialActive: false });
+        console.log('Plan status fetch error, using fallback:', e);
+        // Use user data as fallback if available
+        if (user) {
+          const fallbackPlan: PlanStatus = {
+            planId: user.planId || 'starter',
+            isTrialActive: user.isTrialActive || false,
+            trialEndDate: user.trialEndDate || null,
+            trialPlanId: user.trialPlanId || null
+          };
+          setPlan(fallbackPlan);
+        } else {
+          setPlan({ planId: 'starter', isTrialActive: false });
+        }
       }
     }
-    fetchPlanStatus();
-  }, []);
+    
+    // Only fetch if we have user data
+    if (user) {
+      fetchPlanStatus();
+    }
+  }, [user]); // Re-run when user changes
 
   const isTrialing = () => !!plan?.isTrialActive;
 
