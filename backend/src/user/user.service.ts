@@ -40,7 +40,7 @@ export class UserService {
   }
 
   async findOne(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -68,6 +68,52 @@ export class UserService {
         trialPlanId: true,
       },
     });
+
+    // If user exists but plan fields are null, set defaults
+    if (user && (!user.planId || user.isTrialActive === null)) {
+      const now = new Date();
+      const trialDays = 21;
+      const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+      
+      const updatedUser = await this.prisma.user.update({
+        where: { id },
+        data: {
+          planId: user.planId || 'starter',
+          trialStartDate: user.trialStartDate || now,
+          trialEndDate: user.trialEndDate || trialEnd,
+          isTrialActive: user.isTrialActive !== null ? user.isTrialActive : true,
+          trialPlanId: user.trialPlanId || 'professional',
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          password: true,
+          jobTitle: true,
+          timezone: true,
+          language: true,
+          createdAt: true,
+          updatedAt: true,
+          firstInstalledAt: true,
+          lastActiveAt: true,
+          hubspotPortalId: true,
+          hubspotAccessToken: true,
+          hubspotRefreshToken: true,
+          hubspotTokenExpiresAt: true,
+          resetToken: true,
+          resetTokenExpires: true,
+          planId: true,
+          trialStartDate: true,
+          trialEndDate: true,
+          isTrialActive: true,
+          trialPlanId: true,
+        },
+      });
+      return updatedUser;
+    }
+
+    return user;
   }
 
   async findByEmail(email: string): Promise<User | null> {
