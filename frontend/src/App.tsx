@@ -142,14 +142,14 @@ const AppRoutes = () => {
 const App = () => {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <PlanProvider>
-          <Router>
-            <AppRoutes />
-            <Footer />
-          </Router>
-        </PlanProvider>
-      </AuthProvider>
+    <AuthProvider>
+      <PlanProvider>
+        <Router>
+          <AppRoutes />
+          <Footer />
+        </Router>
+      </PlanProvider>
+    </AuthProvider>
     </ErrorBoundary>
   );
 };

@@ -93,17 +93,17 @@ const MetricCards = ({ analytics, loading = false }: MetricCardsProps) => {
               </span>
               {metric.change && (
                 <div className="flex items-center space-x-1" role="status" aria-live="polite">
-                  {metric.trend === "up" ? (
+                {metric.trend === "up" ? (
                     <TrendingUp className="h-4 w-4 text-green-500" aria-hidden="true" />
-                  ) : (
+                ) : (
                     <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  )}
-                  <span className={`text-sm font-medium ${
-                    metric.trend === "up" ? "text-green-500" : "text-red-500"
-                  }`}>
-                    {metric.change}
-                  </span>
-                </div>
+                )}
+                <span className={`text-sm font-medium ${
+                  metric.trend === "up" ? "text-green-500" : "text-red-500"
+                }`}>
+                  {metric.change}
+                </span>
+              </div>
               )}
               <p className="text-xs text-gray-500">{metric.description}</p>
             </div>

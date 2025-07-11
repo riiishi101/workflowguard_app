@@ -69,49 +69,49 @@ const AnalyticsDashboard = () => {
 
   return (
     <RoleGuard roles={['admin', 'restorer']}>
-      <div className="min-h-screen bg-white">
-        <TopNavigation />
+    <div className="min-h-screen bg-white">
+      <TopNavigation />
         <main className="max-w-7xl mx-auto px-2 sm:px-6 py-8" role="main">
           <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 mb-2">Analytics Dashboard</h1>
-              <p className="text-gray-600">Gain insights into your WorkflowGuard usage, billing, and performance</p>
-            </div>
-            <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <Select value={dateRange} onValueChange={setDateRange}>
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">Analytics Dashboard</h1>
+            <p className="text-gray-600">Gain insights into your WorkflowGuard usage, billing, and performance</p>
+          </div>
+          <div className="flex items-center space-x-4 mt-4 sm:mt-0">
+            <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-40" aria-label="Select date range">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30days">Last 30 Days</SelectItem>
-                  <SelectItem value="7days">Last 7 Days</SelectItem>
-                  <SelectItem value="90days">Last 90 Days</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={plan} onValueChange={setPlan}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30days">Last 30 Days</SelectItem>
+                <SelectItem value="7days">Last 7 Days</SelectItem>
+                <SelectItem value="90days">Last 90 Days</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={plan} onValueChange={setPlan}>
                 <SelectTrigger className="w-32" aria-label="Select plan filter">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-plans">All Plans</SelectItem>
-                  <SelectItem value="starter">Starter</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={portal} onValueChange={setPortal}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-plans">All Plans</SelectItem>
+                <SelectItem value="starter">Starter</SelectItem>
+                <SelectItem value="professional">Professional</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={portal} onValueChange={setPortal}>
                 <SelectTrigger className="w-48" aria-label="Select portal filter">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-portals">All HubSpot Portals</SelectItem>
-                  {user?.hubspotPortalId && (
-                    <SelectItem value={user.hubspotPortalId}>
-                      {user.hubspotPortalId}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-portals">All HubSpot Portals</SelectItem>
+                {user?.hubspotPortalId && (
+                  <SelectItem value={user.hubspotPortalId}>
+                    {user.hubspotPortalId}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -119,8 +119,8 @@ const AnalyticsDashboard = () => {
                 disabled={refreshing || loading}
                 aria-label="Refresh analytics data"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
               </Button>
             </div>
           </header>
@@ -132,18 +132,18 @@ const AnalyticsDashboard = () => {
                 <div className="text-gray-600 mb-4">{error}</div>
                 <Button onClick={handleRefresh} disabled={refreshing}>
                   Try Again
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
+            </Button>
+          </div>
+        </div>
+        ) : (
+          <>
               <MetricCards analytics={analytics} loading={loading} />
               <ChartsSection analytics={analytics} loading={loading} />
               <AnalyticsTable analytics={analytics} loading={loading} />
-            </>
-          )}
+          </>
+        )}
         </main>
-      </div>
+    </div>
     </RoleGuard>
   );
 };
