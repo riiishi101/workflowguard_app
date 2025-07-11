@@ -1,13 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import * as compression from 'compression';
+import compression from 'compression';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { AllExceptionsFilter } from './all-exceptions.filter';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import * as express from 'express';
+import express from 'express';
 
 const server = express();
 
