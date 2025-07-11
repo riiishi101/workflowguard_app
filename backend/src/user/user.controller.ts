@@ -238,16 +238,39 @@ export class UserController {
   async getMyPlanStatus(@Req() req: Request) {
     const userId = (req.user as any)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    
+    console.log('Plan-status - User ID from JWT:', userId);
+    
     const user = await this.userService.findOne(userId);
-    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    console.log('Plan-status - User found:', user ? 'Yes' : 'No', user ? `ID: ${user.id}` : '');
+    
+    if (!user) {
+      console.log('Plan-status - User not found in database, creating default plan status');
+      // Return default plan status instead of throwing 404
+      return {
+        planId: 'starter',
+        isTrialActive: false,
+        trialEndDate: null,
+        trialPlanId: null,
+        remainingTrialDays: null,
+      };
+    }
+    
     const now = new Date();
     let remainingTrialDays = null;
     if (user.trialEndDate && user.isTrialActive) {
       remainingTrialDays = Math.max(0, Math.ceil((user.trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     }
-    return {
+    
+    console.log('Plan-status - Returning plan status:', {
       planId: user.planId,
       isTrialActive: user.isTrialActive,
+      remainingTrialDays
+    });
+    
+    return {
+      planId: user.planId || 'starter',
+      isTrialActive: user.isTrialActive || false,
       trialEndDate: user.trialEndDate,
       trialPlanId: user.trialPlanId,
       remainingTrialDays,
