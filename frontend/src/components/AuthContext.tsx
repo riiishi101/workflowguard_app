@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.clear();
     // Redirect to HubSpot app marketplace listing
     if (typeof window !== 'undefined') {
-      window.location.href = 'https://app.hubspot.com/ecosystem/marketplace/apps';
+    window.location.href = 'https://app.hubspot.com/ecosystem/marketplace/apps';
     }
   };
 
@@ -149,7 +149,7 @@ export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     async function fetchPlanStatus() {
       try {
-        const res = await fetch('/api/users/me/plan-status', { credentials: 'include' });
+        const res = await fetch(`${API_BASE_URL}/users/me/plan-status`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to fetch plan status');
         const data = await res.json();
         setPlan(data);
