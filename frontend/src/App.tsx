@@ -82,12 +82,8 @@ const AppRoutes = () => {
     );
   }
 
-  // Remove localStorage fallback for selectedWorkflows
-  const hasSelectedWorkflows = React.useMemo(() => {
-    // Only use real API/context data for workflow selection
-    // TODO: Replace with actual logic if needed
-    return false; // Default to false if not implemented
-  }, [user, location.key]);
+  // TEMP FIX: Allow all users to proceed to dashboard
+  const hasSelectedWorkflows = true;
 
   // Centralized user flow logic
   React.useEffect(() => {
