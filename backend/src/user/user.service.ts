@@ -69,8 +69,8 @@ export class UserService {
       },
     });
 
-    // If user exists but plan fields are null, set defaults
-    if (user && (!user.planId || user.isTrialActive === null)) {
+    // If user exists but plan fields are null or incomplete, set defaults
+    if (user && (user.isTrialActive === null || user.trialEndDate === null || user.trialPlanId === null)) {
       const now = new Date();
       const trialDays = 21;
       const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
@@ -81,7 +81,7 @@ export class UserService {
           planId: user.planId || 'starter',
           trialStartDate: user.trialStartDate || now,
           trialEndDate: user.trialEndDate || trialEnd,
-          isTrialActive: user.isTrialActive !== null ? user.isTrialActive : true,
+          isTrialActive: user.isTrialActive !== null ? user.isTrialActive : false,
           trialPlanId: user.trialPlanId || 'professional',
         },
         select: {
