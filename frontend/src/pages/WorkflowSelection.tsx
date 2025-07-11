@@ -74,10 +74,19 @@ const WorkflowSelection = () => {
         }
         setWorkflows(validWorkflows);
       } catch (err: any) {
-        // Improved error handling
+        // Improved error handling - don't block the UI if workflows fail to load
         const apiError = err?.response?.data?.message || err?.message || String(err);
-        setError(`Failed to fetch workflows: ${apiError}`);
         console.error("Error fetching workflows:", err);
+        
+        // Set empty workflows array instead of error to allow users to continue
+        setWorkflows([]);
+        
+        // Show a warning toast instead of blocking the UI
+        toast({
+          title: "Workflows Unavailable",
+          description: "Unable to load workflows from HubSpot. You can still proceed and select workflows later from the dashboard.",
+          variant: "default",
+        });
       } finally {
         setLoading(false);
       }
@@ -281,15 +290,32 @@ const WorkflowSelection = () => {
           <div className="overflow-hidden">
             {filteredWorkflows.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No workflows found matching your filters.</p>
-                <div className="flex justify-center gap-2">
-                  <Button onClick={() => { setSearchTerm(""); setStatusFilter("all"); setFolderFilter("all"); }} variant="outline" size="sm">
-                    Clear Filters
-                  </Button>
-                  <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
-                    Go to Dashboard
-                  </Button>
-                </div>
+                {workflows.length === 0 ? (
+                  <>
+                    <p className="text-gray-500 mb-4">No workflows are currently available from your HubSpot account.</p>
+                    <p className="text-gray-400 text-sm mb-6">This might be due to a temporary connection issue or because your HubSpot account doesn't have any workflows yet.</p>
+                    <div className="flex justify-center gap-2">
+                      <Button onClick={() => window.location.reload()} variant="outline" size="sm">
+                        Try Again
+                      </Button>
+                      <Button onClick={() => navigate('/dashboard')} variant="default" size="sm">
+                        Continue to Dashboard
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-gray-500 mb-4">No workflows found matching your filters.</p>
+                    <div className="flex justify-center gap-2">
+                      <Button onClick={() => { setSearchTerm(""); setStatusFilter("all"); setFolderFilter("all"); }} variant="outline" size="sm">
+                        Clear Filters
+                      </Button>
+                      <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
+                        Go to Dashboard
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <table className="w-full">
