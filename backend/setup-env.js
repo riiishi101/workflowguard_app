@@ -18,7 +18,6 @@ console.log('HUBSPOT_CLIENT_SECRET=your-hubspot-client-secret');
 console.log('HUBSPOT_REDIRECT_URI=https://your-backend-url.onrender.com/api/auth/callback');
 console.log('FRONTEND_URL=https://your-frontend-url.vercel.app');
 console.log('NODE_ENV=production');
-console.log('PORT=10000');
 
 console.log('\n📝 Instructions:');
 console.log('1. Copy these environment variables to your Render dashboard');
@@ -26,6 +25,7 @@ console.log('2. Replace "your-hubspot-client-id" and "your-hubspot-client-secret
 console.log('3. Update "your-backend-url.onrender.com" with your actual Render backend URL');
 console.log('4. Update "your-frontend-url.vercel.app" with your actual frontend URL');
 console.log('5. The @ symbol in your password has been URL-encoded as %40');
+console.log('6. PORT will be automatically assigned by Render (no need to set it)');
 
 console.log('\n🔍 Database Connection Test:');
 console.log('After setting up the environment variables, you can test the database connection by:');
