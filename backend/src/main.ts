@@ -11,7 +11,7 @@ import express from 'express';
 
 const server = express();
 
-async function createNestServer(expressInstance = server) {
+export async function createNestServer(expressInstance = server) {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressInstance));
 
   app.use(helmet({
@@ -137,7 +137,9 @@ bootstrap();
 // Export Express handler for Vercel
 export default server;
 
-// If running on Vercel, initialize the Nest app on the exported server
-if (process.env.VERCEL === '1') {
-  createNestServer();
-}
+// Initialize the Nest app on the exported server for Vercel
+createNestServer().then(() => {
+  console.log('🚀 WorkflowGuard API initialized for Vercel');
+}).catch((error) => {
+  console.error('❌ Failed to initialize WorkflowGuard API:', error);
+});
