@@ -10,12 +10,12 @@ You need to set the following environment variables in your Render dashboard:
 
 1. **DATABASE_URL** (Required)
    - Your Supabase PostgreSQL connection string
-   - Format: `postgresql://username:password@host:port/database`
-   - Example: `postgresql://postgres:password@db.lynnyddkcfurwgzgekpn.supabase.co:5432/postgres`
+   - **IMPORTANT**: The `@` symbol in your password must be URL-encoded as `%40`
+   - Your database URL: `postgresql://postgres:Liverpoolisthebest%401998@db.lynnyddkcfurwgzgekpn.supabase.co:5432/postgres?sslmode=require`
 
 2. **JWT_SECRET** (Required)
    - A secure random string for JWT token signing
-   - Generate one using: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+   - Generated value: `c88401bc2d87d640da4b4c661aca7a7b6efc0bfdec2389031024b8c9abe36156846f1fb6a295fe351fe710ae35eddfdf57cd5c95bdb819c136795e490e684c8e`
 
 3. **HUBSPOT_CLIENT_ID** (Required)
    - Your HubSpot OAuth app client ID
@@ -31,6 +31,12 @@ You need to set the following environment variables in your Render dashboard:
    - Your frontend application URL
    - Example: `https://your-frontend-url.vercel.app`
 
+7. **NODE_ENV** (Required)
+   - Value: `production`
+
+8. **PORT** (Required)
+   - Value: `10000`
+
 ### 2. Setting Environment Variables on Render
 
 1. Go to your Render dashboard
@@ -44,21 +50,27 @@ You need to set the following environment variables in your Render dashboard:
 
 ### 3. Database Setup
 
-Before deploying, ensure your Supabase database is properly configured:
+Your Supabase database is already configured:
+- **Host**: `db.lynnyddkcfurwgzgekpn.supabase.co`
+- **Port**: `5432`
+- **Database**: `postgres`
+- **Username**: `postgres`
+- **Password**: `Liverpoolisthebest@1998` (URL-encoded as `Liverpoolisthebest%401998`)
 
-1. **Database URL**: Make sure your `DATABASE_URL` is correctly formatted and includes all necessary parameters
-2. **SSL Mode**: For Supabase, you might need to add `?sslmode=require` to your connection string
-3. **Database Migrations**: The application will automatically run migrations on startup
+**Important Notes**:
+- The `@` symbol in your password must be URL-encoded as `%40`
+- SSL mode is required for Supabase connections
+- The application will automatically run migrations on startup
 
 ### 4. Troubleshooting
 
 #### Common Issues:
 
 1. **Database Connection Error**
-   - Check if `DATABASE_URL` is correctly set
-   - Verify Supabase database is running
-   - Ensure network connectivity
-   - Check database credentials
+   - ✅ Check if `DATABASE_URL` is correctly set with URL-encoded password
+   - ✅ Verify Supabase database is running
+   - ✅ Ensure network connectivity
+   - ✅ Check database credentials
 
 2. **Port Issues**
    - Render automatically assigns port via `PORT` environment variable
@@ -90,5 +102,16 @@ Monitor your application logs in the Render dashboard:
 ### 7. SSL and Security
 
 - Render automatically provides SSL certificates
-- Ensure your `DATABASE_URL` uses SSL if required by your database provider
-- Set appropriate CORS origins in your environment variables 
+- Supabase requires SSL connections (`?sslmode=require`)
+- Set appropriate CORS origins in your environment variables
+
+### 8. Quick Setup Script
+
+Run the setup script to generate environment variables:
+
+```bash
+cd backend
+node setup-env.js
+```
+
+This will output all the required environment variables with proper formatting. 
