@@ -65,6 +65,9 @@ export async function createNestServer() {
   return server;
 }
 
+// Also export as default for compatibility
+export default createNestServer;
+
 // Only run this for local/dev, not on Vercel
 if (process.env.VERCEL !== '1') {
   async function bootstrap() {
