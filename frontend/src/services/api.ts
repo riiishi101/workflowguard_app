@@ -17,7 +17,7 @@ interface CreateWebhookDto {
   secret?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'https://www.workflowguard.pro/api');
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://workflowguard-api.vercel.app/api';
 
 class ApiService {
   private token: string | null = null;
