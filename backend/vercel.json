@@ -1,11 +1,6 @@
 {
   "buildCommand": "npm install && npm run build",
   "outputDirectory": "dist",
-  "functions": {
-    "src/main.js": {
-      "runtime": "nodejs18"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
