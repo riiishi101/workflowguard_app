@@ -19,7 +19,7 @@ export class UserController {
   @UseGuards(PlanFeatureGuard)
   async create(@Req() req: Request, @Body() createUserDto: CreateUserDto) {
     try {
-      const actorUserId = (req.user as any)?.sub;
+      const actorUserId = ((req as any).user)?.sub;
       return await this.userService.create(createUserDto, actorUserId);
     } catch (error) {
       if (error.code === 'P2002') {
@@ -57,7 +57,7 @@ export class UserController {
   @UseGuards(PlanFeatureGuard)
   async update(@Req() req: Request, @Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     try {
-      const actorUserId = (req.user as any)?.sub;
+      const actorUserId = ((req as any).user)?.sub;
       const user = await this.userService.update(id, { ...updateUserDto, updatedBy: actorUserId });
       if (!user) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -77,7 +77,7 @@ export class UserController {
   @UseGuards(PlanFeatureGuard)
   async remove(@Req() req: Request, @Param('id') id: string) {
     try {
-      const actorUserId = (req.user as any)?.sub;
+      const actorUserId = ((req as any).user)?.sub;
       const user = await this.userService.remove(id, actorUserId);
       if (!user) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -91,7 +91,7 @@ export class UserController {
   @Get('me/plan')
   @UseGuards(JwtAuthGuard)
   async getMyPlan(@Req() req: Request) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const user = await this.userService.findOneWithSubscription(userId);
     if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -144,7 +144,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/notification-settings')
   async getMyNotificationSettings(@Req() req: Request) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.getNotificationSettings(userId);
   }
@@ -152,7 +152,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Put('me/notification-settings')
   async updateMyNotificationSettings(@Req() req: Request, @Body() dto: UpdateNotificationSettingsDto) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.updateNotificationSettings(userId, dto);
   }
@@ -160,7 +160,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/api-keys')
   async getMyApiKeys(@Req() req: Request) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.getApiKeys(userId);
   }
@@ -168,7 +168,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Post('me/api-keys')
   async createMyApiKey(@Req() req: Request, @Body() dto: CreateApiKeyDto) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.createApiKey(userId, dto.description);
   }
@@ -176,7 +176,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Delete('me/api-keys/:id')
   async deleteMyApiKey(@Req() req: Request, @Param('id') id: string) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.deleteApiKey(userId, id);
   }
@@ -184,7 +184,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req: Request) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.getMe(userId);
   }
@@ -192,7 +192,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Put('me')
   async updateMe(@Req() req: Request, @Body() dto: UpdateUserDto) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.updateMe(userId, dto);
   }
@@ -200,7 +200,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Delete('me')
   async deleteMe(@Req() req: Request) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.deleteMe(userId);
   }
@@ -236,7 +236,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/plan-status')
   async getMyPlanStatus(@Req() req: Request) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     
     console.log('Plan-status - User ID from JWT:', userId);
@@ -280,7 +280,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/export')
   async exportMyData(@Req() req: Request, @Res() res: Response) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const data = await this.userService.exportUserData(userId);
     res.setHeader('Content-Type', 'application/json');

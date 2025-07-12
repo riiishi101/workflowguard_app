@@ -20,7 +20,7 @@ export class WorkflowController {
   @UseGuards(JwtAuthGuard)
   @Get()
   async findAll(@Req() req: Request, @Query('ownerId') ownerId?: string, @Query('live') live?: string) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (live === 'true' && userId) {
       // Fetch live workflows from HubSpot for the current user
       return await this.workflowService.getWorkflowsFromHubSpot(userId);
@@ -56,7 +56,7 @@ export class WorkflowController {
   @UseGuards(JwtAuthGuard)
   async update(@Req() req: Request, @Param('id') id: string, @Body() updateWorkflowDto: UpdateWorkflowDto) {
     try {
-      const userId = (req.user as any)?.sub;
+      const userId = ((req as any).user)?.sub;
       const workflow = await this.workflowService.update(id, { ...updateWorkflowDto, updatedBy: userId });
       if (!workflow) {
         throw new HttpException('Workflow not found', HttpStatus.NOT_FOUND);
@@ -71,7 +71,7 @@ export class WorkflowController {
   @UseGuards(JwtAuthGuard)
   async remove(@Req() req: Request, @Param('id') id: string) {
     try {
-      const userId = (req.user as any)?.sub;
+      const userId = ((req as any).user)?.sub;
       const workflow = await this.workflowService.remove(id, userId);
       if (!workflow) {
         throw new HttpException('Workflow not found', HttpStatus.NOT_FOUND);
@@ -85,7 +85,7 @@ export class WorkflowController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/sync-from-hubspot')
   async syncFromHubSpot(@Req() req: Request, @Param('id') id: string) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     return this.workflowService.snapshotFromHubSpot(id, userId);
   }
 
@@ -93,7 +93,7 @@ export class WorkflowController {
   @Post(':id/rollback')
   async rollback(@Req() req: Request, @Param('id') id: string) {
     try {
-      const userId = (req.user as any)?.sub;
+      const userId = ((req as any).user)?.sub;
       await this.workflowService.rollback(id, userId);
       return { message: 'Workflow rolled back successfully' };
     } catch (error) {

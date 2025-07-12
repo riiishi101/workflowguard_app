@@ -46,7 +46,7 @@ export class WorkflowVersionController {
   @Get('workflow/:workflowId/history')
   @UseGuards(JwtAuthGuard)
   async getWorkflowHistory(@Req() req: Request, @Param('workflowId') workflowId: string) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return await this.workflowVersionService.findByWorkflowIdWithHistoryLimit(workflowId, userId);
   }

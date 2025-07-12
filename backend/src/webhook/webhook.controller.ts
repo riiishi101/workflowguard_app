@@ -17,21 +17,21 @@ export class WebhookController {
 
   @Post()
   async create(@Req() req: Request, @Body() body: { name?: string; endpointUrl: string; secret?: string; events: string[] }) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.webhookService.create({ userId, ...body });
   }
 
   @Get()
   async findAll(@Req() req: Request) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.webhookService.findAllByUser(userId);
   }
 
   @Delete(':id')
   async remove(@Req() req: Request, @Param('id') id: string) {
-    const userId = (req.user as any)?.sub;
+    const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.webhookService.remove(id, userId);
   }
