@@ -3,10 +3,15 @@
   "outputDirectory": "frontend/dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/src/main.ts"
+      "destination": "/api/$1.js"
     },
     {
       "source": "/(.*)",
