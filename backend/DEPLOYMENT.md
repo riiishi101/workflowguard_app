@@ -9,33 +9,34 @@ You need to set the following environment variables in your Render dashboard:
 #### Required Environment Variables:
 
 1. **DATABASE_URL** (Required)
-   - Your Supabase PostgreSQL connection string
+   - Your Supabase connection pooling URL
    - **IMPORTANT**: The `@` symbol in your password must be URL-encoded as `%40`
-   - Your database URL: `postgresql://postgres:Liverpoolisthebest%401998@db.lynnyddkcfurwgzgekpn.supabase.co:5432/postgres?sslmode=require`
+   - Your database URL: `postgresql://postgres.lynnyddkcfurwgzgekpn:Liverpoolisthebest%401998@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
 
-2. **JWT_SECRET** (Required)
+2. **DIRECT_URL** (Required)
+   - Your Supabase direct connection URL for migrations
+   - Your direct URL: `postgresql://postgres.lynnyddkcfurwgzgekpn:Liverpoolisthebest%401998@aws-0-us-west-1.pooler.supabase.com:5432/postgres`
+
+3. **JWT_SECRET** (Required)
    - A secure random string for JWT token signing
    - Generated value: `c88401bc2d87d640da4b4c661aca7a7b6efc0bfdec2389031024b8c9abe36156846f1fb6a295fe351fe710ae35eddfdf57cd5c95bdb819c136795e490e684c8e`
 
-3. **HUBSPOT_CLIENT_ID** (Required)
+4. **HUBSPOT_CLIENT_ID** (Required)
    - Your HubSpot OAuth app client ID
 
-4. **HUBSPOT_CLIENT_SECRET** (Required)
+5. **HUBSPOT_CLIENT_SECRET** (Required)
    - Your HubSpot OAuth app client secret
 
-5. **HUBSPOT_REDIRECT_URI** (Required)
+6. **HUBSPOT_REDIRECT_URI** (Required)
    - Your HubSpot OAuth redirect URI
    - Format: `https://your-backend-url.onrender.com/api/auth/callback`
 
-6. **FRONTEND_URL** (Required)
+7. **FRONTEND_URL** (Required)
    - Your frontend application URL
    - Example: `https://your-frontend-url.vercel.app`
 
-7. **NODE_ENV** (Required)
+8. **NODE_ENV** (Required)
    - Value: `production`
-
-8. **PORT** (Required)
-   - Value: `10000`
 
 ### 2. Setting Environment Variables on Render
 
@@ -50,16 +51,17 @@ You need to set the following environment variables in your Render dashboard:
 
 ### 3. Database Setup
 
-Your Supabase database is already configured:
-- **Host**: `db.lynnyddkcfurwgzgekpn.supabase.co`
-- **Port**: `5432`
+Your Supabase database is configured with connection pooling:
+- **Connection Pooling URL**: `aws-0-us-west-1.pooler.supabase.com:6543`
+- **Direct Connection URL**: `aws-0-us-west-1.pooler.supabase.com:5432`
 - **Database**: `postgres`
-- **Username**: `postgres`
+- **Username**: `postgres.lynnyddkcfurwgzgekpn`
 - **Password**: `Liverpoolisthebest@1998` (URL-encoded as `Liverpoolisthebest%401998`)
 
 **Important Notes**:
 - The `@` symbol in your password must be URL-encoded as `%40`
-- SSL mode is required for Supabase connections
+- **DATABASE_URL** uses connection pooling (port 6543) for better performance
+- **DIRECT_URL** is used for migrations (port 5432)
 - The application will automatically run migrations on startup
 
 ### 4. Troubleshooting
@@ -67,7 +69,7 @@ Your Supabase database is already configured:
 #### Common Issues:
 
 1. **Database Connection Error**
-   - ✅ Check if `DATABASE_URL` is correctly set with URL-encoded password
+   - ✅ Check if both `DATABASE_URL` and `DIRECT_URL` are correctly set
    - ✅ Verify Supabase database is running
    - ✅ Ensure network connectivity
    - ✅ Check database credentials
@@ -102,7 +104,7 @@ Monitor your application logs in the Render dashboard:
 ### 7. SSL and Security
 
 - Render automatically provides SSL certificates
-- Supabase requires SSL connections (`?sslmode=require`)
+- Supabase connection pooling handles SSL automatically
 - Set appropriate CORS origins in your environment variables
 
 ### 8. Quick Setup Script
