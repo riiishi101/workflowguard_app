@@ -5,7 +5,7 @@ import * as compression from 'compression';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { AllExceptionsFilter } from './all-exceptions.filter';
-import cookieParser from 'cookie-parser';
+import * as cookieParser from 'cookie-parser';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 
