@@ -8,11 +8,16 @@ import { AllExceptionsFilter } from './all-exceptions.filter';
 import * as cookieParser from 'cookie-parser';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 // Exported for Vercel serverless handler
 export async function createNestServer() {
   const server = express();
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server));
+
+  // Serve static files from the 'public' directory
+  app.useStaticAssets(join(__dirname, '..', 'public'));
 
   app.use(helmet({
     contentSecurityPolicy: {
@@ -61,6 +66,13 @@ export async function createNestServer() {
 
   app.setGlobalPrefix('api');
 
+  // Catch-all route to serve index.html for SPA support (non-API routes)
+  server.get('*', (req, res) => {
+    if (!req.originalUrl.startsWith('/api')) {
+      res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+    }
+  });
+
   await app.init();
   return server;
 }
@@ -85,7 +97,9 @@ if (process.env.VERCEL !== '1') {
     console.log('🔌 Database URL configured:', process.env.DATABASE_URL ? 'Yes' : 'No');
     
     try {
-      const app = await NestFactory.create(AppModule);
+      const app = await NestFactory.create<NestExpressApplication>(AppModule);
+      // Serve static files from the 'public' directory
+      app.useStaticAssets(join(__dirname, '..', 'public'));
       
       app.use(helmet({
         contentSecurityPolicy: {
@@ -133,6 +147,14 @@ if (process.env.VERCEL !== '1') {
       app.useGlobalFilters(new AllExceptionsFilter());
       
       app.setGlobalPrefix('api');
+      
+      // Catch-all route to serve index.html for SPA support (non-API routes)
+      const expressApp = app.getHttpAdapter().getInstance();
+      expressApp.get('*', (req, res) => {
+        if (!req.originalUrl.startsWith('/api')) {
+          res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+        }
+      });
       
       const port = process.env.PORT || 3000;
       await app.listen(port);
