@@ -6,67 +6,7 @@ import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 import cookieParser from 'cookie-parser';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import express from 'express';
 
-const server = express();
-
-export async function createNestServer(expressInstance = server) {
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressInstance));
-
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-      },
-    },
-  }));
-
-  app.use(compression());
-
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many requests from this IP, please try again later.',
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-  app.use(limiter);
-
-  app.enableCors({
-    origin: [
-      'https://www.workflowguard.pro',
-      'https://workflowguard.pro',
-      'http://localhost:3000',
-      'http://localhost:8080',
-      process.env.FRONTEND_URL
-    ].filter((v): v is string => typeof v === 'string'),
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
-
-  app.use(cookieParser());
-
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
-
-  app.useGlobalFilters(new AllExceptionsFilter());
-
-  app.setGlobalPrefix('api');
-
-  await app.init();
-  return expressInstance;
-}
-
-// Standard bootstrap for local/dev
-if (process.env.VERCEL !== '1') {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
@@ -131,15 +71,8 @@ async function bootstrap() {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://www.workflowguard.pro'}`);
 }
-bootstrap();
+
+// Only bootstrap if not running on Vercel
+if (process.env.VERCEL !== '1') {
+  bootstrap();
 }
-
-// Export Express handler for Vercel
-export default server;
-
-// Initialize the Nest app on the exported server for Vercel
-createNestServer().then(() => {
-  console.log('🚀 WorkflowGuard API initialized for Vercel');
-}).catch((error) => {
-  console.error('❌ Failed to initialize WorkflowGuard API:', error);
-});
