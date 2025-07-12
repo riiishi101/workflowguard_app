@@ -57,7 +57,7 @@ const ModalsManager = () => {
 
   // Only ConnectHubSpotModal triggers OAuth redirect
   const handleHubSpotOAuth = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/auth/hubspot`;
+    window.location.href = "/api/auth/hubspot";
   };
 
   return (

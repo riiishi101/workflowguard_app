@@ -1,6 +1,4 @@
 console.log('REAL API SERVICE MODULE LOADED');
-console.log('Environment VITE_API_URL:', import.meta.env.VITE_API_URL);
-console.log('Window location origin:', typeof window !== 'undefined' ? window.location.origin : 'undefined');
 // Add type definitions
 interface Webhook {
   id: string;
@@ -20,7 +18,6 @@ interface CreateWebhookDto {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'https://www.workflowguard.pro/api');
-console.log('Final API_BASE_URL:', API_BASE_URL);
 
 class ApiService {
   private token: string | null = null;
