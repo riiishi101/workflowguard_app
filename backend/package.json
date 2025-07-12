@@ -23,6 +23,7 @@
     "setup-db": "node scripts/setup-database.js"
   },
   "dependencies": {
+    "@nestjs/cli": "^10.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^10.0.0",
@@ -32,7 +33,6 @@
     "@nestjs/platform-socket.io": "^10.0.0",
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/websockets": "^10.0.0",
-    "@nestjs/cli": "^10.0.0",
     "@prisma/client": "^6.10.1",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.9",
