@@ -30,7 +30,7 @@ interface RealTimeUpdate {
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'https://www.workflowguard.pro',
+    origin: process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com',
     credentials: true,
   },
   namespace: '/realtime',

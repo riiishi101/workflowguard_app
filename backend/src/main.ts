@@ -43,8 +43,7 @@ export async function createNestServer() {
 
   app.enableCors({
     origin: [
-      'https://www.workflowguard.pro',
-      'https://workflowguard.pro',
+      'https://workflowguard-app.onrender.com',
       'http://localhost:3000',
       'http://localhost:8080',
       process.env.FRONTEND_URL
@@ -85,7 +84,7 @@ if (process.env.VERCEL !== '1') {
   async function bootstrap() {
     console.log('🚀 Starting WorkflowGuard API...');
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://www.workflowguard.pro'}`);
+    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com'}`);
     
     // Check if DATABASE_URL is set
     if (!process.env.DATABASE_URL) {
@@ -125,8 +124,7 @@ if (process.env.VERCEL !== '1') {
       
       app.enableCors({
         origin: [
-          'https://www.workflowguard.pro',
-          'https://workflowguard.pro',
+          'https://workflowguard-app.onrender.com',
           'http://localhost:3000',
           'http://localhost:8080',
           process.env.FRONTEND_URL

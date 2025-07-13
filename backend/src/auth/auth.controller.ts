@@ -21,7 +21,7 @@ export class AuthController {
     // This would redirect to HubSpot's OAuth consent page
     const clientId = process.env.HUBSPOT_CLIENT_ID;
     // Use the callback endpoint that sets JWT cookies
-    const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'https://www.workflowguard.pro/api/auth/callback');
+    const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'https://workflowguard-app.onrender.com/api/auth/callback');
     const scopes = encodeURIComponent('crm.objects.companies.read crm.objects.contacts.read crm.objects.deals.read crm.schemas.companies.read crm.schemas.contacts.read crm.schemas.deals.read oauth');
     const state = encodeURIComponent('workflowguard-oauth-' + Date.now());
     
@@ -41,7 +41,7 @@ export class AuthController {
     console.log('OAuth callback - Request URL:', req.url);
     
     if (!code) {
-      const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
       const errorMsg = encodeURIComponent('Missing code parameter. Please try connecting to HubSpot again from the app.');
       return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
     }
@@ -62,7 +62,7 @@ export class AuthController {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       } catch (tokenErr) {
-        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to exchange code for access token. Please try again or contact support.');
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
@@ -77,7 +77,7 @@ export class AuthController {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       } catch (userErr) {
-        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to fetch user info from HubSpot. Please try again or contact support.');
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
@@ -93,7 +93,7 @@ export class AuthController {
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
         await this.authService.updateUserLastActive(user.id);
       } else if (!email) {
-          const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+          const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
           const errorMsg = encodeURIComponent('Could not retrieve user email or portalId from HubSpot. Please try again or contact support.');
           return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       } else {
@@ -105,7 +105,7 @@ export class AuthController {
         await this.authService.updateUserLastActive(user.id);
         }
       } catch (userDbErr) {
-        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to create or update user in the database. Please try again or contact support.');
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
@@ -118,7 +118,7 @@ export class AuthController {
       await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
       console.log('OAuth - HubSpot tokens updated for user:', user.email);
       } catch (tokenDbErr) {
-        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to update user tokens. Please try again or contact support.');
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
@@ -141,7 +141,7 @@ export class AuthController {
         jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
       console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
       } catch (jwtErr) {
-        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to generate authentication token. Please try again or contact support.');
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
@@ -159,16 +159,16 @@ export class AuthController {
       });
       console.log('JWT cookie set successfully');
       } catch (cookieErr) {
-        const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to set authentication cookie. Please try again or contact support.');
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
       // Optionally, you can also send user info as a query param or just redirect
       console.log('Redirecting to dashboard...');
-      return res.redirect('https://www.workflowguard.pro/dashboard');
+      return res.redirect('https://workflowguard-app.onrender.com/dashboard');
     } catch (error) {
-      const frontendUrl = process.env.VERCEL_FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
       const errorMsg = encodeURIComponent('Unexpected error during HubSpot connection. Please try again or contact support.');
       return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
     }
