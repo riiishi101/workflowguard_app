@@ -65,6 +65,8 @@ export async function createNestServer() {
 
   app.setGlobalPrefix('api');
 
+  await app.init();
+
   // Catch-all route to serve index.html for SPA support (non-API routes)
   server.get('*', (req, res) => {
     if (!req.originalUrl.startsWith('/api')) {
@@ -72,7 +74,6 @@ export async function createNestServer() {
     }
   });
 
-  await app.init();
   return server;
 }
 
@@ -146,6 +147,9 @@ if (process.env.VERCEL !== '1') {
       
       app.setGlobalPrefix('api');
       
+      const port = process.env.PORT || 3000;
+      await app.listen(port);
+      
       // Catch-all route to serve index.html for SPA support (non-API routes)
       const expressApp = app.getHttpAdapter().getInstance();
       expressApp.get('*', (req, res) => {
@@ -153,9 +157,6 @@ if (process.env.VERCEL !== '1') {
           res.sendFile(join(__dirname, '..', 'public', 'index.html'));
         }
       });
-      
-      const port = process.env.PORT || 3000;
-      await app.listen(port);
       
       console.log(`✅ WorkflowGuard API running on port ${port}`);
       console.log(`🌐 Server URL: http://localhost:${port}`);
