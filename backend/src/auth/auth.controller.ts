@@ -166,7 +166,7 @@ export class AuthController {
 
       // Optionally, you can also send user info as a query param or just redirect
       console.log('Redirecting to dashboard...');
-      return res.redirect('https://workflowguard-app.onrender.com/dashboard');
+      return res.redirect('https://www.workflowguard.pro/dashboard');
     } catch (error) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
       const errorMsg = encodeURIComponent('Unexpected error during HubSpot connection. Please try again or contact support.');
