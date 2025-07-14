@@ -14,6 +14,7 @@ import OverageDashboard from './pages/OverageDashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import RealtimeDashboard from './pages/RealtimeDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
+import CookieConsentBanner from './components/ui/CookieConsentBanner';
 
 // Helper: Show Welcome/Connect modals based on context
 const ModalsManager = () => {
@@ -143,6 +144,7 @@ const App = () => {
         <Router>
           <AppRoutes />
           <Footer />
+          <CookieConsentBanner />
         </Router>
       </PlanProvider>
     </AuthProvider>

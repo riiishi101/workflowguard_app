@@ -76,11 +76,8 @@ const WorkflowSelection = () => {
       } catch (err: any) {
         // Improved error handling - don't block the UI if workflows fail to load
         const apiError = err?.response?.data?.message || err?.message || String(err);
-        console.error("Error fetching workflows:", err);
-        
-        // Set empty workflows array instead of error to allow users to continue
+        setError("Failed to fetch workflows");
         setWorkflows([]);
-        
         // Show a warning toast instead of blocking the UI
         toast({
           title: "Workflows Unavailable",
@@ -210,7 +207,9 @@ const WorkflowSelection = () => {
         <TopNavigation minimal />
         <main className="max-w-6xl mx-auto px-6 py-8">
           <div className="text-center py-12">
-            <p className="text-red-500 mb-4">{error}</p>
+            <p className="text-red-500 mb-4">
+              Failed to fetch workflows
+            </p>
             <Button onClick={() => window.location.reload()} variant="outline">
               Try Again
             </Button>
@@ -288,6 +287,11 @@ const WorkflowSelection = () => {
           </div>
 
           <div className="overflow-hidden">
+            {filteredWorkflows.length === 0 && (
+              <div className="text-center text-gray-500 py-8" data-testid="no-workflows">
+                No workflows found
+              </div>
+            )}
             {filteredWorkflows.length === 0 ? (
               <div className="text-center py-12">
                 {workflows.length === 0 ? (

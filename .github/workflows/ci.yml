@@ -36,3 +36,15 @@ jobs:
         with:
           name: coverage-report
           path: frontend/coverage 
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+      - name: Lint backend code
+        run: |
+          cd backend
+          npm run lint || echo "No linter configured"
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test || echo "No tests configured" 

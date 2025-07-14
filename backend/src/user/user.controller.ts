@@ -297,4 +297,13 @@ export class UserController {
     res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.json"`);
     res.send(JSON.stringify(data, null, 2));
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/disconnect-hubspot')
+  async disconnectHubspot(@Req() req: Request) {
+    const userId = ((req as any).user)?.sub;
+    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    await this.userService.disconnectHubspot(userId);
+    return { message: 'HubSpot disconnected' };
+  }
 }

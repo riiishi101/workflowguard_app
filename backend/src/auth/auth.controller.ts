@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res, UseGuards, Req, Logger } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
@@ -27,27 +28,28 @@ export class AuthController {
     
     const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
     
-    console.log('OAuth initiation - Redirecting to:', authUrl);
+    this.logger.log('OAuth initiation - Redirecting to:', authUrl);
     res.redirect(authUrl);
   }
 
   @Public()
   @Get('/callback')
   async hubspotOAuthCallback(@Query('code') code: string, @Query('state') state: string, @Query() allQueryParams: any, @Req() req: Request, @Res() res: Response) {
-    console.log('OAuth callback called with code:', code ? 'present' : 'missing');
-    console.log('OAuth callback - State parameter:', state);
-    console.log('OAuth callback - All query parameters:', allQueryParams);
-    console.log('OAuth callback - Request headers:', req.headers);
-    console.log('OAuth callback - Request URL:', req.url);
+    this.logger.log(`OAuth callback called with code: ${code ? 'present' : 'missing'}`);
+    this.logger.log(`OAuth callback - State parameter: ${state}`);
+    this.logger.log(`OAuth callback - All query parameters: ${JSON.stringify(allQueryParams)}`);
+    this.logger.log(`OAuth callback - Request headers: ${JSON.stringify(req.headers)}`);
+    this.logger.log(`OAuth callback - Request URL: ${req.url}`);
     
     if (!code) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
       const errorMsg = encodeURIComponent('Missing code parameter. Please try connecting to HubSpot again from the app.');
+      this.logger.warn('Missing code parameter in OAuth callback');
       return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
     }
 
     try {
-      console.log('OAuth callback: Starting token exchange...');
+      this.logger.log('OAuth callback: Starting token exchange...');
       // Exchange code for access token
       let tokenRes;
       try {
@@ -64,10 +66,11 @@ export class AuthController {
       } catch (tokenErr) {
         const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to exchange code for access token. Please try again or contact support.');
+        this.logger.error('Failed to exchange code for access token', tokenErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
-      console.log('OAuth callback: Token exchange successful');
+      this.logger.log('OAuth callback: Token exchange successful');
       const { access_token, refresh_token, expires_in } = tokenRes.data;
 
       // Fetch user email and portalId from HubSpot
@@ -79,6 +82,7 @@ export class AuthController {
       } catch (userErr) {
         const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to fetch user info from HubSpot. Please try again or contact support.');
+        this.logger.error('Failed to fetch user info from HubSpot', userErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
       const email = userRes.data.user || userRes.data.email;
@@ -94,19 +98,21 @@ export class AuthController {
         await this.authService.updateUserLastActive(user.id);
       } else if (!email) {
           const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
-          const errorMsg = encodeURIComponent('Could not retrieve user email or portalId from HubSpot. Please try again or contact support.');
+          const errorMsg = encodeURIComponent('Could not retrieve user email from HubSpot. Please try again or contact support.');
+          this.logger.warn('Could not retrieve user email from HubSpot');
           return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       } else {
         // Find or create user in your DB
         user = await this.authService.findOrCreateUser(email);
-        console.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
+        this.logger.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-        console.log('OAuth - HubSpot tokens updated for user:', user.email);
+        this.logger.log('OAuth - HubSpot tokens updated for user:', user.email);
         await this.authService.updateUserLastActive(user.id);
         }
       } catch (userDbErr) {
         const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
-        const errorMsg = encodeURIComponent('Failed to create or update user in the database. Please try again or contact support.');
+        const errorMsg = encodeURIComponent('Failed to create or update user. Please try again or contact support.');
+        this.logger.error('Failed to create or update user', userDbErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
@@ -116,10 +122,11 @@ export class AuthController {
         await this.authService.updateUserHubspotPortalId(user.id, portalId.toString());
       }
       await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
-      console.log('OAuth - HubSpot tokens updated for user:', user.email);
+      this.logger.log('OAuth - HubSpot tokens updated for user:', user.email);
       } catch (tokenDbErr) {
         const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to update user tokens. Please try again or contact support.');
+        this.logger.error('Failed to update user tokens', tokenDbErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
@@ -127,11 +134,11 @@ export class AuthController {
       try {
         const userPlan = await this.userService.getUserPlan(user.id);
         if (userPlan) {
-          console.log('OAuth - User has plan:', userPlan.planId);
+          this.logger.log('OAuth - User has plan:', userPlan.planId);
           // For now, we'll just log this. The frontend will handle the plan update
         }
       } catch (planError) {
-        console.log('OAuth - Could not get user plan:', planError);
+        this.logger.warn('OAuth - Could not get user plan:', planError);
         // Continue with OAuth flow even if plan update fails
       }
 
@@ -139,10 +146,11 @@ export class AuthController {
       let jwt;
       try {
         jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
-      console.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
+      this.logger.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
       } catch (jwtErr) {
         const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to generate authentication token. Please try again or contact support.');
+        this.logger.error('Failed to generate authentication token', jwtErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
@@ -157,17 +165,19 @@ export class AuthController {
         path: '/',
         // Remove domain restriction to allow cross-domain cookies to work properly
       });
-      console.log('JWT cookie set successfully');
+      this.logger.log('JWT cookie set successfully');
       } catch (cookieErr) {
         const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
         const errorMsg = encodeURIComponent('Failed to set authentication cookie. Please try again or contact support.');
+        this.logger.error('Failed to set authentication cookie', cookieErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
       // Optionally, you can also send user info as a query param or just redirect
-      console.log('Redirecting to dashboard...');
+      this.logger.log('Redirecting to dashboard...');
       return res.redirect('https://www.workflowguard.pro/dashboard');
     } catch (error) {
+      this.logger.error('Unexpected error in OAuth callback', error);
       const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
       const errorMsg = encodeURIComponent('Unexpected error during HubSpot connection. Please try again or contact support.');
       return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -231,6 +241,7 @@ export class AuthController {
 
       return res.status(200).json({ contacts: hubspotRes.data });
     } catch (error) {
+      this.logger.error('Failed to fetch contacts from HubSpot', error);
       return res.status(500).json({ message: 'Failed to fetch contacts from HubSpot', error: error.response?.data || error.message });
     }
   }
@@ -250,6 +261,7 @@ export class AuthController {
       });
       return res.status(200).json({ companies: hubspotRes.data });
     } catch (error) {
+      this.logger.error('Failed to fetch companies from HubSpot', error);
       return res.status(500).json({ message: 'Failed to fetch companies from HubSpot', error: error.response?.data || error.message });
     }
   }
@@ -268,6 +280,7 @@ export class AuthController {
       });
       return res.status(200).json({ deals: hubspotRes.data });
     } catch (error) {
+      this.logger.error('Failed to fetch deals from HubSpot', error);
       return res.status(500).json({ message: 'Failed to fetch deals from HubSpot', error: error.response?.data || error.message });
     }
   }
@@ -294,6 +307,7 @@ export class AuthController {
       });
       return res.status(201).json({ contact: hubspotRes.data });
     } catch (error) {
+      this.logger.error('Failed to create contact in HubSpot', error);
       return res.status(500).json({ message: 'Failed to create contact in HubSpot', error: error.response?.data || error.message });
     }
   }
@@ -302,8 +316,8 @@ export class AuthController {
   @Get('me')
   async getMe(@Req() req: Request) {
     // req.user is set by JwtStrategy
-    console.log('GET /me - User from JWT:', req.user);
-    console.log('GET /me - Cookies:', req.cookies);
+    this.logger.log('GET /me - User from JWT:', req.user);
+    this.logger.log('GET /me - Cookies:', req.cookies);
     return { user: req.user };
   }
 
@@ -330,10 +344,10 @@ export class AuthController {
     }
     try {
       const result = await this.authService.handleHubspotDeauth(portalId, userId);
-      console.log(`Received HubSpot deauthorization for portalId: ${portalId}, userId: ${userId}`);
+      this.logger.log(`Received HubSpot deauthorization for portalId: ${portalId}, userId: ${userId}`);
       return res.status(200).json(result);
     } catch (err) {
-      console.error('Error handling HubSpot deauthorization:', err);
+      this.logger.error('Error handling HubSpot deauthorization', err);
       return res.status(500).json({ message: 'Failed to handle deauthorization', error: err.message });
     }
   }

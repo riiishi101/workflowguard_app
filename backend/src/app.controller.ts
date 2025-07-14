@@ -3,6 +3,7 @@ import { AppService } from './app.service';
 import { Response } from 'express';
 import { Public } from './auth/public.decorator';
 import { PrismaService } from './prisma/prisma.service';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller()
 export class AppController {
@@ -17,6 +18,7 @@ export class AppController {
   }
 
   @Public()
+  @SkipThrottle()
   @Get('health')
   async healthCheck(@Res() res: Response) {
     try {

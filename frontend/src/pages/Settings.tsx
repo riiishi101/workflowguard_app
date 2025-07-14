@@ -18,12 +18,14 @@ import {
 } from "lucide-react";
 import { useRequireAuth, useAuth, usePlan } from '../components/AuthContext';
 import RoleGuard from '../components/RoleGuard';
+import { useToast } from '@/components/ui/use-toast';
 
 const Settings = () => {
   useRequireAuth();
   const { user, loading } = useAuth();
   const { plan } = usePlan();
   const [activeTab, setActiveTab] = useState("plan-billing");
+  const { toast } = useToast();
   
   // Ensure plan always has a valid structure to prevent controlled/uncontrolled Tabs warning
   const safePlan = plan && Array.isArray(plan.features)
@@ -63,6 +65,17 @@ const Settings = () => {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab.key);
+  };
+
+  const handleDisconnectHubSpot = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your HubSpot account? This will disable all HubSpot features.')) return;
+    try {
+      await fetch('/api/users/me/disconnect-hubspot', { method: 'POST', credentials: 'include' });
+      toast({ title: 'Disconnected', description: 'Your HubSpot account has been disconnected.' });
+      window.location.reload();
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to disconnect HubSpot account.', variant: 'destructive' });
+    }
   };
 
   return (
@@ -177,6 +190,15 @@ const Settings = () => {
         >
           Reconnect to HubSpot
         </Button>
+        {user?.hubspotPortalId && (
+          <Button
+            onClick={handleDisconnectHubSpot}
+            className="bg-gray-600 text-white mt-2 mb-2"
+            variant="outline"
+          >
+            Disconnect HubSpot
+          </Button>
+        )}
       </main>
     </div>
   );

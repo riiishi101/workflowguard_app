@@ -450,4 +450,26 @@ export class UserService {
       apiKeys,
     };
   }
+
+  async disconnectHubspot(userId: string) {
+    const oldUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        hubspotAccessToken: null,
+        hubspotRefreshToken: null,
+        hubspotTokenExpiresAt: null,
+        hubspotPortalId: null,
+      },
+    });
+    await this.auditLogService.create({
+      userId,
+      action: 'disconnect',
+      entityType: 'hubspot',
+      entityId: userId,
+      oldValue: oldUser,
+      newValue: user,
+    });
+    return user;
+  }
 }

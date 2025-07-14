@@ -135,6 +135,13 @@ const HelpSupport = () => {
             ))}
           </div>
         </div>
+
+        <div className="mt-12 border-t pt-8 text-center">
+          <h2 className="text-lg font-semibold mb-2">Contact & Support</h2>
+          <p className="mb-2 text-gray-700">For help, questions, or to request data deletion, contact us at:</p>
+          <a href="mailto:support@workflowguard.com" className="text-blue-600 hover:underline text-base font-medium">support@workflowguard.com</a>
+          <p className="mt-2 text-xs text-gray-500">For HubSpot App Marketplace reviewers: This app provides a disconnect and data deletion flow in Settings. See our Privacy Policy and Terms of Service for details.</p>
+        </div>
       </main>
     </div>
   );
