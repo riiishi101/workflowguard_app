@@ -3,6 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm install
 
 # Install curl for health checks
@@ -25,6 +26,7 @@ WORKDIR /app
 RUN apk add --no-cache curl
 
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
