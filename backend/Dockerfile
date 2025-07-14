@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Install curl for health checks
 RUN apk add --no-cache curl
@@ -27,7 +27,7 @@ RUN apk add --no-cache curl
 
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm install --omit=dev
+RUN npm install --omit=dev --legacy-peer-deps
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
