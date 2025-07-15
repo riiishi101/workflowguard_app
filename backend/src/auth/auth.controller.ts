@@ -355,14 +355,3 @@ export class AuthController {
     }
   }
 }
-
-// Add a root controller to handle GET /
-import { Controller as RootController, Get as RootGet } from '@nestjs/common';
-
-@RootController()
-export class RootAppController {
-  @RootGet()
-  getRoot() {
-    return { message: 'WorkflowGuard API is running!' };
-  }
-}

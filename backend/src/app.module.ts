@@ -3,7 +3,6 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { RootAppController } from './auth/auth.controller';
 import { WorkflowModule } from './workflow/workflow.module';
 import { WorkflowVersionModule } from './workflow-version/workflow-version.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
@@ -45,7 +44,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     RealtimeModule,
     MetricsModule,
   ],
-  controllers: [AppController, RootAppController],
+  controllers: [AppController],
   providers: [
     AppService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },

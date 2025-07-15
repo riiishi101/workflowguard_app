@@ -13,8 +13,8 @@ export class AppController {
   ) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getHello() {
+    return { message: 'WorkflowGuard API is running!' };
   }
 
   @Public()
