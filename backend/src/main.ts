@@ -17,7 +17,6 @@ import * as SentryIntegrations from '@sentry/integrations';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import winston from 'winston';
 import { Request, Response, NextFunction } from 'express';
-import { Http } from '@sentry/integrations';
 
 // Winston logger setup
 const logger = winston.createLogger({
@@ -138,7 +137,6 @@ if (process.env.VERCEL !== '1') {
     if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
       Sentry.init({
         dsn: process.env.SENTRY_DSN,
-        integrations: [new Http({ tracing: true })],
         tracesSampleRate: 0.1,
         environment: process.env.NODE_ENV,
       });
