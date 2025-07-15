@@ -173,7 +173,7 @@ export class AuthController {
         sameSite: 'none', // Allow cross-site cookies
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
-        // Remove domain restriction to allow cross-domain cookies to work properly
+        ...(isProduction ? { domain: '.workflowguard.pro' } : {}), // Set cookie domain in production
       });
       this.logger.log('JWT cookie set successfully');
       } catch (cookieErr) {
