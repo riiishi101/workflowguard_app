@@ -17,6 +17,9 @@ RUN npx prisma generate
 # Build the NestJS app
 RUN npm run build
 
+# Diagnostic: list build output
+RUN ls -l /app/dist/src
+
 # ---- Production image ----
 FROM node:20-alpine
 
