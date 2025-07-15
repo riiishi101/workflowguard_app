@@ -3,6 +3,10 @@
     {
       "source": "/api/(.*)",
       "destination": "https://workflowguard-app-j3rl.onrender.com/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 } 
