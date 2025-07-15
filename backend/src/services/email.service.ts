@@ -903,7 +903,7 @@ This is an automated message from ${this.appName}
   }
 
   private getAppUrl(): string {
-    return this.configService.get<string>('APP_URL', 'https://app.workflowguard.com');
+    return this.configService.get<string>('APP_URL', 'https://www.workflowguard.pro');
   }
 
   private stripHtml(html: string): string {

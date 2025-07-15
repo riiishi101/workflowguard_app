@@ -6,6 +6,8 @@ import { Request } from 'express';
 import { UserService } from '../user/user.service';
 import { Public } from '../auth/public.decorator';
 import * as crypto from 'crypto';
+import { CreateWebhookDto } from './dto/create-webhook.dto';
+import { IsString, IsNotEmpty, IsOptional, IsArray, ArrayNotEmpty } from 'class-validator';
 
 @Controller('webhooks')
 @UseGuards(JwtAuthGuard, PlanFeatureGuard)
@@ -18,10 +20,10 @@ export class WebhookController {
   ) {}
 
   @Post()
-  async create(@Req() req: Request, @Body() body: { name?: string; endpointUrl: string; secret?: string; events: string[] }) {
+  async create(@Req() req: Request, @Body() createWebhookDto: CreateWebhookDto) {
     const userId = ((req as any).user)?.sub;
     if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    return this.webhookService.create({ userId, ...body });
+    return this.webhookService.create({ userId, ...createWebhookDto });
   }
 
   @Get()

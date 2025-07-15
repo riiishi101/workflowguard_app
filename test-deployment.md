@@ -2,7 +2,7 @@
 
 ## ✅ Pre-Deployment Checklist
 - [x] Environment variables set in Vercel/Render
-- [x] All localhost references updated to www.workflowguard.pro
+- [x] All localhost references updated to https://workflowguard-app-j3rl.onrender.com
 - [x] HubSpot OAuth redirect URI configured
 - [x] Database connection established
 - [x] Code pushed to main branch

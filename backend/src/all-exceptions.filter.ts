@@ -1,4 +1,5 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -19,6 +20,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       body: request?.body,
       query: request?.query,
     });
+
+    // Report to Sentry if initialized
+    if (process.env.SENTRY_DSN) {
+      Sentry.captureException(exception);
+    }
 
     response.status(status).json({
       statusCode: status,

@@ -3,12 +3,18 @@ import { WorkflowService } from './workflow.service';
 import { CreateWorkflowDto, UpdateWorkflowDto } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Request } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Workflows')
+@ApiBearerAuth()
 @Controller('workflows')
 export class WorkflowController {
   constructor(private readonly workflowService: WorkflowService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new workflow' })
+  @ApiResponse({ status: 201, description: 'Workflow created successfully.' })
+  @ApiResponse({ status: 500, description: 'Failed to create workflow.' })
   async create(@Body() createWorkflowDto: CreateWorkflowDto) {
     try {
       return await this.workflowService.create(createWorkflowDto);
@@ -19,6 +25,8 @@ export class WorkflowController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
+  @ApiOperation({ summary: 'Get all workflows' })
+  @ApiResponse({ status: 200, description: 'List of workflows.' })
   async findAll(@Req() req: Request, @Query('ownerId') ownerId?: string, @Query('live') live?: string) {
     const userId = ((req as any).user)?.sub;
     if (live === 'true' && userId) {
@@ -35,6 +43,9 @@ export class WorkflowController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a workflow by ID' })
+  @ApiResponse({ status: 200, description: 'Workflow found.' })
+  @ApiResponse({ status: 404, description: 'Workflow not found.' })
   async findOne(@Param('id') id: string) {
     const workflow = await this.workflowService.findOne(id);
     if (!workflow) {
@@ -44,6 +55,9 @@ export class WorkflowController {
   }
 
   @Get('hubspot/:hubspotId')
+  @ApiOperation({ summary: 'Get a workflow by HubSpot ID' })
+  @ApiResponse({ status: 200, description: 'Workflow found.' })
+  @ApiResponse({ status: 404, description: 'Workflow not found.' })
   async findByHubspotId(@Param('hubspotId') hubspotId: string) {
     const workflow = await this.workflowService.findByHubspotId(hubspotId);
     if (!workflow) {
@@ -54,6 +68,10 @@ export class WorkflowController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update a workflow' })
+  @ApiResponse({ status: 200, description: 'Workflow updated.' })
+  @ApiResponse({ status: 404, description: 'Workflow not found.' })
+  @ApiResponse({ status: 500, description: 'Failed to update workflow.' })
   async update(@Req() req: Request, @Param('id') id: string, @Body() updateWorkflowDto: UpdateWorkflowDto) {
     try {
       const userId = ((req as any).user)?.sub;
@@ -69,6 +87,10 @@ export class WorkflowController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete a workflow' })
+  @ApiResponse({ status: 200, description: 'Workflow deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'Workflow not found.' })
+  @ApiResponse({ status: 500, description: 'Failed to delete workflow.' })
   async remove(@Req() req: Request, @Param('id') id: string) {
     try {
       const userId = ((req as any).user)?.sub;
@@ -84,6 +106,8 @@ export class WorkflowController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/sync-from-hubspot')
+  @ApiOperation({ summary: 'Sync workflow from HubSpot' })
+  @ApiResponse({ status: 200, description: 'Workflow synced from HubSpot.' })
   async syncFromHubSpot(@Req() req: Request, @Param('id') id: string) {
     const userId = ((req as any).user)?.sub;
     return this.workflowService.snapshotFromHubSpot(id, userId);

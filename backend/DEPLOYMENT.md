@@ -117,3 +117,57 @@ node setup-env.js
 ```
 
 This will output all the required environment variables with proper formatting. 
+
+## Required Environment Variables
+
+### Backend (NestJS)
+
+- `DATABASE_URL`: Database connection string (required)
+- `JWT_SECRET`: Secret for signing JWTs (required, no default)
+- `CORS_ORIGIN`: Comma-separated list of allowed frontend origins for CORS (required in production, e.g. `https://workflowguard-app.vercel.app`)
+- `FRONTEND_URL`: The main frontend URL, used for OAuth redirects and links (required, e.g. `https://workflowguard-app.vercel.app`)
+- `SENTRY_DSN`: (Optional) Sentry DSN for error monitoring
+- `NODE_ENV`: Set to `production` in production environments
+
+**Security Note:**
+- Never use wildcards (`*`) or leave `CORS_ORIGIN` empty in production. Only allow your actual frontend domain(s).
+- Do not commit secrets or credentials to version control.
+
+### Frontend (Vercel)
+
+- `VITE_API_URL`: The base URL for the backend API (required, e.g. `https://your-backend.onrender.com/api`)
+- Any OAuth or third-party keys as needed 
+
+## API Documentation
+
+- The backend provides interactive API documentation at `/api/docs` (Swagger UI).
+- You can use this to explore, test, and understand all available API endpoints, request/response formats, and authentication requirements. 
+
+## Backend Security Policies
+
+### Rate Limiting
+- Express rate limiting: 100 requests per 15 minutes per IP (configurable in `main.ts`).
+- NestJS ThrottlerModule: also enabled for additional protection.
+- **Recommendation:** Adjust limits as needed for your use case. Monitor for abuse.
+
+### Input Validation
+- All incoming requests are validated using `class-validator` DTOs and a global `ValidationPipe`.
+- Only whitelisted properties are allowed; extra fields are rejected.
+- **Recommendation:** Always use DTOs for new endpoints.
+
+### Secure Headers
+- `helmet` is used to set HTTP security headers (CSP, XSS, etc.).
+- **Recommendation:** Review and customize CSP for your frontend’s needs.
+
+### CORS
+- Only allows origins specified in `CORS_ORIGIN` (required in production).
+- **Recommendation:** Never use wildcards in production.
+
+### Error Handling
+- All unhandled exceptions are logged and reported to Sentry (if DSN is set).
+- User-facing errors are generic; sensitive details are never exposed.
+
+### General Recommendations
+- Keep all dependencies up to date.
+- Regularly audit for vulnerabilities (`npm audit`).
+- Rotate secrets and credentials periodically. 
