@@ -1,3 +1,6 @@
+// HubSpot OAuth callback is handled at /api/auth/callback (see @Get('/callback') below)
+// This matches the expected /api/auth/hubspot/callback if the global prefix is 'api' and controller is 'auth'.
+// If you need to change the callback path, update both the controller and the HubSpot app settings.
 import { Controller, Get, Post, Body, Param, HttpException, HttpStatus, Query, Res, UseGuards, Req, Logger } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -350,5 +353,16 @@ export class AuthController {
       this.logger.error('Error handling HubSpot deauthorization', err);
       return res.status(500).json({ message: 'Failed to handle deauthorization', error: err.message });
     }
+  }
+}
+
+// Add a root controller to handle GET /
+import { Controller as RootController, Get as RootGet } from '@nestjs/common';
+
+@RootController()
+export class RootAppController {
+  @RootGet()
+  getRoot() {
+    return { message: 'WorkflowGuard API is running!' };
   }
 }
