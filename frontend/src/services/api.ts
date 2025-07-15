@@ -17,7 +17,10 @@ interface CreateWebhookDto {
   secret?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://workflowguard-app.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+if (!API_BASE_URL) {
+  throw new Error('VITE_API_URL must be set in the environment variables');
+}
 
 class ApiService {
   private token: string | null = null;

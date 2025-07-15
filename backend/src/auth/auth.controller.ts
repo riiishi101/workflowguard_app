@@ -22,15 +22,15 @@ export class AuthController {
   @Public()
   @Get('hubspot')
   async initiateHubSpotOAuth(@Res() res: Response) {
-    // This would redirect to HubSpot's OAuth consent page
     const clientId = process.env.HUBSPOT_CLIENT_ID;
-    // Use the callback endpoint that sets JWT cookies
-    const redirectUri = encodeURIComponent(process.env.HUBSPOT_REDIRECT_URI || 'https://workflowguard-app.onrender.com/api/auth/callback');
+    const redirectUriRaw = process.env.HUBSPOT_REDIRECT_URI;
+    if (!clientId || !redirectUriRaw) {
+      throw new Error('HUBSPOT_CLIENT_ID and HUBSPOT_REDIRECT_URI must be set in environment variables');
+    }
+    const redirectUri = encodeURIComponent(redirectUriRaw);
     const scopes = encodeURIComponent('crm.objects.companies.read crm.objects.contacts.read crm.objects.deals.read crm.schemas.companies.read crm.schemas.contacts.read crm.schemas.deals.read oauth');
     const state = encodeURIComponent('workflowguard-oauth-' + Date.now());
-    
     const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
-    
     this.logger.log('OAuth initiation - Redirecting to:', authUrl);
     res.redirect(authUrl);
   }
@@ -45,7 +45,8 @@ export class AuthController {
     this.logger.log(`OAuth callback - Request URL: ${req.url}`);
     
     if (!code) {
-      const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+      const frontendUrl = process.env.FRONTEND_URL;
+      if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
       const errorMsg = encodeURIComponent('Missing code parameter. Please try connecting to HubSpot again from the app.');
       this.logger.warn('Missing code parameter in OAuth callback');
       return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -67,7 +68,8 @@ export class AuthController {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       } catch (tokenErr) {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
         const errorMsg = encodeURIComponent('Failed to exchange code for access token. Please try again or contact support.');
         this.logger.error('Failed to exchange code for access token', tokenErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -83,7 +85,8 @@ export class AuthController {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       } catch (userErr) {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
         const errorMsg = encodeURIComponent('Failed to fetch user info from HubSpot. Please try again or contact support.');
         this.logger.error('Failed to fetch user info from HubSpot', userErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -100,7 +103,8 @@ export class AuthController {
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
         await this.authService.updateUserLastActive(user.id);
       } else if (!email) {
-          const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+          const frontendUrl = process.env.FRONTEND_URL;
+          if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
           const errorMsg = encodeURIComponent('Could not retrieve user email from HubSpot. Please try again or contact support.');
           this.logger.warn('Could not retrieve user email from HubSpot');
           return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -113,7 +117,8 @@ export class AuthController {
         await this.authService.updateUserLastActive(user.id);
         }
       } catch (userDbErr) {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
         const errorMsg = encodeURIComponent('Failed to create or update user. Please try again or contact support.');
         this.logger.error('Failed to create or update user', userDbErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -127,7 +132,8 @@ export class AuthController {
       await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
       this.logger.log('OAuth - HubSpot tokens updated for user:', user.email);
       } catch (tokenDbErr) {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
         const errorMsg = encodeURIComponent('Failed to update user tokens. Please try again or contact support.');
         this.logger.error('Failed to update user tokens', tokenDbErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -151,7 +157,8 @@ export class AuthController {
         jwt = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
       this.logger.log('Generated JWT for user:', user.email, 'JWT length:', jwt.length, 'User ID in JWT:', user.id);
       } catch (jwtErr) {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
         const errorMsg = encodeURIComponent('Failed to generate authentication token. Please try again or contact support.');
         this.logger.error('Failed to generate authentication token', jwtErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
@@ -170,18 +177,20 @@ export class AuthController {
       });
       this.logger.log('JWT cookie set successfully');
       } catch (cookieErr) {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
         const errorMsg = encodeURIComponent('Failed to set authentication cookie. Please try again or contact support.');
         this.logger.error('Failed to set authentication cookie', cookieErr);
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
       // Optionally, you can also send user info as a query param or just redirect
-      this.logger.log('Redirecting to dashboard...');
-      return res.redirect('https://www.workflowguard.pro/dashboard');
+      this.logger.log('Redirecting to workflow-selection...');
+      return res.redirect('https://www.workflowguard.pro/workflow-selection');
     } catch (error) {
       this.logger.error('Unexpected error in OAuth callback', error);
-      const frontendUrl = process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com';
+      const frontendUrl = process.env.FRONTEND_URL;
+      if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
       const errorMsg = encodeURIComponent('Unexpected error during HubSpot connection. Please try again or contact support.');
       return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
     }
