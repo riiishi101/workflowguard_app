@@ -22,7 +22,7 @@ RUN ls -l /app/src
 RUN npm run build
 
 # Diagnostic: list build output
-RUN ls -l /app/dist/src
+RUN ls -l /app/dist
 
 # ---- Production image ----
 FROM node:20-alpine
