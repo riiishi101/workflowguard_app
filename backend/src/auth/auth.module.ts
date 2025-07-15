@@ -12,7 +12,12 @@ import { UserModule } from '../user/user.module';
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'supersecretkey',
+      secret: (() => {
+        if (!process.env.JWT_SECRET) {
+          throw new Error('JWT_SECRET must be set in environment variables');
+        }
+        return process.env.JWT_SECRET;
+      })(),
       signOptions: { expiresIn: '7d' },
     }),
     AuditLogModule,
