@@ -36,7 +36,7 @@ export class AuthController {
   }
 
   @Public()
-  @Get('/callback')
+  @Get('hubspot/callback')
   async hubspotOAuthCallback(@Query('code') code: string, @Query('state') state: string, @Query() allQueryParams: any, @Req() req: Request, @Res() res: Response) {
     this.logger.log(`OAuth callback called with code: ${code ? 'present' : 'missing'}`);
     this.logger.log(`OAuth callback - State parameter: ${state}`);
