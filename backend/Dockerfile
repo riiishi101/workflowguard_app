@@ -14,6 +14,10 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Diagnostic: list source files before build
+RUN ls -l /app
+RUN ls -l /app/src
+
 # Build the NestJS app
 RUN npm run build
 
