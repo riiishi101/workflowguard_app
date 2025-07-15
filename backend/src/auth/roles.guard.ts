@@ -16,7 +16,7 @@ export class PlanFeatureGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!requiredFeature) {
+    if (!requiredFeature) { 
       return true;
     }
     const request = context.switchToHttp().getRequest();
