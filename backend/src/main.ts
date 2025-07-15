@@ -105,12 +105,12 @@ export async function createNestServer() {
 
   await app.init();
 
-  // Add root route for health/status
+  // Root health route (must come BEFORE the catch-all)
   server.get('/', (req, res) => {
     res.json({ message: 'WorkflowGuard API is running!' });
   });
 
-  // Catch-all route to serve index.html for SPA support (non-API routes)
+  // Catch-all for SPA (must come LAST)
   server.get('*', (req, res) => {
     if (!req.originalUrl.startsWith('/api')) {
       res.sendFile(join(__dirname, '..', 'public', 'index.html'));

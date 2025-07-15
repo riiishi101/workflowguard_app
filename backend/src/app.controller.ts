@@ -12,6 +12,7 @@ export class AppController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Public()
   @Get()
   getHello() {
     return { message: 'WorkflowGuard API is running!' };
