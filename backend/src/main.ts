@@ -15,20 +15,20 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import * as Sentry from '@sentry/node';
 import * as SentryIntegrations from '@sentry/integrations';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import winston from 'winston';
+import { createLogger, format, transports } from 'winston';
 import { Request, Response, NextFunction } from 'express';
 
 // Winston logger setup
-const logger = winston.createLogger({
+const logger = createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.splat(),
-    winston.format.json()
+  format: format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    format.splat(),
+    format.json()
   ),
   transports: [
-    new winston.transports.Console(),
+    new transports.Console(),
     // You can add file transports here for persistent logs
   ],
 });
