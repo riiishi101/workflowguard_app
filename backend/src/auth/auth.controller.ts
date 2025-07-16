@@ -9,6 +9,7 @@ import axios from 'axios';
 import { Public } from './public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
+import { CookieOptions } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -166,16 +167,18 @@ export class AuthController {
 
       // Set JWT as HttpOnly, Secure cookie
       const isProduction = process.env.NODE_ENV === 'production';
-      try {
-      res.cookie('jwt', jwt, {
+      const cookieOptions = {
         httpOnly: true,
         secure: isProduction, // true in production, false in development
-        sameSite: 'none', // Allow cross-site cookies
+        sameSite: 'none' as CookieOptions['sameSite'], // Allow cross-site cookies
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
         ...(isProduction ? { domain: '.workflowguard.pro' } : {}), // Set cookie domain in production
-      });
-      this.logger.log('JWT cookie set successfully');
+      };
+      this.logger.log('Setting JWT cookie with options:', JSON.stringify(cookieOptions));
+      try {
+        res.cookie('jwt', jwt, cookieOptions);
+        this.logger.log('JWT cookie set successfully');
       } catch (cookieErr) {
         const frontendUrl = process.env.FRONTEND_URL;
         if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
