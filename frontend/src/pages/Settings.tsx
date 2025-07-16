@@ -156,49 +156,7 @@ const Settings = () => {
               <ProfileTab />
             </TabsContent>
           </div>
-
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-2">Billing History</h2>
-            <p className="mb-4 text-gray-600">
-              All invoices and billing history are managed in your HubSpot account.
-            </p>
-            <Button
-              onClick={() => window.open(`https://app.hubspot.com/billing/${user?.hubspotPortalId || ''}`, '_blank')}
-              className="bg-blue-600 text-white mb-4"
-            >
-              View Invoices in HubSpot
-            </Button>
-          </div>
         </Tabs>
-
-        {showPortalWarning && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 mt-2 text-yellow-800 rounded">
-            <strong>Note:</strong> To manage your subscription, please connect your HubSpot account.
-          </div>
-        )}
-
-        <Button
-          onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}
-          className="text-blue-600 text-base font-medium bg-transparent shadow-none border-none hover:underline mt-2"
-        >
-          Manage Subscription
-        </Button>
-
-        <Button
-          onClick={() => window.location.href = '/api/auth/hubspot'}
-          className="bg-orange-600 text-white mt-4 mb-2"
-        >
-          Reconnect to HubSpot
-        </Button>
-        {user?.hubspotPortalId && (
-          <Button
-            onClick={handleDisconnectHubSpot}
-            className="bg-gray-600 text-white mt-2 mb-2"
-            variant="outline"
-          >
-            Disconnect HubSpot
-          </Button>
-        )}
       </main>
     </div>
   );

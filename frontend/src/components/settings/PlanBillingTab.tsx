@@ -42,10 +42,8 @@ const PlanBillingTab = () => {
     remainingTrialDays: undefined,
   };
 
-  // HubSpot manage subscription URL
-  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = user?.hubspotPortalId
-    ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
-    : 'https://app.hubspot.com/ecosystem/marketplace/apps';
+  // Remove all UI and logic related to Billing History, Manage Subscription, and any HubSpot billing/invoice links or buttons.
+  // Only keep the subscription overview and plan details relevant to the app itself.
 
   // Plan definitions for display
   const plans = [
@@ -90,14 +88,6 @@ const PlanBillingTab = () => {
               <span className="ml-2">{planData.remainingTrialDays} days remaining.</span>
             )}
           </div>
-          <a
-            href={HUBSPOT_MANAGE_SUBSCRIPTION_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-          >
-            Upgrade Now
-          </a>
         </div>
       )}
       {/* Trial Expired Banner */}
@@ -107,14 +97,6 @@ const PlanBillingTab = () => {
             <span className="font-semibold">Your Professional trial has ended.</span>
             <span className="ml-2">You are now on the Starter plan. Upgrade to unlock all features!</span>
           </div>
-          <a
-            href={HUBSPOT_MANAGE_SUBSCRIPTION_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-4 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium"
-          >
-            Upgrade Now
-          </a>
         </div>
       )}
       {/* Subscription Overview */}
@@ -122,25 +104,6 @@ const PlanBillingTab = () => {
         <CardHeader className="p-6 pb-0 flex flex-col items-start">
           <div className="w-full flex items-center justify-between mb-2">
             <CardTitle className="text-xl font-semibold">Your Subscription Overview</CardTitle>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <RoleGuard roles={['admin']}>
-                  <a
-                    href={HUBSPOT_MANAGE_SUBSCRIPTION_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 text-base font-medium hover:underline"
-                  >
-                    Manage Subscription in HubSpot
-                  </a>
-                  </RoleGuard>
-                </TooltipTrigger>
-                <TooltipContent>
-                  All subscription changes are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
         </CardHeader>
         <CardContent className="p-6 pt-0">
@@ -175,14 +138,14 @@ const PlanBillingTab = () => {
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
               <span className="text-base text-gray-700 font-medium">Workflows Monitored</span>
-              <span className="text-base font-semibold text-gray-900">{/* You may want to fetch this from planData if available */}</span>
+              <span className="text-base font-semibold text-gray-900"></span>
             </div>
             <Progress value={0} className="h-2 w-full my-3" />
           </div>
 
           <div className="flex items-center justify-between mb-6">
             <span className="text-base text-gray-700 font-medium">Version History</span>
-            <span className="text-base font-semibold text-gray-900">{/* You may want to fetch this from planData if available */}</span>
+            <span className="text-base font-semibold text-gray-900"></span>
           </div>
 
           <hr className="my-4 border-gray-200" />
@@ -191,80 +154,9 @@ const PlanBillingTab = () => {
             <span className="text-base text-gray-500">Next billing on:</span>
             <span className="text-base font-semibold text-gray-900">N/A</span>
           </div>
-
-          {/* Info box below the button */}
-          <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900 p-4">
-            <div className="flex items-center">
-              <Info className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0" />
-              <span className="text-sm">
-              All subscription changes are managed in your HubSpot account. Clicking the button above will open HubSpot's subscription management page.
-            </span>
-            </div>
-          </Alert>
         </CardContent>
       </Card>
-
-      {/* HubSpot Billing Message and Button */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Billing & Invoices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 text-gray-700">
-            All invoices and billing history are managed in your HubSpot account. You can view and download your invoices directly from HubSpot.
-          </div>
-          <RoleGuard roles={['admin']}>
-          <Button
-            className="bg-blue-600 text-white"
-            onClick={() => window.open(`https://app.hubspot.com/billing/${planData.hubspotPortalId || ''}`, '_blank')}
-          >
-            View Invoices in HubSpot
-          </Button>
-          </RoleGuard>
-        </CardContent>
-      </Card>
-
-      {/* Plan Cards */}
-      <div className="grid grid-cols-3 gap-6">
-        {plans.map((p) => (
-          <Card key={p.id} className={`h-full flex flex-col ${planData.planId === p.id || (showTrialBanner && p.id === 'professional') ? 'border-blue-500 border-2' : ''}`}>
-            <CardHeader>
-              <CardTitle className="text-xl">{p.name}</CardTitle>
-              <div className="text-3xl font-bold">
-                ${p.price}<span className="text-base font-normal">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col flex-grow justify-between space-y-3">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>{p.workflows ? `Up to ${p.workflows} workflows/month` : 'Unlimited workflows'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>{p.history ? `${p.history} days history` : 'Unlimited history'}</span>
-                </div>
-                {p.features.map((f) => (
-                  <div key={f} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>{f}</span>
-                  </div>
-                ))}
-              </div>
-              {/* Plan Action Button at the bottom of the card */}
-              <div className="mt-6 flex justify-center">
-                {(planData.planId === p.id || (showTrialBanner && p.id === 'professional')) ? (
-                  <Button disabled className="w-full bg-gray-200 text-gray-600 cursor-not-allowed">
-                    {showTrialBanner && p.id === 'professional' ? 'Current Plan (Trial)' : 'Current Plan'}
-                  </Button>
-                ) : (
-                  <Button className="w-full bg-blue-600 text-white" onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}>Select Plan</Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Plan Cards and other relevant UI can remain here if needed */}
     </div>
   );
 };
