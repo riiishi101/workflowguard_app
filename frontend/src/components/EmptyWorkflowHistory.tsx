@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import TopNavigation from "@/components/TopNavigation";
 import { FileText, Plus, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import CreateNewWorkflowModal from "./CreateNewWorkflowModal";
 
 // Accept workflow as a prop
 interface WorkflowInfo {
@@ -13,9 +15,10 @@ interface WorkflowInfo {
 
 const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
   const navigate = useNavigate();
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const handleCreateWorkflow = () => {
-    navigate("/workflow-selection");
+    setShowCreateModal(true);
   };
 
   const handleGoToHubSpot = () => {
@@ -106,6 +109,12 @@ const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
           </Button>
         </div>
       </main>
+      <CreateNewWorkflowModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        version={{ id: 'dummy', createdAt: new Date().toISOString(), createdBy: 'System' }}
+        onCreated={() => setShowCreateModal(false)}
+      />
     </div>
   );
 };

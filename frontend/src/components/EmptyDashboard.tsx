@@ -24,7 +24,7 @@ import { useState } from "react";
 
 const EmptyDashboard = () => {
   const navigate = useNavigate();
-  const [versions, setVersions] = useState([]);
+  // No need for versions state in empty state
 
   const handleAddWorkflow = () => {
     navigate('/select-workflows');
@@ -103,73 +103,21 @@ const EmptyDashboard = () => {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                All Protected Workflows
-              </h2>
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleAddWorkflow}
-                  variant="outline"
-                  size="sm"
-                  className="text-blue-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Workflow
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search workflows by name..."
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Select defaultValue="modified">
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Last Modified" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="modified">Last Modified</SelectItem>
-                    <SelectItem value="name">Name</SelectItem>
-                    <SelectItem value="versions">Versions</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select defaultValue="status">
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="status">Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select defaultValue="folder">
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="HubSpot Folder" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="folder">HubSpot Folder</SelectItem>
-                    <SelectItem value="sales">Sales</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" size="sm" className="text-blue-600">
-                  Clear Filters
-                </Button>
-              </div>
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">
+              All Protected Workflows
+            </h2>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleAddWorkflow}
+                variant="outline"
+                size="sm"
+                className="text-blue-600"
+                title="Select workflows from your HubSpot account to start monitoring."
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Workflow
+              </Button>
             </div>
           </div>
 
@@ -182,50 +130,18 @@ const EmptyDashboard = () => {
               No workflows yet
             </h3>
             <p className="text-gray-600 text-sm mb-6 max-w-md mx-auto">
-              Get started by adding your first workflow using the 'Add Workflow'
-              button above
+              Get started by adding your first workflow using the 'Add Workflow' button above.
             </p>
             <Button
               onClick={handleAddWorkflow}
               className="bg-blue-500 hover:bg-blue-600 text-white"
+              title="Select workflows from your HubSpot account to start monitoring."
             >
               Add Workflow
             </Button>
-          </div>
-
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Rows per page:
-              <Select defaultValue="10">
-                <SelectTrigger className="w-16 ml-2 inline-flex">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
+            <p className="text-xs text-gray-500 mt-4 max-w-xs mx-auto">
+              You can select one or more workflows from your HubSpot account to start monitoring changes and activity.
             </p>
-
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">0 workflows</span>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" disabled>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="bg-blue-500 text-white hover:bg-blue-600"
-                >
-                  1
-                </Button>
-                <Button variant="ghost" size="sm" disabled>
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </main>
