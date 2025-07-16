@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://workflowguard-app-j3rl.onrender.com/api/$1"
+      "destination": "https://api.workflowguard.pro/api/$1"
     },
     {
       "source": "/(.*)",
