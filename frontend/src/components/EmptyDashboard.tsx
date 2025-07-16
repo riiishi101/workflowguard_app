@@ -19,15 +19,24 @@ import {
   ChevronRight,
   FolderOpen,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useState } from "react";
 
 const EmptyDashboard = () => {
   const navigate = useNavigate();
+  const [redirect, setRedirect] = useState(false);
   // No need for versions state in empty state
 
   const handleAddWorkflow = () => {
-    navigate('/select-workflows');
+    console.log('Button clicked, navigating to /select-workflows');
+    try {
+      navigate('/select-workflows');
+    } catch (e) {
+      console.error('navigate() failed, falling back to <Navigate>', e);
+      setRedirect(true);
+    }
+    // Fallback in case navigate is a noop
+    setTimeout(() => setRedirect(true), 200);
   };
 
   return (
@@ -139,6 +148,7 @@ const EmptyDashboard = () => {
             >
               Add Workflow
             </Button>
+            {redirect && <Navigate to="/select-workflows" replace />}
             <p className="text-xs text-gray-500 mt-4 max-w-xs mx-auto">
               You can select one or more workflows from your HubSpot account to start monitoring changes and activity.
             </p>

@@ -33,7 +33,7 @@ import UpgradeRequiredModal from '@/components/UpgradeRequiredModal';
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import CreateNewWorkflowModal from "@/components/CreateNewWorkflowModal";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
 
 // Define the workflow type with proper validation
@@ -81,6 +81,7 @@ const Dashboard = () => {
   const { plan, hasFeature, isTrialing } = usePlan();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [redirect, setRedirect] = useState(false);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -252,7 +253,14 @@ const Dashboard = () => {
   };
 
   const handleAddWorkflow = () => {
-    setShowCreateModal(true);
+    console.log('Dashboard Add Workflow clicked, navigating to /select-workflows');
+    try {
+      navigate('/select-workflows');
+    } catch (e) {
+      console.error('navigate() failed, falling back to <Navigate>', e);
+      setRedirect(true);
+    }
+    setTimeout(() => setRedirect(true), 200);
   };
 
   const handleExport = async () => {
@@ -535,6 +543,7 @@ const Dashboard = () => {
                         <Button variant="default" size="lg" onClick={handleAddWorkflow} aria-label="Add Workflow">
                           + Add Workflow
                         </Button>
+                        {redirect && <Navigate to="/select-workflows" replace />}
                       </div>
                     </td>
                   </tr>

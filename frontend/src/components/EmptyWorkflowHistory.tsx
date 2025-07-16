@@ -18,6 +18,7 @@ const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const handleCreateWorkflow = () => {
+    console.log('Create New Workflow button clicked, opening modal');
     setShowCreateModal(true);
   };
 
