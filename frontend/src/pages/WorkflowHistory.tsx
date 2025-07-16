@@ -126,7 +126,7 @@ const WorkflowHistory = () => {
 
   // Show empty state if workflow is found but has no versions
   if (!versions || versions.length === 0) {
-    return <EmptyWorkflowHistory />;
+    return <EmptyWorkflowHistory workflow={workflow} />;
   }
 
   const selectedCount = versions.filter((v) => v.selected).length;
