@@ -180,14 +180,24 @@ export class AuthController {
       }
 
       // Always set the JWT cookie for the parent domain only
-      res.cookie('jwt', jwt, {
+      const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
+        sameSite: 'none' as const,
         domain: '.workflowguard.pro', // Only set for parent domain
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      };
+      try {
+        res.cookie('jwt', jwt, cookieOptions);
+        this.logger.log('JWT cookie set for user:', user.email, 'Cookie options:', JSON.stringify(cookieOptions));
+      } catch (cookieErr) {
+        this.logger.error('Failed to set JWT cookie', cookieErr);
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
+        const errorMsg = encodeURIComponent('Failed to set authentication cookie. Please try again or contact support.');
+        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
+      }
 
       // Optionally, you can also send user info as a query param or just redirect
       this.logger.log('Redirecting to workflow-selection...');
