@@ -71,7 +71,7 @@ const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
         )}
 
         {/* Empty State */}
-        <div className="py-20 text-center">
+        <div className="py-10 text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <FileText className="w-8 h-8 text-blue-500" />
           </div>
@@ -94,7 +94,7 @@ const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-8 border-t border-gray-200">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-8">
           <p className="text-sm text-gray-600">0 versions selected</p>
           <Button
             variant="outline"
