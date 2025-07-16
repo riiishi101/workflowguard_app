@@ -237,16 +237,9 @@ export class UserController {
   @Get('me/plan-status')
   async getMyPlanStatus(@Req() req: Request) {
     const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    
-    console.log('Plan-status - User ID from JWT:', userId);
-    
-    const user = await this.userService.findOne(userId);
-    console.log('Plan-status - User found:', user ? 'Yes' : 'No', user ? `ID: ${user.id}` : '');
-    
-    if (!user) {
-      console.log('Plan-status - User not found in database, creating default plan status');
-      // Return default plan status instead of throwing 404
+    console.log('Plan-status - JWT payload:', (req as any).user);
+    if (!userId) {
+      console.warn('Plan-status - No userId in JWT payload, returning default plan status');
       return {
         planId: 'starter',
         isTrialActive: false,
@@ -255,19 +248,29 @@ export class UserController {
         remainingTrialDays: null,
       };
     }
-    
+    console.log('Plan-status - User ID from JWT:', userId);
+    const user = await this.userService.findOne(userId);
+    console.log('Plan-status - User found:', user ? 'Yes' : 'No', user ? `ID: ${user.id}` : '');
+    if (!user) {
+      console.log('Plan-status - User not found in database, creating default plan status');
+      return {
+        planId: 'starter',
+        isTrialActive: false,
+        trialEndDate: null,
+        trialPlanId: null,
+        remainingTrialDays: null,
+      };
+    }
     const now = new Date();
     let remainingTrialDays = null;
     if (user.trialEndDate && user.isTrialActive) {
       remainingTrialDays = Math.max(0, Math.ceil((user.trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     }
-    
     console.log('Plan-status - Returning plan status:', {
       planId: user.planId,
       isTrialActive: user.isTrialActive,
       remainingTrialDays
     });
-    
     return {
       planId: user.planId || 'starter',
       isTrialActive: user.isTrialActive || false,
