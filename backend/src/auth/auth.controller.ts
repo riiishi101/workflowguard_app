@@ -179,27 +179,15 @@ export class AuthController {
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
-      // Set JWT as HttpOnly, Secure cookie
-      const isProduction = process.env.NODE_ENV === 'production';
-      const cookieOptions = {
+      // Always set the JWT cookie for the parent domain only
+      res.cookie('jwt', jwt, {
         httpOnly: true,
-        secure: isProduction, // true in production, false in development
-        sameSite: 'none' as CookieOptions['sameSite'], // Allow cross-site cookies
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
+        domain: '.workflowguard.pro', // Only set for parent domain
         path: '/',
-        ...(isProduction ? { domain: '.workflowguard.pro' } : {}), // Set cookie domain in production
-      };
-      this.logger.log('Setting JWT cookie with options:', JSON.stringify(cookieOptions));
-      try {
-        res.cookie('jwt', jwt, cookieOptions);
-        this.logger.log('JWT cookie set successfully');
-      } catch (cookieErr) {
-        const frontendUrl = process.env.FRONTEND_URL;
-        if (!frontendUrl) throw new Error('FRONTEND_URL must be set in environment variables');
-        const errorMsg = encodeURIComponent('Failed to set authentication cookie. Please try again or contact support.');
-        this.logger.error('Failed to set authentication cookie', cookieErr);
-        return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
-      }
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
 
       // Optionally, you can also send user info as a query param or just redirect
       this.logger.log('Redirecting to workflow-selection...');
