@@ -37,8 +37,22 @@ export class AuthController {
   }
 
   @Public()
+  @Get('debug-cookies')
+  debugCookies(@Req() req: Request) {
+    this.logger.log('Debug cookies endpoint hit. Incoming cookies:', req.cookies);
+    return { cookies: req.cookies };
+  }
+
+  // At the start of the OAuth callback, log env vars
+  @Public()
   @Get('hubspot/callback')
   async hubspotOAuthCallback(@Query('code') code: string, @Query('state') state: string, @Query() allQueryParams: any, @Req() req: Request, @Res() res: Response) {
+    this.logger.log('--- ENVIRONMENT VARIABLES ---');
+    this.logger.log('NODE_ENV:', process.env.NODE_ENV);
+    this.logger.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
+    this.logger.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+    this.logger.log('JWT_SECRET set:', !!process.env.JWT_SECRET);
+    this.logger.log('-----------------------------');
     this.logger.log(`OAuth callback called with code: ${code ? 'present' : 'missing'}`);
     this.logger.log(`OAuth callback - State parameter: ${state}`);
     this.logger.log(`OAuth callback - All query parameters: ${JSON.stringify(allQueryParams)}`);
@@ -327,12 +341,12 @@ export class AuthController {
     }
   }
 
+  // In getMe, log incoming cookies and user
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req: Request) {
-    // req.user is set by JwtStrategy
+    this.logger.log('GET /me - Incoming cookies:', req.cookies);
     this.logger.log('GET /me - User from JWT:', req.user);
-    this.logger.log('GET /me - Cookies:', req.cookies);
     return { user: req.user };
   }
 
