@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import TopNavigation from "@/components/TopNavigation";
 import { FileText, Plus, ExternalLink } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useState } from "react";
 import CreateNewWorkflowModal from "./CreateNewWorkflowModal";
 
@@ -15,11 +15,17 @@ interface WorkflowInfo {
 
 const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
   const navigate = useNavigate();
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [redirect, setRedirect] = useState(false);
 
-  const handleCreateWorkflow = () => {
-    console.log('Create New Workflow button clicked, opening modal');
-    setShowCreateModal(true);
+  const handleAddWorkflow = () => {
+    console.log('EmptyWorkflowHistory Add Workflow clicked, navigating to /select-workflows');
+    try {
+      navigate('/select-workflows');
+    } catch (e) {
+      console.error('navigate() failed, falling back to <Navigate>', e);
+      setRedirect(true);
+    }
+    setTimeout(() => setRedirect(true), 200);
   };
 
   const handleGoToHubSpot = () => {
@@ -89,12 +95,13 @@ const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
             Your workflow history will appear here.
           </p>
           <Button
-            onClick={handleCreateWorkflow}
+            onClick={handleAddWorkflow}
             className="bg-blue-500 hover:bg-blue-600 text-white"
+            title="Select workflows from your HubSpot account to start monitoring."
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Workflow
+            + Add Workflow
           </Button>
+          {redirect && <Navigate to="/select-workflows" replace />}
         </div>
 
         {/* Footer */}
@@ -110,12 +117,6 @@ const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
           </Button>
         </div>
       </main>
-      <CreateNewWorkflowModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        version={{ id: 'dummy', createdAt: new Date().toISOString(), createdBy: 'System' }}
-        onCreated={() => setShowCreateModal(false)}
-      />
     </div>
   );
 };
