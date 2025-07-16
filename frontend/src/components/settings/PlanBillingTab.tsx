@@ -156,7 +156,48 @@ const PlanBillingTab = () => {
           </div>
         </CardContent>
       </Card>
-      {/* Plan Cards and other relevant UI can remain here if needed */}
+      {/* Plan Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {plans.map((p) => (
+          <Card key={p.id} className={`h-full flex flex-col ${planData.planId === p.id ? 'border-blue-500 border-2' : ''}`}> 
+            <CardHeader>
+              <CardTitle className="text-xl">{p.name}</CardTitle>
+              <div className="text-3xl font-bold">
+                ${p.price}<span className="text-base font-normal">/month</span>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-grow justify-between space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>{p.workflows ? `Up to ${p.workflows} workflows/month` : 'Unlimited workflows'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>{p.history ? `${p.history} days history` : 'Unlimited history'}</span>
+                </div>
+                {p.features.map((f) => (
+                  <div key={f} className="flex items-center gap-2 text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex justify-center">
+                {planData.planId === p.id ? (
+                  <Button disabled className="w-full bg-gray-200 text-gray-600 cursor-not-allowed">
+                    Current Plan
+                  </Button>
+                ) : (
+                  <Button disabled className="w-full bg-blue-100 text-blue-400 cursor-not-allowed">
+                    Select Plan
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
