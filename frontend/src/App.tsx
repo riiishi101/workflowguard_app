@@ -101,10 +101,11 @@ const AppRoutes = () => {
     }
 
     // 4. If on /select-workflows but onboarding is complete, go to dashboard
-    if (user && user.hubspotPortalId && hasSelectedWorkflows && location.pathname === '/select-workflows') {
-      window.location.replace('/dashboard');
-      return;
-    }
+    // (Removed to allow users to always access /select-workflows)
+    // if (user && user.hubspotPortalId && hasSelectedWorkflows && location.pathname === '/select-workflows') {
+    //   window.location.replace('/dashboard');
+    //   return;
+    // }
   }, [user, plan, hasSelectedWorkflows, location.pathname]);
 
   return (
