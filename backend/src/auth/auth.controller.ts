@@ -186,7 +186,7 @@ export class AuthController {
 
       // Optionally, you can also send user info as a query param or just redirect
       this.logger.log('Redirecting to workflow-selection...');
-      return res.redirect('https://www.workflowguard.pro/workflow-selection');
+      return res.redirect('https://www.workflowguard.pro/select-workflows');
     } catch (error) {
       this.logger.error('Unexpected error in OAuth callback', error);
       const frontendUrl = process.env.FRONTEND_URL;
