@@ -167,7 +167,7 @@ const PlanBillingTab = () => {
               </div>
             </CardHeader>
             <CardContent className="flex flex-col flex-grow justify-between space-y-3">
-              <div className="space-y-2">
+              <div className="space-y-2 mb-8">
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle className="w-4 h-4 text-green-500" />
                   <span>{p.workflows ? `Up to ${p.workflows} workflows/month` : 'Unlimited workflows'}</span>
