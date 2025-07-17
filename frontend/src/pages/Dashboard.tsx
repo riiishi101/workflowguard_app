@@ -540,7 +540,12 @@ const Dashboard = () => {
                         <div className="text-gray-500 mb-6">
                           Try adjusting your search or filters.
                         </div>
-                        <Button variant="default" size="lg" onClick={handleAddWorkflow} aria-label="Add Workflow">
+                        <Button 
+                          onClick={handleAddWorkflow} 
+                          aria-label="Add Workflow"
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
+                          size="lg"
+                        >
                           + Add Workflow
                         </Button>
                         {redirect && <Navigate to="/select-workflows" replace />}
