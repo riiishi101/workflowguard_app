@@ -15,6 +15,9 @@ import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import RealtimeDashboard from './pages/RealtimeDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import CookieConsentBanner from './components/ui/CookieConsentBanner';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import ContactUs from './pages/ContactUs';
 
 // Helper: Show Welcome/Connect modals based on context
 const ModalsManager = () => {
@@ -130,6 +133,9 @@ const AppRoutes = () => {
         <Route path="/overages" element={<OverageDashboard />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
         <Route path="/realtime-dashboard" element={<RealtimeDashboard />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/contact-us" element={<ContactUs />} />
         {/* Add more routes as needed */}
         <Route path="*" element={<NotFound />} />
       </Routes>
