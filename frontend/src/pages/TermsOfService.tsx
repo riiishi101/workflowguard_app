@@ -81,6 +81,9 @@ const TermsOfService = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <div className="flex justify-center pt-8">
+        <img src="/LogoW.png" alt="WorkflowGuard Logo" style={{ height: 48 }} />
+      </div>
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -184,28 +187,7 @@ const TermsOfService = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            © 2025 WorkflowGuard. All rights reserved.
-          </div>
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => navigate("/privacy-policy")}
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Privacy Policy
-            </button>
-            <button
-              onClick={() => navigate("/contact")}
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Contact Us
-            </button>
-          </div>
-        </div>
-      </footer>
+   
     </div>
   );
 };

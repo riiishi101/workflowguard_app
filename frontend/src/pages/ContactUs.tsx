@@ -37,6 +37,9 @@ const ContactUs = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <div className="flex justify-center pt-8">
+        <img src="/LogoW.png" alt="WorkflowGuard Logo" style={{ height: 48 }} />
+      </div>
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -256,29 +259,6 @@ const ContactUs = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            © 2024 WorkflowGuard. All rights reserved.
-          </div>
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => navigate("/terms-of-service")}
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Terms of Service
-            </button>
-            <button
-              onClick={() => navigate("/privacy-policy")}
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Privacy Policy
-            </button>
-            <span className="text-sm text-gray-600">Contact Us</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
