@@ -14,7 +14,6 @@ import OverageDashboard from './pages/OverageDashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import RealtimeDashboard from './pages/RealtimeDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
-import CookieConsentBanner from './components/ui/CookieConsentBanner';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import ContactUs from './pages/ContactUs';
@@ -151,7 +150,6 @@ const App = () => {
         <Router>
           <AppRoutes />
           <Footer />
-          <CookieConsentBanner />
         </Router>
       </PlanProvider>
     </AuthProvider>
