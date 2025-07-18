@@ -281,38 +281,18 @@ const UserPermissionsTab = ({ setActiveTab }) => {
           and capabilities within WorkflowGuard
         </p>
 
-        <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Viewer</CardTitle>
+              <CardTitle>Viewer</CardTitle>
+              <CardDescription>Can view workflow history and changes</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Can view workflow history and changes
-              </p>
-            </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Restorer</CardTitle>
+              <CardTitle>Admin</CardTitle>
+              <CardDescription>Full access to manage settings and users</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Can view and restore previous workflow versions
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Admin</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Full access to manage settings and users
-              </p>
-            </CardContent>
           </Card>
         </div>
       </div>
@@ -333,7 +313,6 @@ const UserPermissionsTab = ({ setActiveTab }) => {
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="restorer">Restorer</SelectItem>
             <SelectItem value="viewer">Viewer</SelectItem>
           </SelectContent>
         </Select>
@@ -349,7 +328,6 @@ const UserPermissionsTab = ({ setActiveTab }) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="restorer">Restorer</SelectItem>
               <SelectItem value="viewer">Viewer</SelectItem>
             </SelectContent>
           </Select>
@@ -420,9 +398,8 @@ const UserPermissionsTab = ({ setActiveTab }) => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Restorer">Restorer</SelectItem>
-                          <SelectItem value="Viewer">Viewer</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -493,12 +470,11 @@ const UserPermissionsTab = ({ setActiveTab }) => {
               onChange={e => setInviteName(e.target.value)}
             />
             <Select value={inviteRole} onValueChange={setInviteRole}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Role" />
+              <SelectTrigger className="w-32">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="restorer">Restorer</SelectItem>
                 <SelectItem value="viewer">Viewer</SelectItem>
               </SelectContent>
             </Select>
@@ -541,7 +517,6 @@ const UserPermissionsTab = ({ setActiveTab }) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="restorer">Restorer</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
               </Select>
