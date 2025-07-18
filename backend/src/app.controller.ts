@@ -1,6 +1,6 @@
 import { Controller, Get, HttpStatus, Res, Req } from '@nestjs/common';
 import { AppService } from './app.service';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { Public } from './auth/public.decorator';
 import { PrismaService } from './prisma/prisma.service';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -57,7 +57,7 @@ export class AppController {
   @Public()
   @SkipThrottle()
   @Get('health')
-  async healthCheck(@Req() req, @Res() res: Response) {
+  async healthCheck(@Req() req: Request, @Res() res: Response) {
     try {
       const healthStatus = {
         status: 'ok',
@@ -82,7 +82,7 @@ export class AppController {
 
   @Public()
   @Get('ready')
-  async readinessCheck(@Req() req, @Res() res: Response) {
+  async readinessCheck(@Req() req: Request, @Res() res: Response) {
     try {
       let dbStatus = 'ok';
       try {
