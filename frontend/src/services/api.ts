@@ -541,6 +541,13 @@ class ApiService {
     });
   }
 
+  async sendContactForm(data: { name: string; email: string; subject: string; message: string }) {
+    return this.request('/email/contact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Real-time endpoints
   async getRealtimeConnectionStatus() {
     return this.request('/realtime/status');
