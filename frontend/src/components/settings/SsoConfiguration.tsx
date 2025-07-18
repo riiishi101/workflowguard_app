@@ -9,6 +9,7 @@ import { Upload, Copy, Lock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import apiService from '@/services/api';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
   const { toast } = useToast();
@@ -24,6 +25,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -45,9 +47,9 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
         metadata,
         enabled: ssoEnabled,
       });
-      toast({ title: 'SSO config updated', description: 'Your SSO configuration has been updated.' });
+      setBanner({ type: 'success', message: 'Your SSO configuration has been updated.' });
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to update SSO config', variant: 'destructive' });
+      setBanner({ type: 'error', message: e.message || 'Failed to update SSO config' });
     } finally {
       setSaving(false);
     }
@@ -62,6 +64,9 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
 
   return (
     <div className="space-y-12">
+      {banner && (
+        <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+      )}
       {!canEdit && (
         <Alert className="border-orange-200 bg-orange-50 flex items-center gap-2">
           <Lock className="h-4 w-4 text-orange-600" />

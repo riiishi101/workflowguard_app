@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { usePlan } from "@/components/AuthContext";
 import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 const UserPermissionsTab = ({ setActiveTab }) => {
   const { toast } = useToast();
@@ -51,6 +52,7 @@ const UserPermissionsTab = ({ setActiveTab }) => {
   const [profileUser, setProfileUser] = useState<any | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const { plan, hasFeature, isTrialing } = usePlan();
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     async function checkPlan() {
@@ -98,9 +100,9 @@ const UserPermissionsTab = ({ setActiveTab }) => {
           user.id === userId ? { ...user, role: newRole } : user,
         ),
       );
-      toast({ title: 'Role Updated', description: 'User role has been updated.' });
+      setBanner({ type: 'success', message: 'User role has been updated.' });
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to update role', variant: 'destructive' });
+      setBanner({ type: 'error', message: e.message || 'Failed to update role' });
     }
   };
 
@@ -130,14 +132,11 @@ const UserPermissionsTab = ({ setActiveTab }) => {
       const deletedUser = userList.find(u => u.id === confirmRemoveUserId);
       setUserList(userList.filter(u => u.id !== confirmRemoveUserId));
       setLastDeletedUser(deletedUser);
-      toast({
-        title: 'User Removed',
-        description: 'The user has been removed.',
-      });
+      setBanner({ type: 'success', message: 'The user has been removed.' });
       // Remove undo after 5 seconds
       undoTimeoutRef.current = setTimeout(() => setLastDeletedUser(null), 5000);
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to remove user', variant: 'destructive' });
+      setBanner({ type: 'error', message: e.message || 'Failed to remove user' });
     } finally {
       setRemoving(false);
       setConfirmRemoveUserId(null);
@@ -157,13 +156,13 @@ const UserPermissionsTab = ({ setActiveTab }) => {
         role: inviteRole,
       });
       setUserList((prev) => [...prev, newUser]);
-      toast({ title: 'Invite Sent', description: `Invitation sent to ${inviteEmail}` });
+      setBanner({ type: 'success', message: `Invitation sent to ${inviteEmail}` });
       setInviteOpen(false);
       setInviteEmail('');
       setInviteName('');
       setInviteRole('viewer');
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to invite user', variant: 'destructive' });
+      setBanner({ type: 'error', message: e.message || 'Failed to invite user' });
     } finally {
       setInviteLoading(false);
     }
@@ -270,7 +269,10 @@ const UserPermissionsTab = ({ setActiveTab }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {banner && (
+        <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+      )}
       {/* Role Descriptions */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">

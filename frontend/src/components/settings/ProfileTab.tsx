@@ -16,6 +16,7 @@ import { AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import apiService from '@/services/api';
 import { useAuth } from "@/components/AuthContext";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 const ProfileTab = () => {
   const { toast } = useToast();
@@ -36,6 +37,7 @@ const ProfileTab = () => {
     'unknown'
   );
   const [connectionMessage, setConnectionMessage] = useState<string>("");
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -70,9 +72,9 @@ const ProfileTab = () => {
         timezone: profile.timezone,
         language: profile.language,
       });
-      toast({ title: 'Profile updated', description: 'Your profile has been updated.' });
+      setBanner({ type: 'success', message: 'Your profile has been updated.' });
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to update profile', variant: 'destructive' });
+      setBanner({ type: 'error', message: e.message || 'Failed to update profile' });
     } finally {
       setSaving(false);
     }
@@ -83,10 +85,10 @@ const ProfileTab = () => {
     setDeleting(true);
     try {
       await apiService.deleteMe();
-      toast({ title: 'Account deleted', description: 'Your account has been deleted.' });
+      setBanner({ type: 'success', message: 'Your account has been deleted.' });
       // Optionally redirect or log out
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to delete account', variant: 'destructive' });
+      setBanner({ type: 'error', message: e.message || 'Failed to delete account' });
     } finally {
       setDeleting(false);
     }
@@ -96,11 +98,11 @@ const ProfileTab = () => {
     if (!window.confirm('Are you sure you want to disconnect your HubSpot account? This will disable all HubSpot features.')) return;
     setDisconnecting(true);
     try {
-      await fetch('/api/users/me/disconnect-hubspot', { method: 'POST', credentials: 'include' });
-      toast({ title: 'Disconnected', description: 'Your HubSpot account has been disconnected.' });
+      await apiService.disconnectHubSpot();
+      setBanner({ type: 'success', message: 'Your HubSpot account has been disconnected.' });
       window.location.reload();
-    } catch (e) {
-      toast({ title: 'Error', description: 'Failed to disconnect HubSpot account.', variant: 'destructive' });
+    } catch (e: any) {
+      setBanner({ type: 'error', message: e.message || 'Failed to disconnect HubSpot account' });
     } finally {
       setDisconnecting(false);
     }
@@ -141,7 +143,10 @@ const ProfileTab = () => {
   } : profile;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {banner && (
+        <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+      )}
       {/* Profile Header */}
       <div className="flex items-center gap-4">
         <Avatar className="h-16 w-16">

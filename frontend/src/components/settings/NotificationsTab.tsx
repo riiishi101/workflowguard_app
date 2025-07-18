@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { usePlan } from "@/components/AuthContext";
 import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 interface NotificationSettings {
   notificationsEnabled: boolean;
@@ -36,6 +37,7 @@ const NotificationsTab = ({ setActiveTab }) => {
   const [planChecked, setPlanChecked] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     async function checkPlan() {
@@ -131,21 +133,17 @@ const NotificationsTab = ({ setActiveTab }) => {
         workflowRolledBack: notifications.workflowRolledBack,
         criticalActionModified: notifications.criticalActionModified,
       });
-    toast({
-      title: 'Notification settings saved',
-      description: 'Your notification preferences have been updated.',
-    });
+      setBanner({ type: 'success', message: 'Notification settings have been updated.' });
     } catch (e: any) {
-      toast({
-        title: 'Error',
-        description: e.message || 'Failed to save notification settings',
-        variant: 'destructive',
-      });
+      setBanner({ type: 'error', message: e.message || 'Failed to update notification settings' });
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {banner && (
+        <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+      )}
       {/* Upgrade Banner */}
       <Alert className="border-orange-200 bg-orange-50">
         <Lock className="h-4 w-4 text-orange-600" />

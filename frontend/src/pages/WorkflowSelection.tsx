@@ -16,6 +16,7 @@ import { Search, Info, Loader2 } from "lucide-react";
 import apiService from "@/services/api";
 import { useRequireAuth } from '../components/AuthContext';
 import { useToast } from "@/hooks/use-toast";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 // Define the workflow type
 interface Workflow {
@@ -54,6 +55,7 @@ const WorkflowSelection = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     const fetchWorkflows = async () => {
@@ -66,11 +68,7 @@ const WorkflowSelection = () => {
           ? workflowsData.filter(isValidWorkflow)
           : [];
         if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
-          toast({
-            title: "Warning",
-            description: "Some workflows were ignored due to invalid data.",
-            variant: "destructive",
-          });
+          setBanner({ type: 'error', message: 'Some workflows were ignored due to invalid data.' });
         }
         setWorkflows(validWorkflows);
       } catch (err: any) {
@@ -116,11 +114,7 @@ const WorkflowSelection = () => {
         .filter(id => !selectedWorkflows.includes(id));
       const newSelection = [...selectedWorkflows, ...toAdd];
       if (newSelection.length > MAX_SELECTION) {
-        toast({
-          title: "Selection Limit Reached",
-          description: `You can select up to ${MAX_SELECTION} workflows in your trial.`,
-          variant: "destructive",
-        });
+        setBanner({ type: 'error', message: `You can select up to ${MAX_SELECTION} workflows in your trial.` });
         setSelectedWorkflows(newSelection.slice(0, MAX_SELECTION));
       } else {
         setSelectedWorkflows(newSelection);
@@ -134,11 +128,7 @@ const WorkflowSelection = () => {
         return prev.filter((id) => id !== workflowId);
       } else {
         if (prev.length >= MAX_SELECTION) {
-          toast({
-            title: "Selection Limit Reached",
-            description: `You can select up to ${MAX_SELECTION} workflows in your trial.`,
-            variant: "destructive",
-          });
+          setBanner({ type: 'error', message: `You can select up to ${MAX_SELECTION} workflows in your trial.` });
           return prev;
         }
         return [...prev, workflowId];
@@ -150,17 +140,10 @@ const WorkflowSelection = () => {
     setActionLoading(true);
     try {
       await apiService.setMonitoredWorkflows(selectedWorkflows);
-      toast({
-        title: "Workflows Protected!",
-        description: `${selectedWorkflows.length} workflows are now being monitored.`,
-      });
+      setBanner({ type: 'success', message: `${selectedWorkflows.length} workflows are now being monitored.` });
       navigate("/dashboard");
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to save your selection. Please try again.",
-        variant: "destructive",
-      });
+      setBanner({ type: 'error', message: 'Failed to save your selection. Please try again.' });
     } finally {
       setActionLoading(false);
     }
@@ -169,17 +152,10 @@ const WorkflowSelection = () => {
   const handleSkip = async () => {
     setActionLoading(true);
     try {
-      toast({
-        title: "Skipped",
-        description: "You can select workflows to protect later from the dashboard.",
-      });
+      setBanner({ type: 'success', message: 'You can select workflows to protect later from the dashboard.' });
       navigate('/dashboard');
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to skip. Please try again.",
-        variant: "destructive",
-      });
+      setBanner({ type: 'error', message: 'Failed to skip. Please try again.' });
     } finally {
       setActionLoading(false);
     }
@@ -222,6 +198,11 @@ const WorkflowSelection = () => {
   return (
     <div className="min-h-screen bg-white">
       <TopNavigation minimal />
+      {banner && (
+        <div className="max-w-6xl mx-auto px-6 pt-6">
+          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+        </div>
+      )}
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
