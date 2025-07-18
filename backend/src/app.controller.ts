@@ -4,19 +4,18 @@ import { Response, Request } from 'express';
 import { Public } from './auth/public.decorator';
 import { PrismaService } from './prisma/prisma.service';
 import { SkipThrottle } from '@nestjs/throttler';
-import { Logger } from 'winston';
-import winston from 'winston';
+import { Logger, createLogger, format, transports } from 'winston';
 import * as client from 'prom-client';
 
 // Winston logger setup
-const logger: Logger = winston.createLogger({
+const logger: Logger = createLogger({
   level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
+  format: format.combine(
+    format.timestamp(),
+    format.json()
   ),
   transports: [
-    new winston.transports.Console(),
+    new transports.Console(),
   ],
 });
 
