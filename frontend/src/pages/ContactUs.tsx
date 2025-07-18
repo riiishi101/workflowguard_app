@@ -12,15 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { HelpCircle, Settings, Mail, MessageCircle, Clock } from "lucide-react";
+import apiService from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 const ContactUs = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     subject: "",
     message: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -29,10 +33,28 @@ const ContactUs = () => {
     }));
   };
 
-  const handleSendMessage = () => {
-    // Handle form submission logic here
-    console.log("Sending message:", formData);
-    // In a real app, this would call an API
+  const handleSendMessage = async () => {
+    setLoading(true);
+    try {
+      await apiService.sendContactForm({
+        name: formData.fullName,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
+      toast({
+        title: 'Message sent!',
+        description: 'Thank you for contacting us. We will get back to you soon.',
+      });
+      setFormData({ fullName: '', email: '', subject: '', message: '' });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to send message',
+        description: error?.message || 'Please try again later.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -158,8 +180,9 @@ const ContactUs = () => {
               <Button
                 onClick={handleSendMessage}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3"
+                disabled={loading}
               >
-                Send Message
+                {loading ? 'Sending...' : 'Send Message'}
               </Button>
             </div>
           </div>
