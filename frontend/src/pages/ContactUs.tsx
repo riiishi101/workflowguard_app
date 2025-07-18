@@ -47,14 +47,14 @@ const ContactUs = () => {
             <span className="font-semibold text-gray-900">WorkflowGuard</span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+            <Link to="/help" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
               <HelpCircle className="w-4 h-4" />
               Help
-            </button>
-            <button className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+            </Link>
+            <Link to="/settings" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
               <Settings className="w-4 h-4" />
               Settings
-            </button>
+            </Link>
           </div>
         </div>
       </header>
