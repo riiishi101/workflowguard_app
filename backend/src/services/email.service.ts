@@ -281,7 +281,7 @@ export class EmailService {
    * Core email sending method
    * This would integrate with your email provider (SendGrid, AWS SES, etc.)
    */
-  private async sendEmail(emailData: EmailData): Promise<void> {
+  public async sendEmail(emailData: EmailData): Promise<void> {
     // TODO: Integrate with your email provider
     // Example implementations:
     
