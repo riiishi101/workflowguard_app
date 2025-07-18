@@ -99,7 +99,7 @@ export class AuditLogController {
   }
 
   @Delete(':id')
-  @Roles('admin', 'restorer')
+  @Roles('admin')
   async remove(@Param('id') id: string) {
     try {
       const auditLog = await this.auditLogService.remove(id);
