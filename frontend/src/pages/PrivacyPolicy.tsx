@@ -6,24 +6,11 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="flex justify-center pt-8">
-        <img src="/LogoW.png" alt="WorkflowGuard Logo" style={{ height: 48 }} />
-      </div>
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
-              <div className="w-3 h-3 bg-white rounded-sm flex items-center justify-center">
-                <svg
-                  className="w-2 h-2 text-blue-500"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                </svg>
-              </div>
-            </div>
+            <img src="/LogoW.png" alt="WorkflowGuard Logo" style={{ height: 32 }} />
             <span className="font-semibold text-gray-900">WorkflowGuard</span>
           </div>
           <div className="flex items-center gap-4">
