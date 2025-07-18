@@ -35,6 +35,7 @@ import CreateNewWorkflowModal from "@/components/CreateNewWorkflowModal";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Navigate } from "react-router-dom";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 // Define the workflow type with proper validation
 interface Workflow {
@@ -96,6 +97,7 @@ const Dashboard = () => {
   const [rollbackWorkflow, setRollbackWorkflow] = useState<Workflow | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const canAddMoreWorkflows = hasFeature('unlimited_workflows') || hasFeature('advanced_monitoring');
 
@@ -306,17 +308,10 @@ const Dashboard = () => {
     setActionLoading(true);
     try {
       await apiService.rollbackWorkflow(rollbackWorkflow.id);
-      toast({
-        title: "Rollback Successful",
-        description: `Workflow '${rollbackWorkflow.name}' was rolled back to the latest version.`,
-      });
+      setBanner({ type: 'success', message: `Workflow '${rollbackWorkflow.name}' was rolled back to the latest version.` });
       fetchWorkflows();
     } catch (err: any) {
-      toast({
-        title: "Rollback Failed",
-        description: err?.message || "Failed to rollback workflow.",
-        variant: "destructive",
-      });
+      setBanner({ type: 'error', message: err?.message || 'Failed to rollback workflow.' });
     } finally {
       setRollbackWorkflow(null);
       setShowRollbackModal(false);
@@ -358,7 +353,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-100">
       <TopNavigation />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
@@ -667,6 +662,11 @@ const Dashboard = () => {
           onConfirm={handleConfirmRollback}
           workflowName={rollbackWorkflow?.name}
         />
+        {banner && (
+          <div className="max-w-6xl mx-auto px-6 pt-6">
+            <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+          </div>
+        )}
       </main>
     </div>
   );

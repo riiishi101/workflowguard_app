@@ -32,6 +32,7 @@ import apiService from '@/services/api';
 import { saveAs } from 'file-saver';
 import UpgradeRequiredModal from "../components/UpgradeRequiredModal";
 import { useAuth } from '@/components/AuthContext';
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 // TypeScript interfaces
 interface Workflow {
@@ -77,6 +78,7 @@ const WorkflowHistory = () => {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [lastBulkDeleted, setLastBulkDeleted] = useState<WorkflowVersion[]>([]);
   const { plan, hasFeature, isTrialing } = usePlan();
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   if (!workflowId) {
     return <EmptyWorkflowHistory />;
@@ -219,25 +221,15 @@ const WorkflowHistory = () => {
         workflowId: workflow.id,
         versionNumber: selectedVersion.versionNumber,
         snapshotType: 'restore',
-        createdBy: user?.id || 'system', // Use actual user id
+        createdBy: user?.id || 'system',
         data: selectedVersion.data,
       });
-      toast({
-        title: 'Restore Successful',
-        description: 'Workflow version has been restored.',
-        variant: 'default',
-        duration: 4000,
-      });
+      setBanner({ type: 'success', message: 'Workflow version has been restored.' });
       // Refetch versions
       const data = await apiService.getWorkflowVersions(workflow.id);
       setVersions(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      toast({
-        title: 'Error',
-        description: e.message || 'Failed to restore workflow version',
-        variant: 'destructive',
-        duration: 5000,
-      });
+      setBanner({ type: 'error', message: e.message || 'Failed to restore workflow version' });
     } finally {
       setShowRestore(false);
       setSelectedVersion(null);
@@ -298,6 +290,11 @@ const WorkflowHistory = () => {
   return (
     <div className="min-h-screen bg-white">
       <TopNavigation />
+      {banner && (
+        <div className="max-w-7xl mx-auto px-6 pt-6">
+          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">

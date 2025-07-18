@@ -25,6 +25,7 @@ import RoleGuard from '../components/RoleGuard';
 import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '../components/AuthContext';
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 const CompareVersions = () => {
   useRequireAuth();
@@ -42,6 +43,7 @@ const CompareVersions = () => {
   const [error, setError] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Fetch version details from backend
   useEffect(() => {
@@ -103,9 +105,9 @@ const CompareVersions = () => {
         createdBy: user?.id || '',
         data: version.data,
       });
-      toast({ title: 'Restore Successful', description: 'Workflow version has been restored.', variant: 'default', duration: 4000 });
+      setBanner({ type: 'success', message: 'Workflow version has been restored.' });
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to restore workflow version', variant: 'destructive', duration: 5000 });
+      setBanner({ type: 'error', message: e.message || 'Failed to restore workflow version' });
     } finally {
       setLoading(false);
     }
@@ -134,6 +136,11 @@ const CompareVersions = () => {
   return (
     <div className="min-h-screen bg-white">
       <TopNavigation />
+      {banner && (
+        <div className="max-w-7xl mx-auto px-6 pt-6">
+          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-6 py-6">
         {/* Breadcrumb */}
