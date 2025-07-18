@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -85,7 +85,9 @@ const TermsOfService = () => {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/LogoW.png" alt="WorkflowGuard Logo" style={{ height: 32 }} />
+            <Link to="/dashboard">
+              <img src="/LogoW.png" alt="WorkflowGuard Logo" style={{ height: 32 }} />
+            </Link>
             <span className="font-semibold text-gray-900">WorkflowGuard</span>
           </div>
           <div className="flex items-center gap-4">
