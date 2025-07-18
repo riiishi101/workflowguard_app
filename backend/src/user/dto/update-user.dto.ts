@@ -10,7 +10,7 @@ export class UpdateUserDto {
   name?: string;
 
   @IsString()
-  @IsIn(['admin', 'restorer', 'viewer'])
+  @IsIn(['admin', 'viewer'])
   @IsOptional()
   role?: string;
 
