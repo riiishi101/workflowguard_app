@@ -25,13 +25,59 @@ const ContactUs = () => {
     message: "",
   });
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState({
+    fullName: false,
+    email: false,
+    subject: false,
+    message: false,
+  });
+  const [errors, setErrors] = useState({
+    fullName: '',
+    email: '',
+    subject: '',
+    message: '',
+  });
+
+  // Validation logic
+  const validate = (field: string, value: string) => {
+    let error = '';
+    if (!value.trim()) {
+      error = 'This field is required.';
+    } else if (field === 'email') {
+      // Simple email regex
+      if (!/^\S+@\S+\.\S+$/.test(value)) {
+        error = 'Please enter a valid email address.';
+      }
+    }
+    setErrors((prev) => ({ ...prev, [field]: error }));
+    return error;
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+    if (touched[field as keyof typeof touched]) {
+      validate(field, value);
+    }
   };
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validate(field, formData[field as keyof typeof formData]);
+  };
+
+  const isFormValid =
+    formData.fullName.trim() &&
+    formData.email.trim() &&
+    /^\S+@\S+\.\S+$/.test(formData.email) &&
+    formData.subject.trim() &&
+    formData.message.trim() &&
+    !errors.fullName &&
+    !errors.email &&
+    !errors.subject &&
+    !errors.message;
 
   const handleSendMessage = async () => {
     setLoading(true);
@@ -113,11 +159,13 @@ const ContactUs = () => {
                   id="full-name"
                   placeholder="Your Full Name"
                   value={formData.fullName}
-                  onChange={(e) =>
-                    handleInputChange("fullName", e.target.value)
-                  }
-                  className="mt-1"
+                  onChange={(e) => handleInputChange("fullName", e.target.value)}
+                  onBlur={() => handleBlur("fullName")}
+                  className={`mt-1 ${touched.fullName && errors.fullName ? 'border-red-500' : ''}`}
                 />
+                {touched.fullName && errors.fullName && (
+                  <div className="text-xs text-red-500 mt-1">{errors.fullName}</div>
+                )}
               </div>
 
               <div>
@@ -133,8 +181,12 @@ const ContactUs = () => {
                   placeholder="Your Email Address"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="mt-1"
+                  onBlur={() => handleBlur("email")}
+                  className={`mt-1 ${touched.email && errors.email ? 'border-red-500' : ''}`}
                 />
+                {touched.email && errors.email && (
+                  <div className="text-xs text-red-500 mt-1">{errors.email}</div>
+                )}
               </div>
 
               <div>
@@ -146,9 +198,9 @@ const ContactUs = () => {
                 </Label>
                 <Select
                   value={formData.subject}
-                  onValueChange={(value) => handleInputChange("subject", value)}
+                  onValueChange={(value) => { handleInputChange("subject", value); handleBlur("subject"); }}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className={`mt-1 ${touched.subject && errors.subject ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -159,6 +211,9 @@ const ContactUs = () => {
                     <SelectItem value="bug">Bug Report</SelectItem>
                   </SelectContent>
                 </Select>
+                {touched.subject && errors.subject && (
+                  <div className="text-xs text-red-500 mt-1">{errors.subject}</div>
+                )}
               </div>
 
               <div>
@@ -173,14 +228,18 @@ const ContactUs = () => {
                   placeholder="Tell us how we can help..."
                   value={formData.message}
                   onChange={(e) => handleInputChange("message", e.target.value)}
-                  className="mt-1 min-h-[120px] resize-none"
+                  onBlur={() => handleBlur("message")}
+                  className={`mt-1 min-h-[120px] resize-none ${touched.message && errors.message ? 'border-red-500' : ''}`}
                 />
+                {touched.message && errors.message && (
+                  <div className="text-xs text-red-500 mt-1">{errors.message}</div>
+                )}
               </div>
 
               <Button
                 onClick={handleSendMessage}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3"
-                disabled={loading}
+                disabled={loading || !isFormValid}
               >
                 {loading ? 'Sending...' : 'Send Message'}
               </Button>
