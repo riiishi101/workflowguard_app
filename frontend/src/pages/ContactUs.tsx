@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,20 @@ const ContactUs = () => {
     subject: '',
     message: '',
   });
+  const [success, setSuccess] = useState(false);
+
+  // Auto-dismiss success message after 7 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(false), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Hide success message if user navigates away
+  useEffect(() => {
+    return () => setSuccess(false);
+  }, []);
 
   // Validation logic
   const validate = (field: string, value: string) => {
@@ -88,11 +102,14 @@ const ContactUs = () => {
         subject: formData.subject,
         message: formData.message,
       });
+      setSuccess(true); // Show success banner
       toast({
         title: 'Message sent!',
         description: 'Thank you for contacting us. We will get back to you soon.',
       });
       setFormData({ fullName: '', email: '', subject: '', message: '' });
+      setTouched({ fullName: false, email: false, subject: false, message: false });
+      setErrors({ fullName: '', email: '', subject: '', message: '' });
     } catch (error: any) {
       toast({
         title: 'Failed to send message',
@@ -144,6 +161,15 @@ const ContactUs = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Side - Contact Form */}
           <div>
+            {success && (
+              <div className="mb-6 p-4 rounded bg-green-50 border border-green-300 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4"/></svg>
+                  <span className="text-green-700 font-medium">Message sent successfully!</span>
+                </div>
+                <button onClick={() => setSuccess(false)} className="text-green-700 hover:text-green-900 text-lg font-bold px-2">×</button>
+              </div>
+            )}
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
               Send Us a Message
             </h2>
