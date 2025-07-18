@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res, Req } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Response } from 'express';
 import { Public } from './auth/public.decorator';
@@ -6,6 +6,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Logger } from 'winston';
 import winston from 'winston';
+import * as client from 'prom-client';
 
 // Winston logger setup
 const logger: Logger = winston.createLogger({
@@ -17,6 +18,15 @@ const logger: Logger = winston.createLogger({
   transports: [
     new winston.transports.Console(),
   ],
+});
+
+// Prometheus metrics setup
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics();
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status'],
 });
 
 @Controller()
@@ -34,8 +44,20 @@ export class AppController {
 
   @Public()
   @SkipThrottle()
+  @Get('metrics')
+  async metrics(@Res() res: Response) {
+    try {
+      res.set('Content-Type', client.register.contentType);
+      res.end(await client.register.metrics());
+    } catch (error) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(error.message);
+    }
+  }
+
+  @Public()
+  @SkipThrottle()
   @Get('health')
-  async healthCheck(@Res() res: Response) {
+  async healthCheck(@Req() req, @Res() res: Response) {
     try {
       const healthStatus = {
         status: 'ok',
@@ -45,9 +67,11 @@ export class AppController {
         version: process.env.npm_package_version || '1.0.0',
       };
       logger.info('Health check successful', healthStatus);
+      httpRequestCounter.inc({ method: req.method, route: '/health', status: HttpStatus.OK });
       res.status(HttpStatus.OK).json(healthStatus);
     } catch (error) {
       logger.error('Health check failed', { error: error.message });
+      httpRequestCounter.inc({ method: req.method, route: '/health', status: HttpStatus.SERVICE_UNAVAILABLE });
       res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
         status: 'error',
         timestamp: new Date().toISOString(),
@@ -58,7 +82,7 @@ export class AppController {
 
   @Public()
   @Get('ready')
-  async readinessCheck(@Res() res: Response) {
+  async readinessCheck(@Req() req, @Res() res: Response) {
     try {
       let dbStatus = 'ok';
       try {
@@ -88,9 +112,11 @@ export class AppController {
       const statusCode = readinessStatus.status === 'ready' 
         ? HttpStatus.OK 
         : HttpStatus.SERVICE_UNAVAILABLE;
+      httpRequestCounter.inc({ method: req.method, route: '/ready', status: statusCode });
       res.status(statusCode).json(readinessStatus);
     } catch (error) {
       logger.error('Readiness check failed', { error: error.message });
+      httpRequestCounter.inc({ method: req.method, route: '/ready', status: HttpStatus.SERVICE_UNAVAILABLE });
       res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
         status: 'not_ready',
         timestamp: new Date().toISOString(),
