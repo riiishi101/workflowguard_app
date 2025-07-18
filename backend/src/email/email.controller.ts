@@ -75,6 +75,13 @@ interface SendBulkNotificationDto {
   isHtml?: boolean;
 }
 
+interface ContactFormDto {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
 @Controller('email')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmailController {
@@ -196,6 +203,25 @@ export class EmailController {
       total: data.userEmails.length,
       message: `Bulk notification completed: ${result.success} successful, ${result.failed} failed`,
     };
+  }
+
+  /**
+   * Public endpoint for contact form submissions
+   */
+  @Post('contact')
+  async sendContactForm(@Body() data: ContactFormDto) {
+    const { name, email, subject, message } = data;
+    try {
+      await this.emailService.sendEmail({
+        to: 'contact@workflowguard.pro',
+        subject: `[Contact Form] ${subject}`,
+        html: `<p><strong>Name:</strong> ${name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Message:</strong><br/>${message}</p>`,
+        text: `Name: ${name}\nEmail: ${email}\nMessage:\n${message}`,
+      });
+      return { success: true, message: 'Message sent successfully' };
+    } catch (error) {
+      return { success: false, message: 'Failed to send message', error: error.message };
+    }
   }
 
   /**
