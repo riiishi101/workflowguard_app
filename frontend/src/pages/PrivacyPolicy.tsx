@@ -10,10 +10,10 @@ const PrivacyPolicy = () => {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/dashboard">
+            <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 group" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
               <img src="/LogoW.png" alt="WorkflowGuard Logo" style={{ height: 32 }} />
-            </Link>
-            <span className="font-semibold text-gray-900">WorkflowGuard</span>
+              <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">WorkflowGuard</span>
+            </button>
           </div>
           <div className="flex items-center gap-4">
             <Link to="/help" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
