@@ -42,7 +42,7 @@ export class AuthService {
     };
   }
 
-  async findOrCreateUser(email: string, name?: string) {
+  async findOrCreateUser(email: string, name?: string, portalId?: string) {
     let user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -51,18 +51,26 @@ export class AuthService {
       const now = new Date();
       const trialDays = 21;
       const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+      let role = 'viewer';
+      if (portalId) {
+        // Count users for this portal
+        const count = await this.prisma.user.count({ where: { hubspotPortalId: portalId } });
+        if (count === 0) {
+          role = 'admin';
+        }
+      }
       user = await this.prisma.user.create({
         data: {
           email,
           name,
-          role: 'viewer',
+          role,
           firstInstalledAt: now,
           lastActiveAt: now,
           planId: 'starter',
           trialStartDate: now,
           trialEndDate: trialEnd,
-          isTrialActive: true,
           trialPlanId: 'professional',
+          hubspotPortalId: portalId,
         } as any,
       });
     }

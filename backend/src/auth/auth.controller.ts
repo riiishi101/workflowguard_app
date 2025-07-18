@@ -114,7 +114,7 @@ export class AuthController {
       if (!email && portalId) {
         // Use portalId as a fallback unique identifier (synthetic email)
         const syntheticEmail = `portal-${portalId}@hubspot.test`;
-        user = await this.authService.findOrCreateUser(syntheticEmail);
+        user = await this.authService.findOrCreateUser(syntheticEmail, undefined, portalId);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
         await this.authService.updateUserLastActive(user.id);
       } else if (!email) {
@@ -125,7 +125,7 @@ export class AuthController {
           return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       } else {
         // Find or create user in your DB
-        user = await this.authService.findOrCreateUser(email);
+        user = await this.authService.findOrCreateUser(email, undefined, portalId);
         this.logger.log('OAuth - User found/created:', user.email, 'User ID:', user.id);
         await this.authService.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
         this.logger.log('OAuth - HubSpot tokens updated for user:', user.email);
