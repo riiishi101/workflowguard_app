@@ -23,7 +23,7 @@ const RollbackConfirmModal = ({
   };
 
   return (
-    <RoleGuard roles={['admin', 'restorer']}>
+    <RoleGuard roles={['admin']}>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-lg p-0">
           <VisuallyHidden>

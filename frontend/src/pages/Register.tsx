@@ -45,7 +45,6 @@ const Register: React.FC = () => {
           <label className="block text-gray-700 mb-1">Role</label>
           <select value={role} onChange={e => setRole(e.target.value)} className="w-full border rounded px-3 py-2">
             <option value="viewer">Viewer</option>
-            <option value="restorer">Restorer</option>
             <option value="admin">Admin</option>
           </select>
         </div>

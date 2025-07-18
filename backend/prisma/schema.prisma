@@ -17,7 +17,7 @@ model User {
   id            String   @id @default(uuid())
   email         String   @unique
   name          String?
-  role          String   // e.g., 'admin', 'restorer', 'viewer'
+  role          String   // e.g., 'admin', 'viewer'
   password      String?  // Hashed password for email/password auth
   jobTitle      String?
   timezone      String?

@@ -36,7 +36,7 @@ const RestoreVersionModal = ({
   if (!version) return null;
 
   return (
-    <RoleGuard roles={['admin', 'restorer']}>
+    <RoleGuard roles={['admin']}>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-lg">
           <VisuallyHidden>
