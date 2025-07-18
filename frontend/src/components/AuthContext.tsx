@@ -33,15 +33,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // NEW: error state
 
   useEffect(() => {
     // Always check for JWT cookie authentication first
     (async () => {
+      function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 5000) {
+        return Promise.race([
+          fetch(resource, options),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
+        ]);
+      }
       try {
+        setError(null); // clear error before trying
         console.log('Checking for JWT cookie authentication...');
-        const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        const res = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
           credentials: 'include',
-        });
+        }, 5000) as Response;
         console.log('Auth /me response status:', res.status);
         if (res.ok) {
           const data = await res.json();
@@ -60,9 +68,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('Falling back to localStorage authentication');
             setUser(JSON.parse(storedUser));
             setToken(storedToken);
+          } else {
+            setError('Authentication failed. Please log in again.');
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.log('Auth /me error:', e);
         // Fall back to localStorage if cookie auth fails
         const storedUser = localStorage.getItem('authUser');
@@ -71,6 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Falling back to localStorage authentication after error');
           setUser(JSON.parse(storedUser));
           setToken(storedToken);
+        } else {
+          setError(e.message || 'Authentication error. Please try again.');
         }
       } finally {
         setLoading(false);
@@ -107,7 +119,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout }}>
-      {children}
+      {error ? (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+          <span style={{ color: 'red', fontSize: '1.2rem', marginBottom: '1rem' }}>{error}</span>
+          <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>Retry</button>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 };
