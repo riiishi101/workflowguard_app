@@ -189,7 +189,7 @@ const PlanBillingTab = () => {
                     Current Plan
                   </Button>
                 ) : (
-                  <Button disabled className="w-full bg-blue-100 text-blue-400 cursor-not-allowed">
+                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
                     Select Plan
                   </Button>
                 )}
