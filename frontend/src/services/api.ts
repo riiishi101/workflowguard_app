@@ -279,7 +279,7 @@ class ApiService {
   }
 
   async upgradePlan(planId: string) {
-    return this.request('/users/me', {
+    return this.request('/users/me/plan', {
       method: 'PUT',
       body: JSON.stringify({ planId }),
     });

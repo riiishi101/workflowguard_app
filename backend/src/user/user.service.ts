@@ -184,28 +184,22 @@ export class UserService {
     return PLAN_CONFIG[planId as PlanId] || PLAN_CONFIG.starter;
   }
 
-  async updateUserPlan(userId: string, newPlanId: string, actorUserId: string) {
-    // Find the user's current subscription
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { userId },
-    });
-    if (!subscription) throw new Error('Subscription not found');
-    const oldValue = { ...subscription };
-    // Update the planId
-    const updated = await this.prisma.subscription.update({
-      where: { userId },
+  async updateUserPlan(userId: string, newPlanId: string) {
+    // Update the planId field on the user
+    const user = await this.prisma.user.update({
+      where: { id: userId },
       data: { planId: newPlanId },
     });
-    // Log the change
+    // Optionally, log the change
     await this.auditLogService.create({
-      userId: actorUserId,
+      userId,
       action: 'plan_change',
-      entityType: 'subscription',
-      entityId: updated.id,
-      oldValue,
-      newValue: updated,
+      entityType: 'user',
+      entityId: userId,
+      oldValue: undefined, // You can fetch and pass the old value if needed
+      newValue: user,
     });
-    return updated;
+    return user;
   }
 
   async getUserOverages(userId: string, periodStart?: Date, periodEnd?: Date) {

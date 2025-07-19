@@ -393,4 +393,15 @@ export class UserController {
     await this.userService.disconnectHubspot(userId);
     return { message: 'HubSpot disconnected' };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('me/plan')
+  async updateMyPlan(@Req() req: Request, @Body() body: { planId: string }) {
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    if (!body.planId)
+      throw new HttpException('planId is required', HttpStatus.BAD_REQUEST);
+    return this.userService.updateUserPlan(userId, body.planId);
+  }
 }
