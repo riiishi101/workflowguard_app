@@ -42,7 +42,7 @@ describe('OverageDashboard', () => {
       <MemoryRouter>
         <AuthProvider>
           <PlanProvider>
-            <OverageDashboard />
+          <OverageDashboard />
           </PlanProvider>
         </AuthProvider>
       </MemoryRouter>

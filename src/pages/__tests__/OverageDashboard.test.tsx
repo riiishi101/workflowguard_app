@@ -35,7 +35,7 @@ function renderWithAuth() {
     <MemoryRouter>
       <AuthProvider>
         <PlanProvider>
-          <OverageDashboard />
+        <OverageDashboard />
         </PlanProvider>
       </AuthProvider>
     </MemoryRouter>

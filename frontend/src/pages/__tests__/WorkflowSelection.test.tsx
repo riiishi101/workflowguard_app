@@ -26,7 +26,7 @@ describe('WorkflowSelection', () => {
       <MemoryRouter>
         <AuthProvider>
           <PlanProvider>
-            <WorkflowSelection />
+          <WorkflowSelection />
           </PlanProvider>
         </AuthProvider>
       </MemoryRouter>
@@ -41,7 +41,7 @@ describe('WorkflowSelection', () => {
       <MemoryRouter>
         <AuthProvider>
           <PlanProvider>
-            <WorkflowSelection />
+          <WorkflowSelection />
           </PlanProvider>
         </AuthProvider>
       </MemoryRouter>
@@ -55,7 +55,7 @@ describe('WorkflowSelection', () => {
       <MemoryRouter>
         <AuthProvider>
           <PlanProvider>
-            <WorkflowSelection />
+          <WorkflowSelection />
           </PlanProvider>
         </AuthProvider>
       </MemoryRouter>

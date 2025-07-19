@@ -20,7 +20,7 @@ describe('TopNavigation', () => {
       <BrowserRouter>
         <AuthProvider>
           <PlanProvider>
-            <TopNavigation />
+        <TopNavigation />
           </PlanProvider>
         </AuthProvider>
       </BrowserRouter>
