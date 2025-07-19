@@ -11,6 +11,8 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
+  private userCache = new Map<string, { data: any, expires: number }>();
+
   constructor(
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
@@ -348,11 +350,9 @@ export class UserService {
     });
   }
 
-  const userCache = new Map<string, { data: any, expires: number }>();
-
   async getMe(userId: string) {
     const now = Date.now();
-    const cached = userCache.get(userId);
+    const cached = this.userCache.get(userId);
     if (cached && cached.expires > now) {
       return cached.data;
     }
@@ -370,7 +370,7 @@ export class UserService {
         updatedAt: true,
       },
     });
-    userCache.set(userId, { data, expires: now + 30 * 1000 }); // cache for 30 seconds
+    this.userCache.set(userId, { data, expires: now + 30 * 1000 }); // cache for 30 seconds
     return data;
   }
 
