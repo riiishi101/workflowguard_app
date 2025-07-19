@@ -119,7 +119,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout }}>
-      {error ? (
+      {/* Only show error UI for real errors, not for unauthenticated users */}
+      {error && !(
+        error === 'Authentication failed. Please log in again.' ||
+        error === 'Authentication error. Please try again.'
+      ) ? (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
           <span style={{ color: 'red', fontSize: '1.2rem', marginBottom: '1rem' }}>{error}</span>
           <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>Retry</button>
