@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Navigate } from "react-router-dom";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
 import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
+import { useAuth } from '@/components/AuthContext';
 
 // Define the workflow type with proper validation
 interface Workflow {
@@ -82,6 +83,8 @@ const Dashboard = () => {
   const { plan, hasFeature, isTrialing } = usePlan();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdminOrRestorer = user && (user.role === 'admin' || user.role === 'restorer');
   const [redirect, setRedirect] = useState(false);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [error, setError] = useState<string | null>(null);
