@@ -150,11 +150,11 @@ const Dashboard = () => {
     }
   };
 
-  // Parallel data fetching for better performance
+  // Only fetch data if user is authenticated
   useEffect(() => {
+    if (!user) return;
     const loadData = async () => {
       try {
-        // Fetch workflows and analytics in parallel
         await Promise.allSettled([
           fetchWorkflows(),
           fetchAnalytics()
@@ -163,9 +163,8 @@ const Dashboard = () => {
         console.error('Error loading dashboard data:', error);
       }
     };
-
     loadData();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!plan && workflows.length === 0) {
@@ -349,6 +348,10 @@ const Dashboard = () => {
   }
 
   if (error) {
+    // Suppress error banners for 401 errors if user is not authenticated
+    if (error.toLowerCase().includes('unauthorized') && !user) {
+      return null;
+    }
     return (
       <div className="min-h-screen bg-white">
         <TopNavigation />
