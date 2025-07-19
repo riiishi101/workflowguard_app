@@ -8,7 +8,6 @@ import AnalyticsTable from "@/components/analytics/AnalyticsTable";
 import { useState, useEffect } from 'react';
 import apiService from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
-import RoleGuard from '../components/RoleGuard';
 import { usePlan, useAuth } from "@/components/AuthContext";
 import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
 
@@ -68,7 +67,6 @@ const AnalyticsDashboard = () => {
   }
 
   return (
-    <RoleGuard roles={['admin']}>
     <div className="min-h-screen bg-white">
       <TopNavigation />
         <main className="max-w-7xl mx-auto px-2 sm:px-6 py-8" role="main">
@@ -144,7 +142,6 @@ const AnalyticsDashboard = () => {
         )}
         </main>
     </div>
-    </RoleGuard>
   );
 };
 

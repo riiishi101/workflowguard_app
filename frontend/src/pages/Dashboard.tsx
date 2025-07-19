@@ -439,26 +439,24 @@ const Dashboard = () => {
               All Protected Workflows
             </h2>
             <div className="flex items-center gap-3">
-              <RoleGuard roles={['admin', 'restorer']}>
-                <Button
-                  onClick={canAddMoreWorkflows ? handleAddWorkflow : () => setShowUpgradeModal(true)}
-                  disabled={!canAddMoreWorkflows || actionLoading}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Workflow
-                </Button>
-              </RoleGuard>
-              <RoleGuard roles={['admin', 'restorer']}>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleExport}
-                  disabled={actionLoading || workflows.length === 0}
-                >
-                  {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                  Export
-                </Button>
-              </RoleGuard>
+              <Button
+                onClick={canAddMoreWorkflows ? handleAddWorkflow : () => setShowUpgradeModal(true)}
+                disabled={!canAddMoreWorkflows || actionLoading || !isAdminOrRestorer}
+                title={!isAdminOrRestorer ? 'You do not have permission to add workflows.' : ''}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Workflow
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExport}
+                disabled={actionLoading || workflows.length === 0 || !isAdminOrRestorer}
+                title={!isAdminOrRestorer ? 'You do not have permission to export workflows.' : ''}
+              >
+                {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                Export
+              </Button>
             </div>
           </div>
 
@@ -494,16 +492,15 @@ const Dashboard = () => {
               <span className="text-sm text-blue-900" aria-live="polite">
                 {selectedIds.length} selected
               </span>
-              <RoleGuard roles={['admin', 'restorer']}>
-                <Button 
-                  onClick={handleBulkDelete} 
-                  disabled={selectedIds.length === 0 || actionLoading} 
-                  className="text-red-600 border-red-200"
-                >
-                  {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Delete
-                </Button>
-              </RoleGuard>
+              <Button 
+                onClick={handleBulkDelete} 
+                disabled={selectedIds.length === 0 || actionLoading || !isAdminOrRestorer}
+                className="text-red-600 border-red-200"
+                title={!isAdminOrRestorer ? 'You do not have permission to delete workflows.' : ''}
+              >
+                {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Delete
+              </Button>
             </div>
           )}
 
@@ -610,11 +607,16 @@ const Dashboard = () => {
                             <Button variant="ghost" size="sm" aria-label={`View details for ${workflow.name}`} onClick={() => navigate(`/workflow-history/${workflow.id}`)}>
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <RoleGuard roles={['admin', 'restorer']}>
-                              <Button variant="ghost" size="sm" aria-label={`Rollback ${workflow.name}`} onClick={() => { setRollbackWorkflow(workflow); setShowRollbackModal(true); }}>
-                                <RotateCcw className="w-4 h-4" />
-                              </Button>
-                            </RoleGuard>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label={`Rollback ${workflow.name}`}
+                              onClick={() => { setRollbackWorkflow(workflow); setShowRollbackModal(true); }}
+                              disabled={!isAdminOrRestorer}
+                              title={!isAdminOrRestorer ? 'You do not have permission to rollback workflows.' : ''}
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
                           </div>
                         </td>
                       </tr>

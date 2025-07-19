@@ -21,7 +21,6 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useRequireAuth } from '../components/AuthContext';
-import RoleGuard from '../components/RoleGuard';
 import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '../components/AuthContext';
@@ -285,7 +284,7 @@ const CompareVersions = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Version History
           </Button>
-          <RoleGuard roles={['admin', 'restorer']}>
+          {user?.role === 'admin' && (
             <div className="flex items-center space-x-3">
               <Button variant="outline" className="text-blue-600" onClick={() => handleRestore(versionAData)} disabled={loading}>
                 <RotateCcw className="w-4 h-4 mr-2" />
@@ -296,7 +295,12 @@ const CompareVersions = () => {
                 Restore Version B
               </Button>
             </div>
-          </RoleGuard>
+          )}
+          {user?.role !== 'admin' && (
+            <div className="text-gray-500 text-sm">
+              You do not have permission to restore versions.
+            </div>
+          )}
         </div>
       </main>
     </div>

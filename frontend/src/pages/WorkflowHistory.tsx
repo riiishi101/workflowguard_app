@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import EmptyWorkflowHistory from '../components/EmptyWorkflowHistory';
 import { useRequireAuth, usePlan } from '../components/AuthContext';
-import RoleGuard from '../components/RoleGuard';
 import { useToast } from '@/components/ui/use-toast';
 import React from 'react';
 import apiService from '@/services/api';
@@ -431,7 +430,7 @@ const WorkflowHistory = () => {
                               <Eye className="w-4 h-4 mr-3" />
                               View Details
                             </DropdownMenuItem>
-                            <RoleGuard roles={['admin', 'restorer']}>
+                            {user?.role === 'admin' || user?.role === 'restorer' ? (
                               <DropdownMenuItem
                                 onClick={() => {
                                   setShowRestore(false);
@@ -444,15 +443,14 @@ const WorkflowHistory = () => {
                                 <RotateCcw className="w-4 h-4 mr-3" />
                                 Restore this Version
                               </DropdownMenuItem>
-                            </RoleGuard>
-                            <RoleGuard roles={['viewer']}>
+                            ) : (
                               <DropdownMenuItem
                                 onClick={() => alert('Request sent to admin for rollback.')}
                               >
                                 <RotateCcw className="w-4 h-4 mr-3" />
                                 Request Rollback
                               </DropdownMenuItem>
-                            </RoleGuard>
+                            )}
                             <DropdownMenuItem
                               onClick={() => handleDownloadJSON(version)}
                             >

@@ -17,7 +17,6 @@ import {
   UserCircle,
 } from "lucide-react";
 import { useRequireAuth, useAuth, usePlan } from '../components/AuthContext';
-import RoleGuard from '../components/RoleGuard';
 import { useToast } from '@/components/ui/use-toast';
 
 const Settings = () => {
@@ -93,12 +92,12 @@ const Settings = () => {
           </p>
         </div>
 
-        <RoleGuard roles={['admin']}>
+        {user && user.role === 'admin' && (
           <div className="mb-8 flex items-center gap-4">
             <h2 className="text-lg font-semibold mr-4">User Management (Admin Only)</h2>
             <Button onClick={() => setActiveTab('user-permissions')}>Manage Users</Button>
           </div>
-        </RoleGuard>
+        )}
 
         <Tabs value={activeTab} onValueChange={safeSetActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-6 bg-gray-50 p-1 rounded-lg">
@@ -113,21 +112,21 @@ const Settings = () => {
                 Notifications
               </TabsTrigger>
             )}
-            <RoleGuard roles={['admin']}>
+            {user && user.role === 'admin' && (
               <TabsTrigger key="user-permissions" value="user-permissions" onClick={() => safeSetActiveTab('user-permissions')}>
                 User Permissions
               </TabsTrigger>
-            </RoleGuard>
-            <RoleGuard roles={['admin', 'restorer']}>
+            )}
+            {user && (user.role === 'admin' || user.role === 'restorer') && (
               <TabsTrigger key="audit-log" value="audit-log" onClick={() => safeSetActiveTab('audit-log')}>
                 Audit Log
               </TabsTrigger>
-            </RoleGuard>
-            <RoleGuard roles={['admin']}>
+            )}
+            {user && user.role === 'admin' && (
               <TabsTrigger key="api-access" value="api-access" onClick={() => safeSetActiveTab('api-access')}>
                 API Access
               </TabsTrigger>
-            </RoleGuard>
+            )}
           </TabsList>
 
           <div className="mt-8">
@@ -137,21 +136,21 @@ const Settings = () => {
             <TabsContent value="notifications">
               <NotificationsTab setActiveTab={safeSetActiveTab} />
             </TabsContent>
-            <RoleGuard roles={['admin']}>
+            {user && user.role === 'admin' && (
               <TabsContent value="user-permissions">
                 <UserPermissionsTab setActiveTab={safeSetActiveTab} />
               </TabsContent>
-            </RoleGuard>
-            <RoleGuard roles={['admin', 'restorer']}>
+            )}
+            {user && (user.role === 'admin' || user.role === 'restorer') && (
               <TabsContent value="audit-log">
                 <AuditLogTab />
               </TabsContent>
-            </RoleGuard>
-            <RoleGuard roles={['admin']}>
+            )}
+            {user && user.role === 'admin' && (
               <TabsContent value="api-access">
                 <ApiAccessTab setActiveTab={safeSetActiveTab} />
               </TabsContent>
-            </RoleGuard>
+            )}
             <TabsContent value="profile">
               <ProfileTab />
             </TabsContent>

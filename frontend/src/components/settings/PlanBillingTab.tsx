@@ -16,7 +16,6 @@ import { useToast } from "@/components/ui/use-toast";
 import apiService from '@/services/api';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert } from '@/components/ui/alert';
-import RoleGuard from '../../components/RoleGuard';
 import { usePlan } from '../../components/AuthContext';
 import { useAuth } from '../../components/AuthContext';
 
