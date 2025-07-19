@@ -32,7 +32,7 @@ async function createNestServer(expressInstance = server) {
         legacyHeaders: false,
     });
     app.use(limiter);
-    app.enableCors({
+    const corsOptions = {
         origin: [
             'https://www.workflowguard.pro',
             'https://workflowguard.pro',
@@ -43,7 +43,9 @@ async function createNestServer(expressInstance = server) {
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         allowedHeaders: ['Content-Type', 'Authorization'],
-    });
+    };
+    app.enableCors(corsOptions);
+    console.log('CORS config (createNestServer):', corsOptions);
     app.use((0, cookie_parser_1.default)());
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
@@ -77,7 +79,7 @@ if (process.env.VERCEL !== '1') {
             legacyHeaders: false,
         });
         app.use(limiter);
-        app.enableCors({
+        const corsOptions = {
             origin: [
                 'https://www.workflowguard.pro',
                 'https://workflowguard.pro',
@@ -88,7 +90,9 @@ if (process.env.VERCEL !== '1') {
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
             allowedHeaders: ['Content-Type', 'Authorization'],
-        });
+        };
+        app.enableCors(corsOptions);
+        console.log('CORS config (bootstrap):', corsOptions);
         app.use((0, cookie_parser_1.default)());
         app.useGlobalPipes(new common_1.ValidationPipe({
             whitelist: true,
@@ -107,6 +111,19 @@ if (process.env.VERCEL !== '1') {
 }
 exports.default = server;
 if (process.env.VERCEL === '1') {
-    createNestServer();
+    createNestServer().then(() => {
+        console.log('CORS config (Vercel/serverless):', {
+            origin: [
+                'https://www.workflowguard.pro',
+                'https://workflowguard.pro',
+                'http://localhost:3000',
+                'http://localhost:8080',
+                process.env.FRONTEND_URL
+            ].filter((v) => typeof v === 'string'),
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+            allowedHeaders: ['Content-Type', 'Authorization'],
+        });
+    });
 }
 //# sourceMappingURL=main.js.map
