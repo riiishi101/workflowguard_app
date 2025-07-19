@@ -9,6 +9,7 @@ import ConnectHubSpotModal from './components/ConnectHubSpotModal';
 import AppLoadingState from './components/ui/AppLoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
 import PerformanceMonitor from './components/ui/PerformanceMonitor';
+import Footer from './components/Footer';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -141,6 +142,7 @@ function App() {
           <AppRoutes />
             <Toaster />
             <PerformanceMonitor />
+            <Footer />
           </ErrorBoundary>
       </PlanProvider>
     </AuthProvider>
