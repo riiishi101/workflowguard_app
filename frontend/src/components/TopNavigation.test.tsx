@@ -3,6 +3,8 @@ import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import TopNavigation from './TopNavigation';
+import { AuthProvider } from './AuthContext';
+import { PlanProvider } from './AuthContext';
 
 // Mock useAuth to provide a user
 vi.mock('./AuthContext', async (importOriginal) => {
@@ -16,7 +18,11 @@ describe('TopNavigation', () => {
   it('renders without crashing inside BrowserRouter', () => {
     render(
       <BrowserRouter>
-        <TopNavigation />
+        <AuthProvider>
+          <PlanProvider>
+            <TopNavigation />
+          </PlanProvider>
+        </AuthProvider>
       </BrowserRouter>
     );
     expect(screen.getAllByText(/dashboard/i).length).toBeGreaterThan(0);

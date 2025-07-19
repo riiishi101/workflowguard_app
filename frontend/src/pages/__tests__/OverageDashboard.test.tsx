@@ -7,6 +7,7 @@ import apiService from '@/services/api';
 import { AuthProvider, useAuth } from '@/components/AuthContext';
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { PlanProvider } from '@/components/AuthContext';
 
 const mockUser = { id: '1', email: 'admin@example.com', name: 'Admin', role: 'admin' };
 const summary = {
@@ -40,7 +41,9 @@ describe('OverageDashboard', () => {
     return render(
       <MemoryRouter>
         <AuthProvider>
-          <OverageDashboard />
+          <PlanProvider>
+            <OverageDashboard />
+          </PlanProvider>
         </AuthProvider>
       </MemoryRouter>
     );

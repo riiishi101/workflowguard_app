@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth, usePlan } from './components/AuthContext';
+import { AuthProvider, PlanProvider, useAuth, usePlan } from './components/AuthContext';
 import { Toaster } from './components/ui/toaster';
 import { useToast } from './components/ui/use-toast';
 import TopNavigation from './components/TopNavigation';
@@ -40,8 +40,8 @@ const ModalsManager = () => {
 
   React.useEffect(() => {
     if (!loading) {
-      if (!user) {
-        setWelcomeOpen(true);
+    if (!user) {
+      setWelcomeOpen(true);
       } else if (user && !user.hubspotPortalId) {
         setConnectOpen(true);
       }
@@ -135,13 +135,15 @@ const AppRoutes = () => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <ErrorBoundary>
+    <AuthProvider>
+      <PlanProvider>
+          <ErrorBoundary>
           <AppRoutes />
-          <Toaster />
-          <PerformanceMonitor />
-        </ErrorBoundary>
-      </AuthProvider>
+            <Toaster />
+            <PerformanceMonitor />
+          </ErrorBoundary>
+      </PlanProvider>
+    </AuthProvider>
     </Router>
   );
 }

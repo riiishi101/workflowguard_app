@@ -6,6 +6,7 @@ import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { AuthProvider } from '@/components/AuthContext';
+import { PlanProvider } from '@/components/AuthContext';
 
 vi.mock('@/services/api');
 
@@ -24,7 +25,9 @@ describe('WorkflowSelection', () => {
     render(
       <MemoryRouter>
         <AuthProvider>
-          <WorkflowSelection />
+          <PlanProvider>
+            <WorkflowSelection />
+          </PlanProvider>
         </AuthProvider>
       </MemoryRouter>
     );
@@ -37,7 +40,9 @@ describe('WorkflowSelection', () => {
     render(
       <MemoryRouter>
         <AuthProvider>
-          <WorkflowSelection />
+          <PlanProvider>
+            <WorkflowSelection />
+          </PlanProvider>
         </AuthProvider>
       </MemoryRouter>
     );
@@ -49,7 +54,9 @@ describe('WorkflowSelection', () => {
     render(
       <MemoryRouter>
         <AuthProvider>
-          <WorkflowSelection />
+          <PlanProvider>
+            <WorkflowSelection />
+          </PlanProvider>
         </AuthProvider>
       </MemoryRouter>
     );

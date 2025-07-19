@@ -4,6 +4,7 @@ import React from 'react';
 import apiService from '@/services/api';
 import { AuthProvider, useAuth } from '@/components/AuthContext';
 import OverageDashboard from '@/pages/OverageDashboard';
+import { PlanProvider } from '@/components/AuthContext';
 
 const mockUser = { id: '1', email: 'admin@example.com', name: 'Admin', role: 'admin' };
 const summary = {
@@ -33,7 +34,9 @@ function renderWithAuth() {
   return render(
     <MemoryRouter>
       <AuthProvider>
-        <OverageDashboard />
+        <PlanProvider>
+          <OverageDashboard />
+        </PlanProvider>
       </AuthProvider>
     </MemoryRouter>
   );
