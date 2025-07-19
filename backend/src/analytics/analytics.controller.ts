@@ -28,7 +28,7 @@ export class AnalyticsController {
    * Admin only - provides overview of all key metrics
    */
   @Get('business-intelligence')
-  @Roles('admin')
+  @Roles('admin', 'viewer')
   async getBusinessIntelligence() {
     return this.analyticsService.getBusinessIntelligence();
   }
