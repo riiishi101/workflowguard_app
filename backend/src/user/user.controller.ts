@@ -238,7 +238,11 @@ export class UserController {
     const userId = (req as any).user?.sub;
     if (!userId)
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    return this.userService.getMe(userId);
+    const start = Date.now();
+    const result = await this.userService.getMe(userId);
+    const duration = Date.now() - start;
+    console.log(`[PERF] /me for user ${userId} took ${duration}ms`);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)

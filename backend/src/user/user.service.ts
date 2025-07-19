@@ -348,8 +348,15 @@ export class UserService {
     });
   }
 
+  const userCache = new Map<string, { data: any, expires: number }>();
+
   async getMe(userId: string) {
-    return this.prisma.user.findUnique({
+    const now = Date.now();
+    const cached = userCache.get(userId);
+    if (cached && cached.expires > now) {
+      return cached.data;
+    }
+    const data = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -363,6 +370,8 @@ export class UserService {
         updatedAt: true,
       },
     });
+    userCache.set(userId, { data, expires: now + 30 * 1000 }); // cache for 30 seconds
+    return data;
   }
 
   async updateMe(userId: string, dto: any): Promise<User> {
