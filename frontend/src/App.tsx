@@ -1,60 +1,55 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AuthProvider, PlanProvider, useAuth, usePlan } from './components/AuthContext';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth, usePlan } from './components/AuthContext';
+import { Toaster } from './components/ui/toaster';
+import { useToast } from './components/ui/use-toast';
+import TopNavigation from './components/TopNavigation';
 import WelcomeModal from './components/WelcomeModal';
 import ConnectHubSpotModal from './components/ConnectHubSpotModal';
-import Dashboard from './pages/Dashboard';
-import WorkflowSelection from './pages/WorkflowSelection';
-import Settings from './pages/Settings';
-import NotFound from './pages/NotFound';
-import Footer from './components/Footer';
-import WorkflowHistory from './pages/WorkflowHistory';
-import HelpSupport from './pages/HelpSupport';
-import OverageDashboard from './pages/OverageDashboard';
-import AnalyticsDashboard from './pages/AnalyticsDashboard';
-import RealtimeDashboard from './pages/RealtimeDashboard';
+import AppLoadingState from './components/ui/AppLoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
+import PerformanceMonitor from './components/ui/PerformanceMonitor';
+
+// Pages
+import Dashboard from './pages/Dashboard';
+import WorkflowHistory from './pages/WorkflowHistory';
+import WorkflowHistoryDetail from './pages/WorkflowHistoryDetail';
+import WorkflowSelection from './pages/WorkflowSelection';
+import CompareVersions from './pages/CompareVersions';
+import Settings from './pages/Settings';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import OverageDashboard from './pages/OverageDashboard';
+import RealtimeDashboard from './pages/RealtimeDashboard';
+import ContactUs from './pages/ContactUs';
+import HelpSupport from './pages/HelpSupport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
-import ContactUs from './pages/ContactUs';
+import LoggedOut from './pages/LoggedOut';
+import NotFound from './pages/NotFound';
 
-// Helper: Show Welcome/Connect modals based on context
+// Import API service
+import apiService from './services/api';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+// ModalsManager component to handle modal state
 const ModalsManager = () => {
-  const { user } = useAuth();
-  const { plan } = usePlan();
-  const [welcomeOpen, setWelcomeOpen] = useState(!user);
-  const [connectOpen, setConnectOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const [welcomeOpen, setWelcomeOpen] = React.useState(false);
+  const [connectOpen, setConnectOpen] = React.useState(false);
 
-  // Show WelcomeModal if not logged in
-  // Show ConnectHubSpotModal if logged in but not connected to HubSpot
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const oauthError = params.get("oauth_error");
-    if (oauthError) {
-      setConnectOpen(true);
-      setWelcomeOpen(false);
-      return;
-    }
-    if (!user) {
-      setWelcomeOpen(true);
-      setConnectOpen(false);
-    } else {
-      // Check if user has HubSpot connection by looking at user data
-      const hasHubSpotConnection = user.hubspotPortalId;
-      
-      if (!hasHubSpotConnection) {
-        setWelcomeOpen(false);
+    if (!loading) {
+      if (!user) {
+        setWelcomeOpen(true);
+      } else if (user && !user.hubspotPortalId) {
         setConnectOpen(true);
-      } else {
-        setWelcomeOpen(false);
-        setConnectOpen(false);
       }
     }
-  }, [user, plan]);
+  }, [user, loading]);
 
-  // WelcomeModal opens ConnectHubSpotModal
   const handleConnectHubSpot = () => {
-    console.log('WelcomeModal Connect button clicked');
+    setWelcomeOpen(false);
     setConnectOpen(true);
   };
 
@@ -76,12 +71,14 @@ const AppRoutes = () => {
   const { plan } = usePlan();
   const location = useLocation();
 
-  // Show spinner or blank while loading auth state
+  // Show enhanced loading state while loading auth state
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span className="text-gray-500 text-lg">Loading...</span>
-      </div>
+      <AppLoadingState 
+        message="Initializing WorkflowGuard..."
+        timeout={30000}
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
@@ -108,53 +105,45 @@ const AppRoutes = () => {
     //   window.location.replace('/dashboard');
     //   return;
     // }
-  }, [user, plan, hasSelectedWorkflows, location.pathname]);
+  }, [user, location.pathname, hasSelectedWorkflows]);
 
   return (
     <>
       <ModalsManager />
       <Routes>
-        {/* Default route - redirect based on user state */}
-        <Route path="/" element={
-          <Navigate to={
-            !user ? "/" : // Stay on root if not authenticated (modals will handle)
-            !hasSelectedWorkflows ? "/select-workflows" : 
-            "/dashboard"
-          } replace />
-        } />
-        {/* WelcomeModal and ConnectHubSpotModal are handled globally */}
-        <Route path="/select-workflows" element={<WorkflowSelection />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/settings" element={<Settings />} />
         <Route path="/workflow-history" element={<WorkflowHistory />} />
-        <Route path="/workflow-history/:workflowId" element={<WorkflowHistory />} />
-        <Route path="/help" element={<HelpSupport />} />
-        <Route path="/overages" element={<OverageDashboard />} />
+        <Route path="/workflow-history/:id" element={<WorkflowHistoryDetail />} />
+        <Route path="/select-workflows" element={<WorkflowSelection />} />
+        <Route path="/compare-versions" element={<CompareVersions />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
-        <Route path="/realtime-dashboard" element={<RealtimeDashboard />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-of-service" element={<TermsOfService />} />
-        <Route path="/contact-us" element={<ContactUs />} />
-        {/* Add more routes as needed */}
+        <Route path="/overage" element={<OverageDashboard />} />
+        <Route path="/realtime" element={<RealtimeDashboard />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/help" element={<HelpSupport />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/logged-out" element={<LoggedOut />} />
+        <Route path="/" element={<Dashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );
 };
 
-const App = () => {
+function App() {
   return (
-    <ErrorBoundary>
-    <AuthProvider>
-      <PlanProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <ErrorBoundary>
           <AppRoutes />
-          <Footer />
-        </Router>
-      </PlanProvider>
-    </AuthProvider>
-    </ErrorBoundary>
+          <Toaster />
+          <PerformanceMonitor />
+        </ErrorBoundary>
+      </AuthProvider>
+    </Router>
   );
-};
+}
 
 export default App;

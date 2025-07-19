@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { OverageService } from './overage.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -28,7 +39,7 @@ export class OverageController {
       filters.periodStart = { gte: new Date(periodStart) };
       filters.periodEnd = { lte: new Date(periodEnd) };
     }
-    
+
     return this.overageService.findAll(filters);
   }
 
@@ -49,12 +60,14 @@ export class OverageController {
   @Post('bulk-bill')
   async bulkBillOverages(@Body() body: { overageIds: string[] }) {
     try {
-      const results = await this.hubspotBillingService.reportOveragesToHubSpot(body.overageIds);
+      const results = await this.hubspotBillingService.reportOveragesToHubSpot(
+        body.overageIds,
+      );
       return {
         message: 'Bulk billing completed',
         processed: results.length,
-        successful: results.filter(r => r.success).length,
-        failed: results.filter(r => !r.success).length,
+        successful: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
         results,
       };
     } catch (error) {
@@ -69,8 +82,11 @@ export class OverageController {
   async getBillingStatus() {
     try {
       const unbilledOverages = await this.overageService.getUnbilledOverages();
-      const totalUnbilled = unbilledOverages.reduce((sum, o) => sum + o.amount, 0);
-      
+      const totalUnbilled = unbilledOverages.reduce(
+        (sum, o) => sum + o.amount,
+        0,
+      );
+
       return {
         status: 'operational',
         unbilledCount: unbilledOverages.length,
@@ -102,4 +118,4 @@ export class OverageController {
   async getUnbilledOverages() {
     return this.overageService.getUnbilledOverages();
   }
-} 
+}

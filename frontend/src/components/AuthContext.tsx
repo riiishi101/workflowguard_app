@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Always check for JWT cookie authentication first
     (async () => {
-      function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 5000) {
+      function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 15000) {
         return Promise.race([
           fetch(resource, options),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Checking for JWT cookie authentication...');
         const res = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
           credentials: 'include',
-        }, 5000) as Response;
+        }, 15000) as Response;
         console.log('Auth /me response status:', res.status);
         if (res.ok) {
           const data = await res.json();
@@ -111,9 +111,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     localStorage.clear();
     sessionStorage.clear();
-    // Redirect to HubSpot app marketplace listing
+    // Redirect to a dedicated logged-out page to prevent auto-login
     if (typeof window !== 'undefined') {
-    window.location.href = 'https://app.hubspot.com/ecosystem/marketplace/apps';
+      window.location.href = '/logged-out';
     }
   };
 

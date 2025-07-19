@@ -44,7 +44,7 @@ const Settings = () => {
   };
 
   // Debug log for user and plan
-  console.log('Settings debug:', { user, plan: safePlan });
+  // console.log('Settings debug:', { user, plan: safePlan });
 
   const HUBSPOT_MANAGE_SUBSCRIPTION_URL = user?.hubspotPortalId
     ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`

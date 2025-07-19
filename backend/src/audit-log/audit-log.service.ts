@@ -6,7 +6,10 @@ import { RealtimeService } from '../services/realtime.service';
 
 @Injectable()
 export class AuditLogService {
-  constructor(private prisma: PrismaService, private realtimeService: RealtimeService) {}
+  constructor(
+    private prisma: PrismaService,
+    private realtimeService: RealtimeService,
+  ) {}
 
   async create(data: CreateAuditLogDto): Promise<AuditLog> {
     const log = await this.prisma.auditLog.create({
@@ -43,7 +46,10 @@ export class AuditLogService {
     });
   }
 
-  async findByEntity(entityType: string, entityId: string): Promise<AuditLog[]> {
+  async findByEntity(
+    entityType: string,
+    entityId: string,
+  ): Promise<AuditLog[]> {
     return this.prisma.auditLog.findMany({
       where: {
         entityType,
@@ -86,7 +92,8 @@ export class AuditLogService {
   async findAdvanced(where: any): Promise<AuditLog[]> {
     // Remove undefined/null keys
     Object.keys(where).forEach(
-      (key) => (where[key] === undefined || where[key] === null) && delete where[key]
+      (key) =>
+        (where[key] === undefined || where[key] === null) && delete where[key],
     );
     return this.prisma.auditLog.findMany({
       where,

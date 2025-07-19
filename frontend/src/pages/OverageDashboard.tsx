@@ -142,7 +142,7 @@ export default function OverageDashboard() {
   const overagePeriods = summary?.overagePeriods ?? 0;
 
   return (
-    <RoleGuard roles={['admin', 'restorer']}>
+    <RoleGuard roles={['admin']}>
       <div className="min-h-screen bg-white">
         <TopNavigation />
 

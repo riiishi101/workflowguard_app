@@ -9,7 +9,14 @@ describe('WebhookService', () => {
   let auditLogService: any;
 
   beforeEach(async () => {
-    prisma = { webhook: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), delete: jest.fn() } };
+    prisma = {
+      webhook: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        delete: jest.fn(),
+      },
+    };
     auditLogService = { create: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
       providers: [

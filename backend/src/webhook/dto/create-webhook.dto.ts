@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, ArrayNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsArray,
+  ArrayNotEmpty,
+} from 'class-validator';
 
 export class CreateWebhookDto {
   @IsOptional()
@@ -17,4 +23,4 @@ export class CreateWebhookDto {
   @ArrayNotEmpty()
   @IsString({ each: true })
   events: string[];
-} 
+}

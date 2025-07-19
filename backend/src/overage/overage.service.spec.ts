@@ -157,7 +157,9 @@ describe('OverageService', () => {
     });
 
     it('should handle database errors gracefully', async () => {
-      (prisma.overage.update as jest.Mock).mockRejectedValue(new Error('Database error'));
+      (prisma.overage.update as jest.Mock).mockRejectedValue(
+        new Error('Database error'),
+      );
       await expect(service.markAsBilled('1')).rejects.toThrow('Database error');
     });
   });
@@ -269,4 +271,4 @@ describe('OverageService', () => {
       expect(result).toEqual([]);
     });
   });
-}); 
+});

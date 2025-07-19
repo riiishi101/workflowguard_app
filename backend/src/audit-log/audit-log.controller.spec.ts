@@ -9,7 +9,15 @@ describe('AuditLogController', () => {
   let userService: any;
 
   beforeEach(async () => {
-    auditLogService = { findAll: jest.fn(), findByUser: jest.fn(), findByEntity: jest.fn(), findOne: jest.fn(), create: jest.fn(), update: jest.fn(), remove: jest.fn() };
+    auditLogService = {
+      findAll: jest.fn(),
+      findByUser: jest.fn(),
+      findByEntity: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+    };
     userService = { findOne: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuditLogController],

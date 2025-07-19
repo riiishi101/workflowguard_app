@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ExecutionContext } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('UserController', () => {
@@ -18,13 +17,17 @@ describe('UserController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [
-        { provide: UserService, useValue: userService },
+        {
+          provide: UserService,
+          useValue: userService,
+        },
         { provide: PrismaService, useValue: prisma },
+        {
+          provide: JwtAuthGuard,
+          useValue: { canActivate: () => true },
+        },
       ],
-    })
-      .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: (ctx: ExecutionContext) => true })
-      .compile();
+    }).compile();
 
     controller = module.get<UserController>(UserController);
   });
@@ -34,7 +37,7 @@ describe('UserController', () => {
   });
 
   describe('getMyPlanStatus', () => {
-    const mockReq = (userId: string) => ({ user: { sub: userId } } as any);
+    const mockReq = (userId: string) => ({ user: { sub: userId } }) as any;
     it('returns trial info when trial is active', async () => {
       const now = new Date();
       const trialEndDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);

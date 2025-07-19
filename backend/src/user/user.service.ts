@@ -70,18 +70,26 @@ export class UserService {
     });
 
     // If user exists but plan fields are null or incomplete, set defaults
-    if (user && (user.isTrialActive === null || user.trialEndDate === null || user.trialPlanId === null)) {
+    if (
+      user &&
+      (user.isTrialActive === null ||
+        user.trialEndDate === null ||
+        user.trialPlanId === null)
+    ) {
       const now = new Date();
       const trialDays = 21;
-      const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
-      
+      const trialEnd = new Date(
+        now.getTime() + trialDays * 24 * 60 * 60 * 1000,
+      );
+
       const updatedUser = await this.prisma.user.update({
         where: { id },
         data: {
           planId: user.planId || 'starter',
           trialStartDate: user.trialStartDate || now,
           trialEndDate: user.trialEndDate || trialEnd,
-          isTrialActive: user.isTrialActive !== null ? user.isTrialActive : false,
+          isTrialActive:
+            user.isTrialActive !== null ? user.isTrialActive : false,
           trialPlanId: user.trialPlanId || 'professional',
         },
         select: {
@@ -122,7 +130,10 @@ export class UserService {
     });
   }
 
-  async update(id: string, data: Prisma.UserUpdateInput & { updatedBy?: string }): Promise<User> {
+  async update(
+    id: string,
+    data: Prisma.UserUpdateInput & { updatedBy?: string },
+  ): Promise<User> {
     const oldUser = await this.prisma.user.findUnique({ where: { id } });
     const user = await this.prisma.user.update({
       where: { id },
@@ -156,7 +167,11 @@ export class UserService {
     return this.prisma.workflow.count({ where: { ownerId } });
   }
 
-  async findOneWithSubscription(id: string): Promise<(User & { subscription: any; hubspotPortalId: string | null }) | null> {
+  async findOneWithSubscription(
+    id: string,
+  ): Promise<
+    (User & { subscription: any; hubspotPortalId: string | null }) | null
+  > {
     return this.prisma.user.findUnique({
       where: { id },
       include: { subscription: true },
@@ -169,7 +184,9 @@ export class UserService {
 
   async updateUserPlan(userId: string, newPlanId: string, actorUserId: string) {
     // Find the user's current subscription
-    const subscription = await this.prisma.subscription.findUnique({ where: { userId } });
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
     if (!subscription) throw new Error('Subscription not found');
     const oldValue = { ...subscription };
     // Update the planId
@@ -206,20 +223,24 @@ export class UserService {
       where: { userId },
       orderBy: { periodStart: 'desc' },
     });
-    
-    const totalOverages = overages.reduce((sum, overage) => sum + overage.amount, 0);
+
+    const totalOverages = overages.reduce(
+      (sum, overage) => sum + overage.amount,
+      0,
+    );
     const unbilledOverages = overages
-      .filter(overage => !overage.billed)
+      .filter((overage) => !overage.billed)
       .reduce((sum, overage) => sum + overage.amount, 0);
-    
+
     return {
       totalOverages,
       unbilledOverages,
       overagePeriods: overages.length,
-      currentPeriodOverages: overages.find(o => {
-        const now = new Date();
-        return o.periodStart <= now && o.periodEnd >= now;
-      })?.amount || 0,
+      currentPeriodOverages:
+        overages.find((o) => {
+          const now = new Date();
+          return o.periodStart <= now && o.periodEnd >= now;
+        })?.amount || 0,
     };
   }
 
@@ -230,7 +251,13 @@ export class UserService {
     return subscription;
   }
 
-  async trackOverage(userId: string, type: string, amount: number, periodStart: Date, periodEnd: Date) {
+  async trackOverage(
+    userId: string,
+    type: string,
+    amount: number,
+    periodStart: Date,
+    periodEnd: Date,
+  ) {
     const overage = await this.prisma.overage.create({
       data: {
         userId,
@@ -258,7 +285,9 @@ export class UserService {
   }
 
   async updateNotificationSettings(userId: string, dto: any) {
-    const oldSettings = await this.prisma.notificationSettings.findUnique({ where: { userId } });
+    const oldSettings = await this.prisma.notificationSettings.findUnique({
+      where: { userId },
+    });
     const settings = await this.prisma.notificationSettings.upsert({
       where: { userId },
       update: dto,
@@ -303,7 +332,12 @@ export class UserService {
       },
     });
     // Return the raw key only once
-    return { id: apiKey.id, description: apiKey.description, createdAt: apiKey.createdAt, key: rawKey };
+    return {
+      id: apiKey.id,
+      description: apiKey.description,
+      createdAt: apiKey.createdAt,
+      key: rawKey,
+    };
   }
 
   async deleteApiKey(userId: string, id: string) {
@@ -332,8 +366,13 @@ export class UserService {
   }
 
   async updateMe(userId: string, dto: any): Promise<User> {
-    const oldUser = await this.prisma.user.findUnique({ where: { id: userId } });
-    const user = await this.prisma.user.update({ where: { id: userId }, data: dto });
+    const oldUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: dto,
+    });
     await this.auditLogService.create({
       userId,
       action: 'update',
@@ -346,7 +385,9 @@ export class UserService {
   }
 
   async deleteMe(userId: string): Promise<User> {
-    const oldUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    const oldUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
     const user = await this.prisma.user.delete({ where: { id: userId } });
     await this.auditLogService.create({
       userId,
@@ -389,7 +430,10 @@ export class UserService {
     return token;
   }
 
-  async resetPasswordWithToken(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  async resetPasswordWithToken(
+    token: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message: string }> {
     // Find user by token and check expiry
     const user = await this.prisma.user.findFirst({
       where: {
@@ -429,14 +473,23 @@ export class UserService {
 
   async exportUserData(userId: string): Promise<any> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    const workflows = await this.prisma.workflow.findMany({ where: { ownerId: userId } });
-    const workflowIds = workflows.map(w => w.id);
-    const workflowVersions = await this.prisma.workflowVersion.findMany({ where: { workflowId: { in: workflowIds } } });
-    const auditLogs = await this.prisma.auditLog.findMany({ where: { userId } });
-    const subscription = await this.prisma.subscription.findUnique({ where: { userId } });
+    const workflows = await this.prisma.workflow.findMany({
+      where: { ownerId: userId },
+    });
+    const workflowIds = workflows.map((w) => w.id);
+    const workflowVersions = await this.prisma.workflowVersion.findMany({
+      where: { workflowId: { in: workflowIds } },
+    });
+    const auditLogs = await this.prisma.auditLog.findMany({
+      where: { userId },
+    });
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
     const webhooks = await this.prisma.webhook.findMany({ where: { userId } });
     const overages = await this.prisma.overage.findMany({ where: { userId } });
-    const notificationSettings = await this.prisma.notificationSettings.findUnique({ where: { userId } });
+    const notificationSettings =
+      await this.prisma.notificationSettings.findUnique({ where: { userId } });
     const apiKeys = await this.prisma.apiKey.findMany({ where: { userId } });
     return {
       user,
@@ -452,7 +505,9 @@ export class UserService {
   }
 
   async disconnectHubspot(userId: string) {
-    const oldUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    const oldUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {

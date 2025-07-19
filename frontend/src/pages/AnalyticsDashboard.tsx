@@ -68,7 +68,7 @@ const AnalyticsDashboard = () => {
   }
 
   return (
-    <RoleGuard roles={['admin', 'restorer']}>
+    <RoleGuard roles={['admin']}>
     <div className="min-h-screen bg-white">
       <TopNavigation />
         <main className="max-w-7xl mx-auto px-2 sm:px-6 py-8" role="main">

@@ -1,13 +1,15 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
-import { CreateUserDto } from '../user/dto/create-user.dto';
 import axios from 'axios';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async validateUser(email: string) {
     return this.prisma.user.findUnique({
@@ -15,8 +17,13 @@ export class AuthService {
     });
   }
 
-  async createUser(email: string, name?: string, role: string = 'viewer', password?: string) {
-    let data: any = { email, name, role };
+  async createUser(
+    email: string,
+    name?: string,
+    role: string = 'viewer',
+    password?: string,
+  ) {
+    const data: any = { email, name, role };
     if (password) {
       data.password = await bcrypt.hash(password, 10);
     }
@@ -35,9 +42,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     // Remove password from user object before returning
-    const { password: _, ...userWithoutPassword } = user as any;
+    const userWithoutPassword = { ...user } as any;
+    delete userWithoutPassword.password;
+    console.log('Password removed from user object for security');
     return {
-      access_token: this.jwtService.sign({ sub: user.id, email: user.email, role: user.role }),
+      access_token: this.jwtService.sign({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      }),
       user: userWithoutPassword,
     };
   }
@@ -50,11 +63,15 @@ export class AuthService {
     if (!user) {
       const now = new Date();
       const trialDays = 21;
-      const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+      const trialEnd = new Date(
+        now.getTime() + trialDays * 24 * 60 * 60 * 1000,
+      );
       let role = 'viewer';
       if (portalId) {
         // Count users for this portal
-        const count = await this.prisma.user.count({ where: { hubspotPortalId: portalId } });
+        const count = await this.prisma.user.count({
+          where: { hubspotPortalId: portalId },
+        });
         if (count === 0) {
           role = 'admin';
         }
@@ -102,7 +119,11 @@ export class AuthService {
     return user;
   }
 
-  async validateJwtPayload(payload: { sub: string; email: string; role: string }) {
+  async validateJwtPayload(payload: {
+    sub: string;
+    email: string;
+    role: string;
+  }) {
     return this.prisma.user.findUnique({ where: { id: payload.sub } });
   }
 
@@ -113,7 +134,12 @@ export class AuthService {
     });
   }
 
-  async updateUserHubspotTokens(userId: string, accessToken: string, refreshToken: string, expiresIn: number) {
+  async updateUserHubspotTokens(
+    userId: string,
+    accessToken: string,
+    refreshToken: string,
+    expiresIn: number,
+  ) {
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
     return this.prisma.user.update({
       where: { id: userId },
@@ -127,7 +153,11 @@ export class AuthService {
 
   async getValidHubspotAccessToken(user: any) {
     const now = new Date();
-    if (user.hubspotAccessToken && user.hubspotTokenExpiresAt && user.hubspotTokenExpiresAt > now) {
+    if (
+      user.hubspotAccessToken &&
+      user.hubspotTokenExpiresAt &&
+      user.hubspotTokenExpiresAt > now
+    ) {
       // Token is still valid
       return user.hubspotAccessToken;
     }
@@ -135,17 +165,26 @@ export class AuthService {
     if (!user.hubspotRefreshToken) {
       throw new Error('No HubSpot refresh token available');
     }
-    const tokenRes = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
-      params: {
-        grant_type: 'refresh_token',
-        client_id: process.env.HUBSPOT_CLIENT_ID,
-        client_secret: process.env.HUBSPOT_CLIENT_SECRET,
-        refresh_token: user.hubspotRefreshToken,
+    const tokenRes = await axios.post(
+      'https://api.hubapi.com/oauth/v1/token',
+      null,
+      {
+        params: {
+          grant_type: 'refresh_token',
+          client_id: process.env.HUBSPOT_CLIENT_ID,
+          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+          refresh_token: user.hubspotRefreshToken,
+        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       },
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
+    );
     const { access_token, refresh_token, expires_in } = tokenRes.data;
-    await this.updateUserHubspotTokens(user.id, access_token, refresh_token, expires_in);
+    await this.updateUserHubspotTokens(
+      user.id,
+      access_token,
+      refresh_token,
+      expires_in,
+    );
     return access_token;
   }
 
@@ -165,7 +204,16 @@ export class AuthService {
 
   async handleHubspotDeauth(portalId: string, userId?: string) {
     // Find all users with this portalId
-    const users = await this.prisma.user.findMany({ where: { hubspotPortalId: portalId } });
+    const users = await this.prisma.user.findMany({
+      where: { hubspotPortalId: portalId },
+    });
+
+    if (userId) {
+      console.log(
+        `HubSpot deauth initiated by user ${userId} for portal ${portalId}`,
+      );
+    }
+
     for (const user of users) {
       // Anonymize user email and remove HubSpot tokens
       await this.prisma.user.update({
@@ -179,8 +227,12 @@ export class AuthService {
         },
       });
       // Optionally, log or audit this action
-      console.log(`Anonymized user ${user.id} for HubSpot portalId ${portalId}`);
+      console.log(
+        `Anonymized user ${user.id} for HubSpot portalId ${portalId}`,
+      );
     }
-    return { message: `Deauthorized and anonymized ${users.length} user(s) for portalId ${portalId}` };
+    return {
+      message: `Deauthorized and anonymized ${users.length} user(s) for portalId ${portalId}`,
+    };
   }
 }

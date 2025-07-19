@@ -11,7 +11,11 @@ describe('WebhookController', () => {
   let prisma: any;
 
   beforeEach(async () => {
-    webhookService = { create: jest.fn(), findAllByUser: jest.fn(), remove: jest.fn() };
+    webhookService = {
+      create: jest.fn(),
+      findAllByUser: jest.fn(),
+      remove: jest.fn(),
+    };
     userService = { findOne: jest.fn() };
     prisma = { user: { findUnique: jest.fn() } };
     const module: TestingModule = await Test.createTestingModule({

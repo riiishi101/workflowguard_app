@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, Delete, HttpException, HttpStatus, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  HttpException,
+  HttpStatus,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AuditLogService } from './audit-log.service';
 import { CreateAuditLogDto } from './dto';
@@ -18,7 +30,11 @@ export class AuditLogController {
     try {
       return await this.auditLogService.create(createAuditLogDto);
     } catch (error) {
-      throw new HttpException('Failed to create audit log', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Failed to create audit log:', error);
+      throw new HttpException(
+        'Failed to create audit log',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -36,9 +52,14 @@ export class AuditLogController {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
     const planId = user?.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
     // Advanced filtering
     const where: any = {};
@@ -47,7 +68,10 @@ export class AuditLogController {
     if (entityId) where.entityId = entityId;
     if (action) where.action = action;
     if (startDate && endDate) {
-      where.timestamp = { gte: new Date(startDate), lte: new Date(endDate + 'T23:59:59.999Z') };
+      where.timestamp = {
+        gte: new Date(startDate),
+        lte: new Date(endDate + 'T23:59:59.999Z'),
+      };
     }
     if (Object.keys(where).length > 0) {
       return await this.auditLogService.findAdvanced(where);
@@ -61,9 +85,14 @@ export class AuditLogController {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
     const planId = user?.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
     const auditLog = await this.auditLogService.findOne(id);
     if (!auditLog) {
@@ -78,22 +107,36 @@ export class AuditLogController {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
     const planId = user?.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
     return await this.auditLogService.findByUser(userId);
   }
 
   @Get('entity/:entityType/:entityId')
   @UseGuards(JwtAuthGuard)
-  async findByEntity(@Req() req: Request, @Param('entityType') entityType: string, @Param('entityId') entityId: string) {
+  async findByEntity(
+    @Req() req: Request,
+    @Param('entityType') entityType: string,
+    @Param('entityId') entityId: string,
+  ) {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
     const planId = user?.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
     return await this.auditLogService.findByEntity(entityType, entityId);
   }
@@ -108,7 +151,11 @@ export class AuditLogController {
       }
       return { message: 'Audit log deleted successfully' };
     } catch (error) {
-      throw new HttpException('Failed to delete audit log', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Failed to delete audit log:', error);
+      throw new HttpException(
+        'Failed to delete audit log',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

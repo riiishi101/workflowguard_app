@@ -7,7 +7,12 @@ import { NotificationModule } from '../notification/notification.module';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => AuditLogModule), NotificationModule, EmailModule],
+  imports: [
+    PrismaModule,
+    forwardRef(() => AuditLogModule),
+    NotificationModule,
+    EmailModule,
+  ],
   providers: [UserService],
   controllers: [UserController],
   exports: [UserService],

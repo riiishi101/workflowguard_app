@@ -12,4 +12,4 @@ export class CreateUserDto {
   @IsIn(['admin', 'viewer'])
   @IsOptional()
   role?: string = 'viewer';
-} 
+}

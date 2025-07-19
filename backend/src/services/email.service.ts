@@ -40,7 +40,11 @@ interface BillingUpdateData {
 interface SystemAlertData {
   userEmail: string;
   userName: string;
-  alertType: 'plan_upgrade' | 'plan_downgrade' | 'usage_warning' | 'system_maintenance';
+  alertType:
+    | 'plan_upgrade'
+    | 'plan_downgrade'
+    | 'usage_warning'
+    | 'system_maintenance';
   message: string;
   actionRequired?: boolean;
 }
@@ -67,9 +71,15 @@ export class EmailService {
   private readonly supportEmail: string;
 
   constructor(private configService: ConfigService) {
-    this.fromEmail = this.configService.get<string>('EMAIL_FROM', 'noreply@workflowguard.com');
+    this.fromEmail = this.configService.get<string>(
+      'EMAIL_FROM',
+      'noreply@workflowguard.com',
+    );
     this.appName = this.configService.get<string>('APP_NAME', 'WorkflowGuard');
-    this.supportEmail = this.configService.get<string>('SUPPORT_EMAIL', 'support@workflowguard.com');
+    this.supportEmail = this.configService.get<string>(
+      'SUPPORT_EMAIL',
+      'support@workflowguard.com',
+    );
   }
 
   /**
@@ -84,11 +94,14 @@ export class EmailService {
         html: template.html,
         text: template.text,
       });
-      
+
       this.logger.log(`Overage alert sent to ${data.userEmail}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send overage alert to ${data.userEmail}:`, error);
+      this.logger.error(
+        `Failed to send overage alert to ${data.userEmail}:`,
+        error,
+      );
       return false;
     }
   }
@@ -105,11 +118,14 @@ export class EmailService {
         html: template.html,
         text: template.text,
       });
-      
+
       this.logger.log(`Billing update sent to ${data.userEmail}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send billing update to ${data.userEmail}:`, error);
+      this.logger.error(
+        `Failed to send billing update to ${data.userEmail}:`,
+        error,
+      );
       return false;
     }
   }
@@ -126,11 +142,14 @@ export class EmailService {
         html: template.html,
         text: template.text,
       });
-      
+
       this.logger.log(`System alert sent to ${data.userEmail}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send system alert to ${data.userEmail}:`, error);
+      this.logger.error(
+        `Failed to send system alert to ${data.userEmail}:`,
+        error,
+      );
       return false;
     }
   }
@@ -147,11 +166,14 @@ export class EmailService {
         html: template.html,
         text: template.text,
       });
-      
+
       this.logger.log(`Welcome email sent to ${data.userEmail}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send welcome email to ${data.userEmail}:`, error);
+      this.logger.error(
+        `Failed to send welcome email to ${data.userEmail}:`,
+        error,
+      );
       return false;
     }
   }
@@ -164,7 +186,7 @@ export class EmailService {
     userName: string,
     currentPlan: string,
     recommendedPlan: string,
-    reason: string
+    reason: string,
   ): Promise<boolean> {
     try {
       const template = this.getUpgradeRecommendationTemplate({
@@ -174,18 +196,21 @@ export class EmailService {
         recommendedPlan,
         reason,
       });
-      
+
       await this.sendEmail({
         to: userEmail,
         subject: template.subject,
         html: template.html,
         text: template.text,
       });
-      
+
       this.logger.log(`Upgrade recommendation sent to ${userEmail}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send upgrade recommendation to ${userEmail}:`, error);
+      this.logger.error(
+        `Failed to send upgrade recommendation to ${userEmail}:`,
+        error,
+      );
       return false;
     }
   }
@@ -199,7 +224,7 @@ export class EmailService {
     planId: string,
     currentUsage: number,
     limit: number,
-    percentageUsed: number
+    percentageUsed: number,
   ): Promise<boolean> {
     try {
       const template = this.getUsageWarningTemplate({
@@ -210,14 +235,14 @@ export class EmailService {
         limit,
         percentageUsed,
       });
-      
+
       await this.sendEmail({
         to: userEmail,
         subject: template.subject,
         html: template.html,
         text: template.text,
       });
-      
+
       this.logger.log(`Usage warning sent to ${userEmail}`);
       return true;
     } catch (error) {
@@ -233,7 +258,7 @@ export class EmailService {
     userEmails: string[],
     subject: string,
     message: string,
-    isHtml: boolean = true
+    isHtml: boolean = true,
   ): Promise<{ success: number; failed: number }> {
     let success = 0;
     let failed = 0;
@@ -248,12 +273,17 @@ export class EmailService {
         });
         success++;
       } catch (error) {
-        this.logger.error(`Failed to send bulk notification to ${email}:`, error);
+        this.logger.error(
+          `Failed to send bulk notification to ${email}:`,
+          error,
+        );
         failed++;
       }
     }
 
-    this.logger.log(`Bulk notification completed: ${success} successful, ${failed} failed`);
+    this.logger.log(
+      `Bulk notification completed: ${success} successful, ${failed} failed`,
+    );
     return { success, failed };
   }
 
@@ -272,7 +302,10 @@ export class EmailService {
       this.logger.log(`Password reset email sent to ${data.userEmail}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send password reset email to ${data.userEmail}:`, error);
+      this.logger.error(
+        `Failed to send password reset email to ${data.userEmail}:`,
+        error,
+      );
       return false;
     }
   }
@@ -282,31 +315,10 @@ export class EmailService {
    * This would integrate with your email provider (SendGrid, AWS SES, etc.)
    */
   public async sendEmail(emailData: EmailData): Promise<void> {
-    // TODO: Integrate with your email provider
-    // Example implementations:
-    
-    // For SendGrid:
-    // const sgMail = require('@sendgrid/mail');
-    // sgMail.setApiKey(this.configService.get('SENDGRID_API_KEY'));
-    // await sgMail.send(emailData);
-    
-    // For AWS SES:
-    // const AWS = require('aws-sdk');
-    // const ses = new AWS.SES();
-    // await ses.sendEmail({
-    //   Source: emailData.from || this.fromEmail,
-    //   Destination: { ToAddresses: [emailData.to] },
-    //   Message: {
-    //     Subject: { Data: emailData.subject },
-    //     Body: {
-    //       Html: { Data: emailData.html },
-    //       Text: { Data: emailData.text || this.stripHtml(emailData.html) }
-    //     }
-    //   }
-    // }).promise();
-    
     // For development/testing, just log the email
-    this.logger.log(`[EMAIL] To: ${emailData.to}, Subject: ${emailData.subject}`);
+    this.logger.log(
+      `[EMAIL] To: ${emailData.to}, Subject: ${emailData.subject}`,
+    );
     this.logger.debug(`[EMAIL HTML] ${emailData.html}`);
   }
 
@@ -315,7 +327,7 @@ export class EmailService {
    */
   private getOverageAlertTemplate(data: OverageAlertData): EmailTemplate {
     const subject = `⚠️ Overage Alert - ${data.overageCount} overages detected`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -350,10 +362,14 @@ export class EmailService {
               </ul>
             </div>
             
-            ${data.recommendedPlan ? `
+            ${
+              data.recommendedPlan
+                ? `
               <h3>💡 Recommendation</h3>
               <p>Consider upgrading to our <strong>${data.recommendedPlan}</strong> plan to avoid future overages and get more workflow capacity.</p>
-            ` : ''}
+            `
+                : ''
+            }
             
             <p>
               <a href="${this.getAppUrl()}/settings" class="button">Manage Your Plan</a>
@@ -396,7 +412,7 @@ This is an automated message from ${this.appName}
 
   private getBillingUpdateTemplate(data: BillingUpdateData): EmailTemplate {
     const subject = `💰 Billing Update - $${data.billingAmount.toFixed(2)} for ${data.billingPeriod}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -440,13 +456,17 @@ This is an automated message from ${this.appName}
                 </tr>
               </thead>
               <tbody>
-                ${data.overageDetails.map(detail => `
+                ${data.overageDetails
+                  .map(
+                    (detail) => `
                   <tr>
                     <td>${detail.period}</td>
                     <td>${detail.count}</td>
                     <td>$${detail.amount.toFixed(2)}</td>
                   </tr>
-                `).join('')}
+                `,
+                  )
+                  .join('')}
               </tbody>
             </table>
             
@@ -475,7 +495,7 @@ Period: ${data.billingPeriod}
 Total Amount: $${data.billingAmount.toFixed(2)}
 
 OVERAGE DETAILS:
-${data.overageDetails.map(detail => `${detail.period}: ${detail.count} overages - $${detail.amount.toFixed(2)}`).join('\n')}
+${data.overageDetails.map((detail) => `${detail.period}: ${detail.count} overages - $${detail.amount.toFixed(2)}`).join('\n')}
 
 View overage details: ${this.getAppUrl()}/overages
 
@@ -498,7 +518,7 @@ This is an automated message from ${this.appName}
     };
 
     const subject = `${alertIcons[data.alertType]} System Alert - ${data.alertType.replace('_', ' ').toUpperCase()}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -567,7 +587,7 @@ This is an automated message from ${this.appName}
 
   private getWelcomeEmailTemplate(data: WelcomeEmailData): EmailTemplate {
     const subject = `🎉 Welcome to ${this.appName}!`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -598,7 +618,7 @@ This is an automated message from ${this.appName}
               <h3>Your ${data.planId} Plan Includes:</h3>
               <ul>
                 <li><strong>Workflow Limit:</strong> ${data.workflowLimit} workflows</li>
-                ${data.features.map(feature => `<li>${feature}</li>`).join('')}
+                ${data.features.map((feature) => `<li>${feature}</li>`).join('')}
               </ul>
             </div>
             
@@ -634,7 +654,7 @@ Welcome to ${this.appName}! We're excited to help you protect and manage your Hu
 
 YOUR ${data.planId.toUpperCase()} PLAN INCLUDES:
 - Workflow Limit: ${data.workflowLimit} workflows
-${data.features.map(feature => `- ${feature}`).join('\n')}
+${data.features.map((feature) => `- ${feature}`).join('\n')}
 
 GETTING STARTED:
 1. Connect your HubSpot workflows
@@ -662,7 +682,7 @@ This is an automated message from ${this.appName}
     reason: string;
   }): EmailTemplate {
     const subject = `💡 Upgrade Recommendation - ${data.recommendedPlan} Plan`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -754,7 +774,7 @@ This is an automated message from ${this.appName}
     percentageUsed: number;
   }): EmailTemplate {
     const subject = `⚠️ Usage Warning - ${data.percentageUsed}% of ${data.planId} plan used`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -843,7 +863,9 @@ This is an automated message from ${this.appName}
     return { subject, html, text };
   }
 
-  private getPasswordResetEmailTemplate(data: PasswordResetEmailData): EmailTemplate {
+  private getPasswordResetEmailTemplate(
+    data: PasswordResetEmailData,
+  ): EmailTemplate {
     const resetUrl = `${this.getAppUrl()}/reset-password?token=${data.resetToken}`;
     const subject = `🔒 Password Reset Request`;
     const html = `
@@ -903,10 +925,13 @@ This is an automated message from ${this.appName}
   }
 
   private getAppUrl(): string {
-    return this.configService.get<string>('APP_URL', 'https://www.workflowguard.pro');
+    return this.configService.get<string>(
+      'APP_URL',
+      'https://www.workflowguard.pro',
+    );
   }
 
   private stripHtml(html: string): string {
     return html.replace(/<[^>]*>/g, '');
   }
-} 
+}

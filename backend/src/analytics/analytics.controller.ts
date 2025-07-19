@@ -3,7 +3,12 @@ import { AnalyticsService } from '../services/analytics.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UsageTrend, UserAnalytics, RevenueAnalytics, PredictiveAnalytics } from '../services/analytics.service';
+import {
+  UsageTrend,
+  UserAnalytics,
+  RevenueAnalytics,
+  PredictiveAnalytics,
+} from '../services/analytics.service';
 
 interface RequestWithUser extends Request {
   user: {
@@ -34,7 +39,9 @@ export class AnalyticsController {
    */
   @Get('usage-trends')
   @Roles('admin')
-  async getUsageTrends(@Query('months') months?: string): Promise<UsageTrend[]> {
+  async getUsageTrends(
+    @Query('months') months?: string,
+  ): Promise<UsageTrend[]> {
     const periodMonths = months ? parseInt(months, 10) : 12;
     return this.analyticsService.getUsageAnalytics(periodMonths);
   }
@@ -81,7 +88,7 @@ export class AnalyticsController {
   ) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       throw new Error('Invalid date format. Use ISO 8601 format (YYYY-MM-DD)');
     }
@@ -96,8 +103,8 @@ export class AnalyticsController {
   @Get('my-analytics')
   async getMyAnalytics(@Request() req: RequestWithUser) {
     const userAnalytics = await this.analyticsService.getUserAnalytics();
-    const myAnalytics = userAnalytics.find(ua => ua.userId === req.user.id);
-    
+    const myAnalytics = userAnalytics.find((ua) => ua.userId === req.user.id);
+
     if (!myAnalytics) {
       throw new Error('User analytics not found');
     }
@@ -118,7 +125,7 @@ export class AnalyticsController {
   @Roles('admin')
   async getRevenueSummary() {
     const revenueAnalytics = await this.analyticsService.getRevenueAnalytics();
-    
+
     return {
       totalRevenue: revenueAnalytics.totalRevenue,
       monthlyRevenue: revenueAnalytics.monthlyRevenue,
@@ -135,20 +142,30 @@ export class AnalyticsController {
   @Roles('admin')
   async getRiskAssessment() {
     const userAnalytics = await this.analyticsService.getUserAnalytics();
-    
-    const highRiskUsers = userAnalytics.filter(u => u.riskLevel === 'high');
-    const mediumRiskUsers = userAnalytics.filter(u => u.riskLevel === 'medium');
-    const lowRiskUsers = userAnalytics.filter(u => u.riskLevel === 'low');
+
+    const highRiskUsers = userAnalytics.filter((u) => u.riskLevel === 'high');
+    const mediumRiskUsers = userAnalytics.filter(
+      (u) => u.riskLevel === 'medium',
+    );
+    const lowRiskUsers = userAnalytics.filter((u) => u.riskLevel === 'low');
 
     return {
       totalUsers: userAnalytics.length,
       highRiskUsers: {
         count: highRiskUsers.length,
-        users: highRiskUsers.map(u => ({ userId: u.userId, email: u.email, avgOveragesPerMonth: u.avgOveragesPerMonth })),
+        users: highRiskUsers.map((u) => ({
+          userId: u.userId,
+          email: u.email,
+          avgOveragesPerMonth: u.avgOveragesPerMonth,
+        })),
       },
       mediumRiskUsers: {
         count: mediumRiskUsers.length,
-        users: mediumRiskUsers.map(u => ({ userId: u.userId, email: u.email, avgOveragesPerMonth: u.avgOveragesPerMonth })),
+        users: mediumRiskUsers.map((u) => ({
+          userId: u.userId,
+          email: u.email,
+          avgOveragesPerMonth: u.avgOveragesPerMonth,
+        })),
       },
       lowRiskUsers: {
         count: lowRiskUsers.length,
@@ -163,11 +180,12 @@ export class AnalyticsController {
   @Get('upgrade-recommendations')
   @Roles('admin')
   async getUpgradeRecommendations() {
-    const predictiveAnalytics = await this.analyticsService.getPredictiveAnalytics();
-    
+    const predictiveAnalytics =
+      await this.analyticsService.getPredictiveAnalytics();
+
     return {
       recommendations: predictiveAnalytics.recommendedUpgrades,
       totalRecommendations: predictiveAnalytics.recommendedUpgrades.length,
     };
   }
-} 
+}

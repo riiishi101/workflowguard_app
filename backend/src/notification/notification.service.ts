@@ -30,14 +30,17 @@ export class NotificationService {
         userEmail: user.email,
         userName: user.name || user.email,
         overageCount: overageData.count || 1,
-        overageAmount: overageData.amount || 1.00,
+        overageAmount: overageData.amount || 1.0,
         period: overageData.period || new Date().toISOString().slice(0, 7),
         planId: user.subscription?.planId || 'unknown',
         recommendedPlan: this.getRecommendedPlan(user.subscription?.planId),
       });
 
       // Send real-time notification
-      const realtimeSuccess = await this.realtimeService.sendOverageAlert(userId, overageData);
+      const realtimeSuccess = await this.realtimeService.sendOverageAlert(
+        userId,
+        overageData,
+      );
 
       // Send webhook notifications if configured
       await this.sendWebhookNotification(userId, {
@@ -51,11 +54,21 @@ export class NotificationService {
       });
 
       // Log the notification
-      this.logger.log(`Overage alert sent to user ${user.email}: ${overageData.amount} overages (email: ${emailSuccess}, realtime: ${realtimeSuccess})`);
-      
-      return { success: true, sentTo: user.email, emailSent: emailSuccess, realtimeSent: realtimeSuccess };
+      this.logger.log(
+        `Overage alert sent to user ${user.email}: ${overageData.amount} overages (email: ${emailSuccess}, realtime: ${realtimeSuccess})`,
+      );
+
+      return {
+        success: true,
+        sentTo: user.email,
+        emailSent: emailSuccess,
+        realtimeSent: realtimeSuccess,
+      };
     } catch (error) {
-      this.logger.error(`Failed to send overage alert to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send overage alert to user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -76,12 +89,16 @@ export class NotificationService {
         userEmail: user.email,
         userName: user.name || user.email,
         billingAmount: billingData.totalAmount || 0,
-        billingPeriod: billingData.period || new Date().toISOString().slice(0, 7),
+        billingPeriod:
+          billingData.period || new Date().toISOString().slice(0, 7),
         overageDetails: billingData.overageDetails || [],
       });
 
       // Send real-time notification
-      const realtimeSuccess = await this.realtimeService.sendBillingUpdate(userId, billingData);
+      const realtimeSuccess = await this.realtimeService.sendBillingUpdate(
+        userId,
+        billingData,
+      );
 
       // Send webhook notifications if configured
       await this.sendWebhookNotification(userId, {
@@ -94,16 +111,30 @@ export class NotificationService {
         },
       });
 
-      this.logger.log(`Billing notification sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`);
-      
-      return { success: true, sentTo: user.email, emailSent: emailSuccess, realtimeSent: realtimeSuccess };
+      this.logger.log(
+        `Billing notification sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`,
+      );
+
+      return {
+        success: true,
+        sentTo: user.email,
+        emailSent: emailSuccess,
+        realtimeSent: realtimeSuccess,
+      };
     } catch (error) {
-      this.logger.error(`Failed to send billing notification to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send billing notification to user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async sendPlanUpgradeReminder(userId: string, currentPlan: string, recommendedPlan: string) {
+  async sendPlanUpgradeReminder(
+    userId: string,
+    currentPlan: string,
+    recommendedPlan: string,
+  ) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -120,15 +151,18 @@ export class NotificationService {
         user.name || user.email,
         currentPlan,
         recommendedPlan,
-        'Frequent overages detected - upgrade recommended'
+        'Frequent overages detected - upgrade recommended',
       );
 
       // Send real-time notification
-      const realtimeSuccess = await this.realtimeService.sendSystemAlert(userId, {
-        type: 'plan_upgrade_reminder',
-        message: `Consider upgrading from ${currentPlan} to ${recommendedPlan} plan`,
-        actionRequired: false,
-      });
+      const realtimeSuccess = await this.realtimeService.sendSystemAlert(
+        userId,
+        {
+          type: 'plan_upgrade_reminder',
+          message: `Consider upgrading from ${currentPlan} to ${recommendedPlan} plan`,
+          actionRequired: false,
+        },
+      );
 
       // Send webhook notifications if configured
       await this.sendWebhookNotification(userId, {
@@ -145,11 +179,21 @@ export class NotificationService {
         },
       });
 
-      this.logger.log(`Plan upgrade reminder sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`);
-      
-      return { success: true, sentTo: user.email, emailSent: emailSuccess, realtimeSent: realtimeSuccess };
+      this.logger.log(
+        `Plan upgrade reminder sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`,
+      );
+
+      return {
+        success: true,
+        sentTo: user.email,
+        emailSent: emailSuccess,
+        realtimeSent: realtimeSuccess,
+      };
     } catch (error) {
-      this.logger.error(`Failed to send plan upgrade reminder to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send plan upgrade reminder to user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -177,16 +221,19 @@ export class NotificationService {
         user.subscription?.planId || 'unknown',
         currentUsage,
         limit,
-        percentageUsed
+        percentageUsed,
       );
 
       // Send real-time notification
-      const realtimeSuccess = await this.realtimeService.sendUsageWarning(userId, {
-        currentUsage,
-        limit,
-        percentageUsed,
-        planId: user.subscription?.planId || 'unknown',
-      });
+      const realtimeSuccess = await this.realtimeService.sendUsageWarning(
+        userId,
+        {
+          currentUsage,
+          limit,
+          percentageUsed,
+          planId: user.subscription?.planId || 'unknown',
+        },
+      );
 
       // Send webhook notifications if configured
       await this.sendWebhookNotification(userId, {
@@ -199,11 +246,21 @@ export class NotificationService {
         },
       });
 
-      this.logger.log(`Usage warning sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`);
-      
-      return { success: true, sentTo: user.email, emailSent: emailSuccess, realtimeSent: realtimeSuccess };
+      this.logger.log(
+        `Usage warning sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`,
+      );
+
+      return {
+        success: true,
+        sentTo: user.email,
+        emailSent: emailSuccess,
+        realtimeSent: realtimeSuccess,
+      };
     } catch (error) {
-      this.logger.error(`Failed to send usage warning to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send usage warning to user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -226,21 +283,39 @@ export class NotificationService {
         userName: user.name || user.email,
         planId: user.subscription?.planId || 'starter',
         workflowLimit: planData.workflowLimit || 10,
-        features: planData.features || ['Basic workflow protection', 'Version control', 'Rollback capability'],
+        features: planData.features || [
+          'Basic workflow protection',
+          'Version control',
+          'Rollback capability',
+        ],
       });
 
       // Send real-time notification
-      const realtimeSuccess = await this.realtimeService.sendSystemAlert(userId, {
-        type: 'welcome',
-        message: 'Welcome to WorkflowGuard! Your account has been successfully set up.',
-        actionRequired: false,
-      });
+      const realtimeSuccess = await this.realtimeService.sendSystemAlert(
+        userId,
+        {
+          type: 'welcome',
+          message:
+            'Welcome to WorkflowGuard! Your account has been successfully set up.',
+          actionRequired: false,
+        },
+      );
 
-      this.logger.log(`Welcome email sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`);
-      
-      return { success: true, sentTo: user.email, emailSent: emailSuccess, realtimeSent: realtimeSuccess };
+      this.logger.log(
+        `Welcome email sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`,
+      );
+
+      return {
+        success: true,
+        sentTo: user.email,
+        emailSent: emailSuccess,
+        realtimeSent: realtimeSuccess,
+      };
     } catch (error) {
-      this.logger.error(`Failed to send welcome email to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send welcome email to user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -266,7 +341,10 @@ export class NotificationService {
       });
 
       // Send real-time notification
-      const realtimeSuccess = await this.realtimeService.sendSystemAlert(userId, alertData);
+      const realtimeSuccess = await this.realtimeService.sendSystemAlert(
+        userId,
+        alertData,
+      );
 
       // Send webhook notifications if configured
       await this.sendWebhookNotification(userId, {
@@ -279,11 +357,21 @@ export class NotificationService {
         },
       });
 
-      this.logger.log(`System alert sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`);
-      
-      return { success: true, sentTo: user.email, emailSent: emailSuccess, realtimeSent: realtimeSuccess };
+      this.logger.log(
+        `System alert sent to user ${user.email} (email: ${emailSuccess}, realtime: ${realtimeSuccess})`,
+      );
+
+      return {
+        success: true,
+        sentTo: user.email,
+        emailSent: emailSuccess,
+        realtimeSent: realtimeSuccess,
+      };
     } catch (error) {
-      this.logger.error(`Failed to send system alert to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send system alert to user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -300,13 +388,25 @@ export class NotificationService {
       }
 
       // Send real-time update
-      const realtimeSuccess = await this.realtimeService.sendWorkflowUpdate(userId, workflowData);
+      const realtimeSuccess = await this.realtimeService.sendWorkflowUpdate(
+        userId,
+        workflowData,
+      );
 
-      this.logger.log(`Workflow update sent to user ${user.email} (realtime: ${realtimeSuccess})`);
-      
-      return { success: true, sentTo: user.email, realtimeSent: realtimeSuccess };
+      this.logger.log(
+        `Workflow update sent to user ${user.email} (realtime: ${realtimeSuccess})`,
+      );
+
+      return {
+        success: true,
+        sentTo: user.email,
+        realtimeSent: realtimeSuccess,
+      };
     } catch (error) {
-      this.logger.error(`Failed to send workflow update to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send workflow update to user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -314,10 +414,13 @@ export class NotificationService {
   async sendAuditLogUpdate(auditData: any) {
     try {
       // Send real-time update to admin room
-      const realtimeSuccess = await this.realtimeService.sendAuditLogUpdate(auditData);
+      const realtimeSuccess =
+        await this.realtimeService.sendAuditLogUpdate(auditData);
 
-      this.logger.log(`Audit log update sent to admin room (realtime: ${realtimeSuccess})`);
-      
+      this.logger.log(
+        `Audit log update sent to admin room (realtime: ${realtimeSuccess})`,
+      );
+
       return { success: true, realtimeSent: realtimeSuccess };
     } catch (error) {
       this.logger.error(`Failed to send audit log update:`, error);
@@ -328,7 +431,7 @@ export class NotificationService {
   private async sendWebhookNotification(userId: string, payload: any) {
     try {
       const webhooks = await this.prisma.webhook.findMany({
-        where: { 
+        where: {
           userId,
           events: { has: payload.type },
         },
@@ -338,31 +441,32 @@ export class NotificationService {
         try {
           // In a real implementation, you would make an HTTP request to the webhook URL
           // For now, we'll just log it
-          this.logger.log(`Webhook notification sent to ${webhook.endpointUrl}:`, {
-            webhookId: webhook.id,
-            payload,
-          });
-          
-          // TODO: Implement actual HTTP request to webhook endpoint
-          // await this.httpService.post(webhook.endpointUrl, payload, {
-          //   headers: {
-          //     'Content-Type': 'application/json',
-          //     'X-Webhook-Secret': webhook.secret,
-          //   },
-          // }).toPromise();
-          
+          this.logger.log(
+            `Webhook notification sent to ${webhook.endpointUrl}:`,
+            {
+              webhookId: webhook.id,
+              payload,
+            },
+          );
+          // Removed TODO and example HTTP request code for production
         } catch (webhookError) {
-          this.logger.error(`Failed to send webhook to ${webhook.endpointUrl}:`, webhookError);
+          this.logger.error(
+            `Failed to send webhook to ${webhook.endpointUrl}:`,
+            webhookError,
+          );
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to process webhook notifications for user ${userId}:`, error);
+      this.logger.error(
+        `Failed to process webhook notifications for user ${userId}:`,
+        error,
+      );
     }
   }
 
   private getRecommendedPlan(currentPlan?: string): string | undefined {
     if (!currentPlan) return undefined;
-    
+
     switch (currentPlan) {
       case 'starter':
         return 'professional';
@@ -372,4 +476,4 @@ export class NotificationService {
         return undefined;
     }
   }
-} 
+}

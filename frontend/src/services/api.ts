@@ -53,8 +53,18 @@ class ApiService {
       ...options,
     };
 
+    // Add timeout to prevent hanging requests
+    const timeoutDuration = 30000; // 30 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+    
     try {
-      const response = await fetch(url, config);
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -63,7 +73,14 @@ class ApiService {
 
       return await response.json();
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('API request failed:', error);
+      
+      // Handle timeout specifically
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please try again.');
+      }
+      
       throw error;
     }
   }
@@ -259,6 +276,13 @@ class ApiService {
 
   async getMyPlan() {
     return this.request('/users/me/plan');
+  }
+
+  async upgradePlan(planId: string) {
+    return this.request('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify({ planId }),
+    });
   }
 
   // Webhook methods
@@ -724,7 +748,7 @@ class ApiService {
     language?: string;
   }) {
     return this.request('/users/me', {
-      method: 'PUT',
+      method: 'PUT', 
       body: JSON.stringify(profile),
     });
   }

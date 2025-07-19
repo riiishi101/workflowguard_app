@@ -101,17 +101,6 @@ const Dashboard = () => {
 
   const canAddMoreWorkflows = hasFeature('unlimited_workflows') || hasFeature('advanced_monitoring');
 
-  useEffect(() => {
-    fetchWorkflows();
-  }, []);
-
-  useEffect(() => {
-    if (!plan && workflows.length === 0) {
-      // Remove fallback: do not load from localStorage, just show empty state
-        setWorkflows([]); // Explicitly set to empty to trigger empty state
-    }
-  }, [plan, workflows.length]);
-
   const fetchWorkflows = async () => {
     try {
       setWorkflowsLoading(true);
@@ -157,6 +146,30 @@ const Dashboard = () => {
       setAnalyticsLoading(false);
     }
   };
+
+  // Parallel data fetching for better performance
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Fetch workflows and analytics in parallel
+        await Promise.allSettled([
+          fetchWorkflows(),
+          fetchAnalytics()
+        ]);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!plan && workflows.length === 0) {
+      // Remove fallback: do not load from localStorage, just show empty state
+        setWorkflows([]); // Explicitly set to empty to trigger empty state
+    }
+  }, [plan, workflows.length]);
 
   const filteredWorkflows = workflows.filter(workflow => {
     const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase());

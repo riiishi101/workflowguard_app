@@ -1,4 +1,17 @@
-import { Controller, Post, Get, Delete, Body, Req, Param, UseGuards, HttpException, HttpStatus, Logger, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  HttpException,
+  HttpStatus,
+  Logger,
+  Headers,
+} from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PlanFeature, PlanFeatureGuard } from '../auth/roles.guard';
@@ -7,7 +20,6 @@ import { UserService } from '../user/user.service';
 import { Public } from '../auth/public.decorator';
 import * as crypto from 'crypto';
 import { CreateWebhookDto } from './dto/create-webhook.dto';
-import { IsString, IsNotEmpty, IsOptional, IsArray, ArrayNotEmpty } from 'class-validator';
 
 @Controller('webhooks')
 @UseGuards(JwtAuthGuard, PlanFeatureGuard)
@@ -20,23 +32,29 @@ export class WebhookController {
   ) {}
 
   @Post()
-  async create(@Req() req: Request, @Body() createWebhookDto: CreateWebhookDto) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+  async create(
+    @Req() req: Request,
+    @Body() createWebhookDto: CreateWebhookDto,
+  ) {
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.webhookService.create({ userId, ...createWebhookDto });
   }
 
   @Get()
   async findAll(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.webhookService.findAllByUser(userId);
   }
 
   @Delete(':id')
   async remove(@Req() req: Request, @Param('id') id: string) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.webhookService.remove(id, userId);
   }
 
@@ -46,7 +64,7 @@ export class WebhookController {
   async handleHubSpotUninstall(
     @Body('portalId') portalId: string,
     @Headers('x-hubspot-signature') signature: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     // Validate signature if secret is set
     const secret = process.env.HUBSPOT_WEBHOOK_SECRET;
@@ -57,11 +75,15 @@ export class WebhookController {
         .update(payload)
         .digest('hex');
       if (signature !== expectedSignature) {
-        this.logger.warn(`Invalid HubSpot webhook signature for portalId ${portalId}`);
+        this.logger.warn(
+          `Invalid HubSpot webhook signature for portalId ${portalId}`,
+        );
         throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
       }
     }
-    this.logger.log(`Received HubSpot uninstall webhook for portalId ${portalId}`);
+    this.logger.log(
+      `Received HubSpot uninstall webhook for portalId ${portalId}`,
+    );
     if (!portalId) {
       this.logger.warn('Missing portalId in uninstall webhook');
       throw new HttpException('Missing portalId', HttpStatus.BAD_REQUEST);
@@ -70,15 +92,23 @@ export class WebhookController {
     const user = await this.userService.findByHubspotPortalId(portalId);
     if (!user) {
       this.logger.warn(`User not found for portalId ${portalId}`);
-      throw new HttpException('User not found for portalId', HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        'User not found for portalId',
+        HttpStatus.NOT_FOUND,
+      );
     }
     try {
       await this.userService.remove(user.id, undefined);
       this.logger.log(`User and data deleted for portalId ${portalId}`);
       return { message: 'User and data deleted for portalId ' + portalId };
     } catch (err) {
-      this.logger.error(`Failed to delete user for portalId ${portalId}: ${err.message}`);
-      throw new HttpException('Failed to delete user: ' + err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error(
+        `Failed to delete user for portalId ${portalId}: ${err.message}`,
+      );
+      throw new HttpException(
+        'Failed to delete user: ' + err.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

@@ -1,6 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface Props {
   children: ReactNode;
@@ -15,7 +14,7 @@ interface State {
 
 class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false,
+    hasError: false
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -25,27 +24,14 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
     this.setState({ error, errorInfo });
-
-    // Log error to external service in production
-    if (process.env.NODE_ENV === 'production') {
-      // TODO: Send to error reporting service (Sentry, LogRocket, etc.)
-      console.error('Error details:', {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-      });
-    }
   }
+
+  private handleRetry = () => {
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
 
   private handleReload = () => {
     window.location.reload();
-  };
-
-  private handleGoHome = () => {
-    window.location.href = '/';
   };
 
   public render() {
@@ -55,65 +41,55 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto px-4">
             <div className="mb-6">
-              <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Something went wrong
-              </h1>
-              <p className="text-gray-600 mb-6">
-                We're sorry, but something unexpected happened. Please try refreshing the page or contact support if the problem persists.
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
+              <p className="text-gray-600 mb-4">
+                An unexpected error occurred. Please try again or contact support if the problem persists.
               </p>
             </div>
-
+            
+            <div className="space-y-3">
+              <Button 
+                onClick={this.handleRetry}
+                className="w-full"
+                variant="default"
+              >
+                Try Again
+              </Button>
+              <Button 
+                onClick={this.handleReload}
+                className="w-full"
+                variant="outline"
+              >
+                Refresh Page
+              </Button>
+            </div>
+            
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="mb-6 text-left">
-                <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
+              <details className="mt-6 text-left">
+                <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
                   Error Details (Development)
                 </summary>
-                <div className="bg-gray-100 p-4 rounded text-xs font-mono text-gray-800 overflow-auto max-h-40">
+                <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-800 overflow-auto">
                   <div className="mb-2">
-                    <strong>Error:</strong> {this.state.error.message}
+                    <strong>Error:</strong> {this.state.error.toString()}
                   </div>
-                  {this.state.error.stack && (
-                    <div className="mb-2">
-                      <strong>Stack:</strong>
-                      <pre className="whitespace-pre-wrap">{this.state.error.stack}</pre>
-                    </div>
-                  )}
                   {this.state.errorInfo && (
                     <div>
-                      <strong>Component Stack:</strong>
+                      <strong>Stack:</strong>
                       <pre className="whitespace-pre-wrap">{this.state.errorInfo.componentStack}</pre>
                     </div>
                   )}
                 </div>
               </details>
             )}
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={this.handleReload} className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Refresh Page
-              </Button>
-              <Button variant="outline" onClick={this.handleGoHome} className="flex items-center gap-2">
-                <Home className="h-4 w-4" />
-                Go Home
-              </Button>
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
-                If this problem continues, please contact our support team.
-              </p>
-              <a 
-                href="mailto:support@workflowguard.pro" 
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                support@workflowguard.pro
-              </a>
-            </div>
           </div>
         </div>
       );

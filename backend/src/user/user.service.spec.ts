@@ -42,13 +42,19 @@ describe('UserService', () => {
   });
 
   it('should create a user with valid data', async () => {
-    const dto: CreateUserDto = { email: 'test@example.com', name: 'Test', role: 'admin' };
+    const dto: CreateUserDto = {
+      email: 'test@example.com',
+      name: 'Test',
+      role: 'admin',
+    };
     const createdUser = { id: '1', ...dto };
     prisma.user.create.mockResolvedValue(createdUser);
     auditLog.create.mockResolvedValue({});
     const result = await service.create(dto, 'actorId');
     expect(result).toEqual(createdUser);
-    expect(prisma.user.create).toHaveBeenCalledWith({ data: { ...dto, role: 'admin' } });
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: { ...dto, role: 'admin' },
+    });
     expect(auditLog.create).toHaveBeenCalledWith({
       userId: 'actorId',
       action: 'create',

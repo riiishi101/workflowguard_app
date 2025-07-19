@@ -8,12 +8,7 @@ import { UserModule } from '../user/user.module';
 import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    UserModule,
-    AuditLogModule,
-    ScheduleModule.forRoot()
-  ],
+  imports: [PrismaModule, UserModule, AuditLogModule, ScheduleModule.forRoot()],
   controllers: [WorkflowController],
   providers: [WorkflowService, WorkflowSyncService],
   exports: [WorkflowService],

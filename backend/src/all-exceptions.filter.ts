@@ -1,4 +1,10 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  Logger,
+} from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 
 @Catch()
@@ -9,7 +15,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest();
     const response = ctx.getResponse();
-    const status = exception instanceof HttpException ? exception.getStatus() : 500;
+    const status =
+      exception instanceof HttpException ? exception.getStatus() : 500;
 
     this.logger.error('Unhandled exception', {
       exception,
@@ -28,7 +35,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     response.status(status).json({
       statusCode: status,
-      message: status === 500 ? 'Internal server error' : (exception as any).message,
+      message:
+        status === 500 ? 'Internal server error' : (exception as any).message,
     });
   }
-} 
+}

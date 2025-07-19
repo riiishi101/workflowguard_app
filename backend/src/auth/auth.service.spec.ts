@@ -9,7 +9,14 @@ describe('AuthService', () => {
   let jwtService: any;
 
   beforeEach(async () => {
-    prisma = { user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), findMany: jest.fn() } };
+    prisma = {
+      user: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        findMany: jest.fn(),
+      },
+    };
     jwtService = { sign: jest.fn(), verify: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
       providers: [

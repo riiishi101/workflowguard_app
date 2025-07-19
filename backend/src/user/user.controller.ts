@@ -1,11 +1,29 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, UseGuards, Req, Query, Put, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpException,
+  HttpStatus,
+  UseGuards,
+  Req,
+  Query,
+  Put,
+  Res,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, UpdateUserDto, UpdateNotificationSettingsDto } from './dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UpdateNotificationSettingsDto,
+} from './dto';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
 import { Roles } from '../auth/roles.decorator';
 import { PlanFeature, PlanFeatureGuard } from '../auth/roles.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PLAN_CONFIG } from '../plan-config';
 import { Request, Response } from 'express';
 import { RolesGuard } from '../auth/roles.guard';
 
@@ -19,13 +37,19 @@ export class UserController {
   @UseGuards(PlanFeatureGuard)
   async create(@Req() req: Request, @Body() createUserDto: CreateUserDto) {
     try {
-      const actorUserId = ((req as any).user)?.sub;
+      const actorUserId = (req as any).user?.sub;
       return await this.userService.create(createUserDto, actorUserId);
     } catch (error) {
       if (error.code === 'P2002') {
-        throw new HttpException('User with this email already exists', HttpStatus.CONFLICT);
+        throw new HttpException(
+          'User with this email already exists',
+          HttpStatus.CONFLICT,
+        );
       }
-      throw new HttpException('Failed to create user', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to create user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -55,19 +79,32 @@ export class UserController {
   @Patch(':id')
   @PlanFeature('user_permissions')
   @UseGuards(PlanFeatureGuard)
-  async update(@Req() req: Request, @Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     try {
-      const actorUserId = ((req as any).user)?.sub;
-      const user = await this.userService.update(id, { ...updateUserDto, updatedBy: actorUserId });
+      const actorUserId = (req as any).user?.sub;
+      const user = await this.userService.update(id, {
+        ...updateUserDto,
+        updatedBy: actorUserId,
+      });
       if (!user) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
       return user;
     } catch (error) {
       if (error.code === 'P2002') {
-        throw new HttpException('User with this email already exists', HttpStatus.CONFLICT);
+        throw new HttpException(
+          'User with this email already exists',
+          HttpStatus.CONFLICT,
+        );
       }
-      throw new HttpException('Failed to update user', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to update user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -77,30 +114,36 @@ export class UserController {
   @UseGuards(PlanFeatureGuard)
   async remove(@Req() req: Request, @Param('id') id: string) {
     try {
-      const actorUserId = ((req as any).user)?.sub;
+      const actorUserId = (req as any).user?.sub;
       const user = await this.userService.remove(id, actorUserId);
       if (!user) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
       return { message: 'User deleted successfully' };
     } catch (error) {
-      throw new HttpException('Failed to delete user', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Failed to delete user:', error);
+      throw new HttpException(
+        'Failed to delete user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Get('me/plan')
   @UseGuards(JwtAuthGuard)
   async getMyPlan(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const user = await this.userService.findOneWithSubscription(userId);
     if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    
+
     // Default to starter plan if no subscription exists
     const planId = user.subscription?.planId || 'starter';
     const plan = await this.userService.getPlanById(planId);
-    const workflowsMonitoredCount = await this.userService.getWorkflowCountByOwner(userId);
-    
+    const workflowsMonitoredCount =
+      await this.userService.getWorkflowCountByOwner(userId);
+
     return {
       planId,
       status: user.subscription?.status || 'active',
@@ -144,64 +187,75 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/notification-settings')
   async getMyNotificationSettings(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.getNotificationSettings(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put('me/notification-settings')
-  async updateMyNotificationSettings(@Req() req: Request, @Body() dto: UpdateNotificationSettingsDto) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+  async updateMyNotificationSettings(
+    @Req() req: Request,
+    @Body() dto: UpdateNotificationSettingsDto,
+  ) {
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.updateNotificationSettings(userId, dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me/api-keys')
   async getMyApiKeys(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.getApiKeys(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('me/api-keys')
   async createMyApiKey(@Req() req: Request, @Body() dto: CreateApiKeyDto) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.createApiKey(userId, dto.description);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('me/api-keys/:id')
   async deleteMyApiKey(@Req() req: Request, @Param('id') id: string) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.deleteApiKey(userId, id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.getMe(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put('me')
   async updateMe(@Req() req: Request, @Body() dto: UpdateUserDto) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.updateMe(userId, dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('me')
   async deleteMe(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     return this.userService.deleteMe(userId);
   }
 
@@ -214,9 +268,14 @@ export class UserController {
   }
 
   @Post('reset-password')
-  async resetPasswordWithToken(@Body() body: { token: string; newPassword: string }) {
+  async resetPasswordWithToken(
+    @Body() body: { token: string; newPassword: string },
+  ) {
     const { token, newPassword } = body;
-    const result = await this.userService.resetPasswordWithToken(token, newPassword);
+    const result = await this.userService.resetPasswordWithToken(
+      token,
+      newPassword,
+    );
     if (result.success) {
       return { message: 'Password has been reset successfully.' };
     } else {
@@ -236,10 +295,12 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/plan-status')
   async getMyPlanStatus(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
+    const userId = (req as any).user?.sub;
     console.log('Plan-status - JWT payload:', (req as any).user);
     if (!userId) {
-      console.warn('Plan-status - No userId in JWT payload, returning default plan status');
+      console.warn(
+        'Plan-status - No userId in JWT payload, returning default plan status',
+      );
       return {
         planId: 'starter',
         isTrialActive: false,
@@ -250,9 +311,15 @@ export class UserController {
     }
     console.log('Plan-status - User ID from JWT:', userId);
     const user = await this.userService.findOne(userId);
-    console.log('Plan-status - User found:', user ? 'Yes' : 'No', user ? `ID: ${user.id}` : '');
+    console.log(
+      'Plan-status - User found:',
+      user ? 'Yes' : 'No',
+      user ? `ID: ${user.id}` : '',
+    );
     if (!user) {
-      console.log('Plan-status - User not found in database, creating default plan status');
+      console.log(
+        'Plan-status - User not found in database, creating default plan status',
+      );
       return {
         planId: 'starter',
         isTrialActive: false,
@@ -264,12 +331,17 @@ export class UserController {
     const now = new Date();
     let remainingTrialDays = null;
     if (user.trialEndDate && user.isTrialActive) {
-      remainingTrialDays = Math.max(0, Math.ceil((user.trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      remainingTrialDays = Math.max(
+        0,
+        Math.ceil(
+          (user.trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        ),
+      );
     }
     console.log('Plan-status - Returning plan status:', {
       planId: user.planId,
       isTrialActive: user.isTrialActive,
-      remainingTrialDays
+      remainingTrialDays,
     });
     return {
       planId: user.planId || 'starter',
@@ -283,11 +355,15 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me/export')
   async exportMyData(@Req() req: Request, @Res() res: Response) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const data = await this.userService.exportUserData(userId);
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="user-data-${userId}.json"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="user-data-${userId}.json"`,
+    );
     res.send(JSON.stringify(data, null, 2));
   }
 
@@ -297,15 +373,19 @@ export class UserController {
   async exportUserData(@Param('id') id: string, @Res() res: Response) {
     const data = await this.userService.exportUserData(id);
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.json"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="user-data-${id}.json"`,
+    );
     res.send(JSON.stringify(data, null, 2));
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('me/disconnect-hubspot')
   async disconnectHubspot(@Req() req: Request) {
-    const userId = ((req as any).user)?.sub;
-    if (!userId) throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const userId = (req as any).user?.sub;
+    if (!userId)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     await this.userService.disconnectHubspot(userId);
     return { message: 'HubSpot disconnected' };
   }

@@ -11,8 +11,23 @@ describe('WorkflowService', () => {
   let auditLogService: any;
 
   beforeEach(async () => {
-    prisma = { workflow: { count: jest.fn(), create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), delete: jest.fn(), }, overage: { upsert: jest.fn() } };
-    userService = { findOneWithSubscription: jest.fn(), getPlanById: jest.fn(), findOne: jest.fn() };
+    prisma = {
+      workflow: {
+        count: jest.fn(),
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      overage: { upsert: jest.fn() },
+    };
+    userService = {
+      findOneWithSubscription: jest.fn(),
+      getPlanById: jest.fn(),
+      findOne: jest.fn(),
+    };
     auditLogService = { create: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
       providers: [

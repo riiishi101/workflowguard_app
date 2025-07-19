@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -14,7 +20,13 @@ interface UserConnection {
 }
 
 interface NotificationMessage {
-  type: 'overage_alert' | 'billing_update' | 'system_alert' | 'usage_warning' | 'workflow_update' | 'audit_log';
+  type:
+    | 'overage_alert'
+    | 'billing_update'
+    | 'system_alert'
+    | 'usage_warning'
+    | 'workflow_update'
+    | 'audit_log';
   title: string;
   message: string;
   data?: any;
@@ -23,7 +35,13 @@ interface NotificationMessage {
 }
 
 interface RealTimeUpdate {
-  type: 'workflow_created' | 'workflow_updated' | 'workflow_deleted' | 'overage_detected' | 'billing_updated' | 'user_activity';
+  type:
+    | 'workflow_created'
+    | 'workflow_updated'
+    | 'workflow_deleted'
+    | 'overage_detected'
+    | 'billing_updated'
+    | 'user_activity';
   data: any;
   timestamp: Date;
 }
@@ -54,8 +72,9 @@ export class RealtimeService {
    */
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth.token || client.handshake.headers.authorization;
-      
+      const token =
+        client.handshake.auth.token || client.handshake.headers.authorization;
+
       if (!token) {
         this.logger.warn(`Client ${client.id} connected without token`);
         client.disconnect();
@@ -101,7 +120,7 @@ export class RealtimeService {
       }
 
       this.logger.log(`User ${user.email} connected with socket ${client.id}`);
-      
+
       // Send welcome message
       client.emit('connected', {
         message: 'Connected to WorkflowGuard real-time updates',
@@ -113,7 +132,6 @@ export class RealtimeService {
         },
         timestamp: new Date(),
       });
-
     } catch (error) {
       this.logger.error(`Connection error for client ${client.id}:`, error);
       client.disconnect();
@@ -135,18 +153,28 @@ export class RealtimeService {
   /**
    * Send notification to specific user
    */
-  async sendNotificationToUser(userId: string, notification: NotificationMessage) {
+  async sendNotificationToUser(
+    userId: string,
+    notification: NotificationMessage,
+  ) {
     const userConnection = this.findUserConnection(userId);
     if (userConnection) {
-      this.server.to(userConnection.socketId).emit('notification', notification);
-      this.logger.log(`Notification sent to user ${userConnection.userEmail}: ${notification.type}`);
+      this.server
+        .to(userConnection.socketId)
+        .emit('notification', notification);
+      this.logger.log(
+        `Notification sent to user ${userConnection.userEmail}: ${notification.type}`,
+      );
     }
   }
 
   /**
    * Send notification to all users in a room
    */
-  async sendNotificationToRoom(room: string, notification: NotificationMessage) {
+  async sendNotificationToRoom(
+    room: string,
+    notification: NotificationMessage,
+  ) {
     this.server.to(room).emit('notification', notification);
     this.logger.log(`Notification sent to room ${room}: ${notification.type}`);
   }
@@ -166,7 +194,9 @@ export class RealtimeService {
     const userConnection = this.findUserConnection(userId);
     if (userConnection) {
       this.server.to(userConnection.socketId).emit('update', update);
-      this.logger.log(`Update sent to user ${userConnection.userEmail}: ${update.type}`);
+      this.logger.log(
+        `Update sent to user ${userConnection.userEmail}: ${update.type}`,
+      );
     }
   }
 
@@ -287,7 +317,9 @@ export class RealtimeService {
    * Get connected users by role
    */
   getConnectedUsersByRole(role: string): UserConnection[] {
-    return Array.from(this.userConnections.values()).filter(conn => conn.role === role);
+    return Array.from(this.userConnections.values()).filter(
+      (conn) => conn.role === role,
+    );
   }
 
   /**
@@ -301,7 +333,9 @@ export class RealtimeService {
    * Check if user is connected
    */
   isUserConnected(userId: string): boolean {
-    return Array.from(this.userConnections.values()).some(conn => conn.userId === userId);
+    return Array.from(this.userConnections.values()).some(
+      (conn) => conn.userId === userId,
+    );
   }
 
   /**
@@ -344,7 +378,7 @@ export class RealtimeService {
     const userConnection = this.userConnections.get(client.id);
     if (userConnection) {
       this.logger.log(`Message from ${userConnection.userEmail}: ${data.type}`);
-      
+
       // Echo back to sender
       client.emit('message', {
         type: 'echo',
@@ -377,8 +411,10 @@ export class RealtimeService {
   handleActivity(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
     const userConnection = this.userConnections.get(client.id);
     if (userConnection) {
-      this.logger.log(`User activity from ${userConnection.userEmail}: ${data.type}`);
-      
+      this.logger.log(
+        `User activity from ${userConnection.userEmail}: ${data.type}`,
+      );
+
       // Log activity for analytics
       this.logUserActivity(userConnection.userId, data);
     }
@@ -388,7 +424,9 @@ export class RealtimeService {
    * Helper methods
    */
   private findUserConnection(userId: string): UserConnection | undefined {
-    return Array.from(this.userConnections.values()).find(conn => conn.userId === userId);
+    return Array.from(this.userConnections.values()).find(
+      (conn) => conn.userId === userId,
+    );
   }
 
   private addUserToRoom(userId: string, room: string) {
@@ -418,4 +456,4 @@ export class RealtimeService {
       this.logger.error(`Failed to log user activity:`, error);
     }
   }
-} 
+}

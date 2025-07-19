@@ -22,7 +22,7 @@ import { useAuth } from '../../components/AuthContext';
 
 const PlanBillingTab = () => {
   const { toast } = useToast();
-  const { plan } = usePlan();
+  const { plan, setPlan } = usePlan();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +76,36 @@ const PlanBillingTab = () => {
   // Trial banner logic
   const showTrialBanner = planData.isTrialActive && planData.trialPlanId === 'professional';
   const showTrialExpiredBanner = !planData.isTrialActive && planData.trialPlanId === 'professional' && planData.planId === 'starter';
+
+  const handleUpgrade = async (planId: string) => {
+    try {
+      setLoading(true);
+      await apiService.upgradePlan(planId);
+      // Refetch plan status
+      const res = await apiService.getMyPlan();
+      setPlan({
+        planId: res.planId,
+        isTrialActive: res.status === 'trial',
+        trialEndDate: res.trialEndDate,
+        trialPlanId: res.trialPlanId,
+        remainingTrialDays: res.trialEndDate ? Math.max(0, Math.ceil((new Date(res.trialEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : undefined
+      });
+      toast({
+        title: 'Plan Upgraded',
+        description: `You have successfully upgraded to the ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan.`,
+        duration: 7000,
+        variant: 'success',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Upgrade Failed',
+        description: e.message || 'Failed to upgrade plan',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -189,7 +219,7 @@ const PlanBillingTab = () => {
                     Current Plan
                   </Button>
                 ) : (
-                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
+                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleUpgrade(p.id)}>
                     Select Plan
                   </Button>
                 )}

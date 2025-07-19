@@ -9,7 +9,15 @@ describe('AuditLogService', () => {
   let realtimeService: any;
 
   beforeEach(async () => {
-    prisma = { auditLog: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn(), delete: jest.fn() } };
+    prisma = {
+      auditLog: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+    };
     realtimeService = { sendAuditLogUpdate: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
       providers: [

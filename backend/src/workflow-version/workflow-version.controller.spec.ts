@@ -7,7 +7,14 @@ describe('WorkflowVersionController', () => {
   let workflowVersionService: any;
 
   beforeEach(async () => {
-    workflowVersionService = { findAll: jest.fn(), findByWorkflowId: jest.fn(), findOne: jest.fn(), create: jest.fn(), update: jest.fn(), remove: jest.fn() };
+    workflowVersionService = {
+      findAll: jest.fn(),
+      findByWorkflowId: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WorkflowVersionController],
       providers: [
@@ -15,7 +22,9 @@ describe('WorkflowVersionController', () => {
       ],
     }).compile();
 
-    controller = module.get<WorkflowVersionController>(WorkflowVersionController);
+    controller = module.get<WorkflowVersionController>(
+      WorkflowVersionController,
+    );
   });
 
   it('should be defined', () => {

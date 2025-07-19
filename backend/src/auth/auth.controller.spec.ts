@@ -11,7 +11,15 @@ describe('AuthController', () => {
   let jwtService: any;
 
   beforeEach(async () => {
-    authService = { findOrCreateUser: jest.fn(), updateUserHubspotTokens: jest.fn(), updateUserLastActive: jest.fn(), updateUserHubspotPortalId: jest.fn(), validateUser: jest.fn(), login: jest.fn(), registerUser: jest.fn(), };
+    authService = {
+      findOrCreateUser: jest.fn(),
+      updateUserHubspotTokens: jest.fn(),
+      updateUserLastActive: jest.fn(),
+      updateUserHubspotPortalId: jest.fn(),
+      validateUser: jest.fn(),
+      login: jest.fn(),
+      registerUser: jest.fn(),
+    };
     userService = { getUserPlan: jest.fn() };
     jwtService = { sign: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({

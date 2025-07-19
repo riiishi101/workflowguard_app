@@ -1,6 +1,10 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -12,11 +16,13 @@ export class LastActiveInterceptor implements NestInterceptor {
     const user = request.user;
     if (user && user.id) {
       // Fire and forget update
-      this.prisma.user.update({
-        where: { id: user.id },
-        data: { lastActiveAt: new Date() },
-      }).catch(() => {});
+      this.prisma.user
+        .update({
+          where: { id: user.id },
+          data: { lastActiveAt: new Date() },
+        })
+        .catch(() => {});
     }
     return next.handle();
   }
-} 
+}

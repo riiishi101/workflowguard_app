@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Workflow, Prisma } from '@prisma/client';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
@@ -20,8 +24,10 @@ export class WorkflowService {
     const user = await this.userService.findOneWithSubscription(ownerId);
     if (!user) throw new ForbiddenException('User not found');
     const planId = user.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
-    let count = await this.prisma.workflow.count({ where: { ownerId } });
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
+    const count = await this.prisma.workflow.count({ where: { ownerId } });
     let isOverage = false;
     if (plan?.maxWorkflows !== null && plan?.maxWorkflows !== undefined) {
       if (count >= plan.maxWorkflows) {
@@ -42,7 +48,15 @@ export class WorkflowService {
       // Record overage for this billing period
       const now = new Date();
       const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      const periodEnd = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       await this.prisma.overage.upsert({
         where: {
           userId_type_periodStart_periodEnd: {
@@ -115,8 +129,13 @@ export class WorkflowService {
     });
   }
 
-  async update(id: string, data: Prisma.WorkflowUpdateInput & { updatedBy?: string }): Promise<Workflow> {
-    const oldWorkflow = await this.prisma.workflow.findUnique({ where: { id } });
+  async update(
+    id: string,
+    data: Prisma.WorkflowUpdateInput & { updatedBy?: string },
+  ): Promise<Workflow> {
+    const oldWorkflow = await this.prisma.workflow.findUnique({
+      where: { id },
+    });
     const workflow = await this.prisma.workflow.update({
       where: { id },
       data,
@@ -138,7 +157,9 @@ export class WorkflowService {
   }
 
   async remove(id: string, userId?: string): Promise<Workflow> {
-    const oldWorkflow = await this.prisma.workflow.findUnique({ where: { id } });
+    const oldWorkflow = await this.prisma.workflow.findUnique({
+      where: { id },
+    });
     const workflow = await this.prisma.workflow.delete({ where: { id } });
     // Audit log
     await this.auditLogService.create({
@@ -161,23 +182,32 @@ export class WorkflowService {
     // const accessToken = await this.userService.getValidHubspotAccessToken(user);
     const accessToken = user.hubspotAccessToken;
     // Fetch workflows from HubSpot
-    const response = await axios.get('https://api.hubapi.com/automation/v3/workflows', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const response = await axios.get(
+      'https://api.hubapi.com/automation/v3/workflows',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
     return response.data.workflows || [];
   }
 
   async snapshotFromHubSpot(workflowId: string, userId: string) {
     // 1. Find workflow in your DB to get hubspotId
-    const workflow = await this.prisma.workflow.findUnique({ where: { id: workflowId } });
+    const workflow = await this.prisma.workflow.findUnique({
+      where: { id: workflowId },
+    });
     if (!workflow) throw new NotFoundException('Workflow not found');
     // 2. Get user and valid access token
     const user = await this.userService.findOne(userId);
-    if (!user || !user.hubspotAccessToken) throw new ForbiddenException('No HubSpot access token');
+    if (!user || !user.hubspotAccessToken)
+      throw new ForbiddenException('No HubSpot access token');
     // 3. Fetch latest workflow details from HubSpot
-    const response = await axios.get(`https://api.hubapi.com/automation/v3/workflows/${workflow.hubspotId}`, {
-      headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
-    });
+    const response = await axios.get(
+      `https://api.hubapi.com/automation/v3/workflows/${workflow.hubspotId}`,
+      {
+        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+      },
+    );
     // 4. Create new WorkflowVersion in your DB
     const latestVersion = await this.prisma.workflowVersion.findFirst({
       where: { workflowId },
@@ -214,16 +244,26 @@ export class WorkflowService {
       throw new NotFoundException('No version found to rollback to');
     }
     // Update the workflow's data to match the latest version
-    const oldWorkflow = await this.prisma.workflow.findUnique({ where: { id } });
-    let updateData: any = {};
-    if (latestVersion.data && typeof latestVersion.data === 'object' && !Array.isArray(latestVersion.data)) {
+    const oldWorkflow = await this.prisma.workflow.findUnique({
+      where: { id },
+    });
+    const updateData: any = {};
+    if (
+      latestVersion.data &&
+      typeof latestVersion.data === 'object' &&
+      !Array.isArray(latestVersion.data)
+    ) {
       // Map fields from the version's data JSON to the Workflow model
-      if ('name' in latestVersion.data) updateData.name = latestVersion.data.name;
-      if ('hubspotId' in latestVersion.data) updateData.hubspotId = latestVersion.data.hubspotId;
+      if ('name' in latestVersion.data)
+        updateData.name = latestVersion.data.name;
+      if ('hubspotId' in latestVersion.data)
+        updateData.hubspotId = latestVersion.data.hubspotId;
       // Add more fields as needed
     }
     if (Object.keys(updateData).length === 0) {
-      throw new NotFoundException('No valid fields found in version data to restore');
+      throw new NotFoundException(
+        'No valid fields found in version data to restore',
+      );
     }
     await this.prisma.workflow.update({
       where: { id },
