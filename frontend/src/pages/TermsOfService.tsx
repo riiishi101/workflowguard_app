@@ -125,7 +125,7 @@ const TermsOfService = () => {
           {sections.map((section) => (
             <Collapsible
               key={section.id}
-              open={openSections[section.id]}
+              open={openSections[section.id] || false}
               onOpenChange={() => toggleSection(section.id)}
             >
               <CollapsibleTrigger className="w-full">

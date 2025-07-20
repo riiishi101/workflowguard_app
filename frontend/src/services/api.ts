@@ -53,10 +53,13 @@ class ApiService {
       ...options,
     };
 
-    // Add timeout to prevent hanging requests
-    const timeoutDuration = 30000; // 30 seconds
+    // Increase timeout to prevent hanging requests on slow connections
+    const timeoutDuration = 60000; // 60 seconds
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      console.warn(`Request to ${endpoint} timed out after ${timeoutDuration}ms`);
+    }, timeoutDuration);
     
     try {
       const response = await fetch(url, {

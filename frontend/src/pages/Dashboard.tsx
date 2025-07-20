@@ -125,6 +125,12 @@ const Dashboard = () => {
       
       setWorkflows(validWorkflows);
     } catch (err: any) {
+      // Don't set error for aborted requests (user navigation)
+      if (err.name === 'AbortError') {
+        console.log('Workflows request was aborted');
+        return;
+      }
+      
       // Improved error handling
       const apiError = err?.response?.data?.message || err?.message || String(err);
       setError(`Failed to fetch workflows: ${apiError}`);
@@ -139,7 +145,13 @@ const Dashboard = () => {
       setAnalyticsLoading(true);
       const data = await apiService.getBusinessIntelligence();
       setAnalytics(data);
-    } catch (err) {
+    } catch (err: any) {
+      // Don't show toast for aborted requests (user navigation)
+      if (err.name === 'AbortError') {
+        console.log('Analytics request was aborted');
+        return;
+      }
+      
       toast({
         title: "Analytics Error",
         description: err?.message || "Failed to load analytics.",
@@ -153,17 +165,44 @@ const Dashboard = () => {
   // Only fetch data if user is authenticated
   useEffect(() => {
     if (!user) return;
+    
+    let isMounted = true;
+    
     const loadData = async () => {
       try {
-        await Promise.allSettled([
+        // Use Promise.allSettled to handle both requests independently
+        const results = await Promise.allSettled([
           fetchWorkflows(),
           fetchAnalytics()
         ]);
+        
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+        
+        // Handle individual results
+        results.forEach((result, index) => {
+          if (result.status === 'rejected' && isMounted) {
+            const error = result.reason;
+            if (error.name === 'AbortError') {
+              console.log('Request was aborted, likely due to navigation');
+            } else {
+              console.error(`Error loading data (${index === 0 ? 'workflows' : 'analytics'}):`, error);
+            }
+          }
+        });
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        if (isMounted) {
+          console.error('Error loading dashboard data:', error);
+        }
       }
     };
+    
     loadData();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   useEffect(() => {
