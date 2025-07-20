@@ -740,7 +740,7 @@ class ApiService {
   }
 
   async getMe() {
-    return this.request('/users/me');
+    return this.request('/auth/me');
   }
 
   async updateMe(profile: {
@@ -750,39 +750,43 @@ class ApiService {
     timezone?: string;
     language?: string;
   }) {
-    return this.request('/users/me', {
-      method: 'PUT', 
+    return this.request('/auth/me', {
+      method: 'PATCH',
       body: JSON.stringify(profile),
     });
   }
 
   async deleteMe() {
-    return this.request('/users/me', { method: 'DELETE' });
+    return this.request('/auth/me', {
+      method: 'DELETE',
+    });
   }
 
   async getSsoConfig() {
-    return this.request('/sso-config');
+    return this.request('/auth/sso-config');
   }
 
   async updateSsoConfig(config: { provider: string; metadata: string; enabled: boolean }) {
-    return this.request('/sso-config', {
-      method: 'PUT',
+    return this.request('/auth/sso-config', {
+      method: 'PATCH',
       body: JSON.stringify(config),
     });
   }
 
   async syncWorkflowFromHubSpot(workflowId: string) {
-    return this.request(`/workflows/${workflowId}/sync-from-hubspot`, {
+    return this.request(`/workflows/sync/${workflowId}`, {
       method: 'POST',
     });
   }
 
   async setMonitoredWorkflows(workflowIds: string[]) {
-    return this.request('/users/me/monitored-workflows', {
+    return this.request('/workflows/monitored', {
       method: 'POST',
       body: JSON.stringify({ workflowIds }),
     });
   }
+
+
 }
 
 export const apiService = new ApiService();
