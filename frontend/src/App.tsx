@@ -10,6 +10,8 @@ import AppLoadingState from './components/ui/AppLoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
 import PerformanceMonitor from './components/ui/PerformanceMonitor';
 import Footer from './components/Footer';
+import { Alert } from './components/ui/alert';
+import { Lock } from 'lucide-react';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -67,6 +69,44 @@ const ModalsManager = () => {
   );
 };
 
+const LockoutBanner: React.FC<{ message?: string }> = ({ message }) => (
+  <Alert
+    variant="default"
+    className="flex items-center gap-3 bg-yellow-50 border-yellow-200 text-yellow-900 rounded-xl px-6 py-4 mb-4 shadow-sm"
+    style={{ borderWidth: 2 }}
+  >
+    <Lock className="w-6 h-6 text-yellow-700 mr-2" />
+    <span className="font-medium text-base">
+      {message || "Your free trial has ended. Upgrade your plan to unlock WorkflowGuard's features."}
+    </span>
+  </Alert>
+);
+
+const LockoutOverlay: React.FC = () => (
+  <div
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      background: 'rgba(255,255,255,0.7)',
+      zIndex: 1000,
+      pointerEvents: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+    }}
+    tabIndex={-1}
+    aria-hidden="true"
+  >
+    <div style={{ width: '100%', maxWidth: 900, marginTop: 40 }}>
+      <LockoutBanner message="Your free trial has ended. Please upgrade your plan to continue using WorkflowGuard. You can manage your subscription below." />
+    </div>
+  </div>
+);
+
 const AppRoutes = () => {
   const { user, loading } = useAuth();
   const { plan } = usePlan();
@@ -108,9 +148,14 @@ const AppRoutes = () => {
     // }
   }, [user, location.pathname, hasSelectedWorkflows]);
 
+  // Determine if user is locked out (trial expired, not paid)
+  const isTrialExpired = plan && !plan.isTrialActive && plan.trialPlanId === 'professional';
+  const isOnPlanBilling = location.pathname === '/settings';
+
   return (
     <>
       <ModalsManager />
+      {isTrialExpired && !isOnPlanBilling && <LockoutOverlay />}
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/workflow-history" element={<WorkflowHistory />} />
