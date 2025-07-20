@@ -66,16 +66,8 @@ export class AuthService {
       const trialEnd = new Date(
         now.getTime() + trialDays * 24 * 60 * 60 * 1000,
       );
-      let role = 'viewer';
-      if (portalId) {
-        // Count users for this portal
-        const count = await this.prisma.user.count({
-          where: { hubspotPortalId: portalId },
-        });
-        if (count === 0) {
-          role = 'admin';
-        }
-      }
+      // Always assign 'admin' role to new users
+      let role = 'admin';
       user = await this.prisma.user.create({
         data: {
           email,
@@ -86,13 +78,12 @@ export class AuthService {
           planId: 'professional',
           trialStartDate: now,
           trialEndDate: trialEnd,
-          trialPlanId: 'professional',
           isTrialActive: true,
+          trialPlanId: 'professional',
           hubspotPortalId: portalId,
-        } as any,
+        },
       });
     }
-
     return user;
   }
 
