@@ -34,10 +34,10 @@ const PlanBillingTab = () => {
 
   // Use default plan info if not loaded
   const planData = plan || {
-    planId: 'starter',
-    isTrialActive: false,
+    planId: 'professional',
+    isTrialActive: true,
     trialEndDate: undefined,
-    trialPlanId: undefined,
+    trialPlanId: 'professional',
     remainingTrialDays: undefined,
   };
 

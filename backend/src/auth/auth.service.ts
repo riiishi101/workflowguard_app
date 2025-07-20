@@ -83,10 +83,11 @@ export class AuthService {
           role,
           firstInstalledAt: now,
           lastActiveAt: now,
-          planId: 'starter',
+          planId: 'professional',
           trialStartDate: now,
           trialEndDate: trialEnd,
           trialPlanId: 'professional',
+          isTrialActive: true,
           hubspotPortalId: portalId,
         } as any,
       });

@@ -39,10 +39,10 @@ model User {
   hubspotTokenExpiresAt DateTime?
   resetToken    String?
   resetTokenExpires DateTime?
-  planId         String?   @default("starter")
+  planId         String?   @default("professional")
   trialStartDate DateTime?
   trialEndDate   DateTime?
-  isTrialActive  Boolean?  @default(false)
+  isTrialActive  Boolean?  @default(true)
   trialPlanId    String?
 }
 
