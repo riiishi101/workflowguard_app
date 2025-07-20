@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Download, HelpCircle, Info } from "lucide-react";
+import { CheckCircle, Download, HelpCircle, Info, CreditCard, Calendar, FileText, Settings, AlertTriangle, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import apiService from '@/services/api';
@@ -25,6 +25,8 @@ const PlanBillingTab = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [billingHistory, setBillingHistory] = useState<any[]>([]);
+  const [showManageSubscription, setShowManageSubscription] = useState(false);
 
   useEffect(() => {
     setLoading(false); // Plan is loaded from context now
@@ -40,9 +42,6 @@ const PlanBillingTab = () => {
     trialPlanId: 'professional',
     remainingTrialDays: undefined,
   };
-
-  // Remove all UI and logic related to Billing History, Manage Subscription, and any HubSpot billing/invoice links or buttons.
-  // Only keep the subscription overview and plan details relevant to the app itself.
 
   // Plan definitions for display
   const plans = [
@@ -81,19 +80,18 @@ const PlanBillingTab = () => {
       setLoading(true);
       await apiService.upgradePlan(planId);
       // Refetch plan status
-      const res = await apiService.getMyPlan();
+      const res = await apiService.getMyPlan() as any;
       setPlan({
-        planId: res.planId,
+        planId: res.planId || 'professional',
         isTrialActive: res.status === 'trial',
         trialEndDate: res.trialEndDate,
-        trialPlanId: res.trialPlanId,
+        trialPlanId: res.trialPlanId || 'professional',
         remainingTrialDays: res.trialEndDate ? Math.max(0, Math.ceil((new Date(res.trialEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : undefined
       });
       toast({
         title: 'Plan Upgraded',
         description: `You have successfully upgraded to the ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan.`,
         duration: 7000,
-        variant: 'success',
       });
     } catch (e: any) {
       toast({
@@ -104,6 +102,57 @@ const PlanBillingTab = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleManageSubscription = () => {
+    setShowManageSubscription(true);
+  };
+
+  const handleCancelSubscription = async () => {
+    try {
+      // This would integrate with HubSpot marketplace for actual cancellation
+      toast({
+        title: 'Subscription Cancelled',
+        description: 'Your subscription will be cancelled at the end of the current billing period.',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Cancellation Failed',
+        description: e.message || 'Failed to cancel subscription',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    try {
+      // This would integrate with HubSpot marketplace for reactivation
+      toast({
+        title: 'Subscription Reactivated',
+        description: 'Your subscription has been reactivated successfully.',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Reactivation Failed',
+        description: e.message || 'Failed to reactivate subscription',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
   };
 
   return (
@@ -185,6 +234,7 @@ const PlanBillingTab = () => {
           </div>
         </CardContent>
       </Card>
+      
       {/* Plan Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((p) => (
@@ -227,6 +277,107 @@ const PlanBillingTab = () => {
           </Card>
         ))}
       </div>
+
+      {/* Manage Subscription Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Manage Subscription
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Subscription Status */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+              <CreditCard className="w-5 h-5 text-gray-600" />
+              <div>
+                <p className="text-sm text-gray-600">Payment Method</p>
+                <p className="font-medium">HubSpot Marketplace</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+              <Calendar className="w-5 h-5 text-gray-600" />
+              <div>
+                <p className="text-sm text-gray-600">Billing Cycle</p>
+                <p className="font-medium">Monthly</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+              <FileText className="w-5 h-5 text-gray-600" />
+              <div>
+                <p className="text-sm text-gray-600">Invoices</p>
+                <p className="font-medium">Available in HubSpot</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              onClick={handleManageSubscription}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Manage in HubSpot
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => window.open('https://app.hubspot.com/ecosystem/marketplace/apps', '_blank')}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View Billing History
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => window.open('/help', '_blank')}
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Billing Support
+            </Button>
+          </div>
+
+          {/* Important Notes */}
+          <Alert>
+            <Info className="h-4 w-4" />
+            <div>
+              <h4 className="font-medium">Important Information</h4>
+              <p className="text-sm text-gray-600 mt-1">
+                Your subscription is managed through the HubSpot Marketplace. To make changes to your billing, 
+                payment method, or view invoices, please visit your HubSpot account settings.
+              </p>
+            </div>
+          </Alert>
+
+          {/* Trial Information */}
+          {showTrialBanner && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <div>
+                <h4 className="font-medium text-blue-900">Trial Period Active</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  You're currently on a free trial. No charges will be made until your trial ends. 
+                  You can upgrade or cancel at any time during the trial period.
+                </p>
+              </div>
+            </Alert>
+          )}
+
+          {/* Cancellation Warning */}
+          {!showTrialBanner && (
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <div>
+                <h4 className="font-medium text-yellow-900">Cancellation Policy</h4>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Cancelling your subscription will stop billing at the end of your current period. 
+                  You'll continue to have access to all features until then.
+                </p>
+              </div>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
