@@ -190,7 +190,19 @@ export class WorkflowService {
       );
       // Add logging after API call
       console.log(`[HubSpot] Workflows API response for userId: ${userId}`, response.data);
-      return response.data.workflows || [];
+      // Map to expected structure for frontend
+      const workflows = Array.isArray(response.data.workflows) ? response.data.workflows.map((w: any) => ({
+        id: w.id ? String(w.id) : undefined,
+        name: w.name || '',
+        hubspotId: w.id ? String(w.id) : undefined,
+        ownerId: userId,
+        folder: w.folderId ? String(w.folderId) : undefined, // if available
+        status: w.enabled === false ? 'inactive' : 'active', // if available
+        createdAt: w.insertedAt ? new Date(w.insertedAt).toISOString() : undefined,
+        updatedAt: w.updatedAt ? new Date(w.updatedAt).toISOString() : undefined,
+        ...w,
+      })) : [];
+      return workflows;
     } catch (error) {
       // Log error details
       console.error(`[HubSpot] Error fetching workflows for userId: ${userId}`, error.response?.data || error.message || error);
