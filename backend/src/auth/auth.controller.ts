@@ -153,6 +153,7 @@ export class AuthController {
       const email = userRes.data.user || userRes.data.email;
       const portalId = userRes.data.portalId;
 
+      // Ensure synthetic email and portalId are set
       let user;
       try {
         if (!email && portalId) {
@@ -163,57 +164,24 @@ export class AuthController {
             undefined,
             portalId,
           );
-          await this.authService.updateUserHubspotTokens(
-            user.id,
-            access_token,
-            refresh_token,
-            expires_in,
-          );
-          await this.authService.updateUserLastActive(user.id);
-        } else if (!email) {
-          const frontendUrl = process.env.FRONTEND_URL;
-          if (!frontendUrl)
-            throw new Error(
-              'FRONTEND_URL must be set in environment variables',
-            );
-          const errorMsg = encodeURIComponent(
-            'Could not retrieve user email from HubSpot. Please try again or contact support.',
-          );
-          this.logger.warn('Could not retrieve user email from HubSpot');
-          return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
+        } else if (email) {
+          user = await this.authService.findOrCreateUser(email, undefined, portalId);
         } else {
-          // Find or create user in your DB
-          user = await this.authService.findOrCreateUser(
-            email,
-            undefined,
-            portalId,
-          );
-          this.logger.log(
-            'OAuth - User found/created:',
-            user.email,
-            'User ID:',
-            user.id,
-          );
-          await this.authService.updateUserHubspotTokens(
-            user.id,
-            access_token,
-            refresh_token,
-            expires_in,
-          );
-          this.logger.log(
-            'OAuth - HubSpot tokens updated for user:',
-            user.email,
-          );
-          await this.authService.updateUserLastActive(user.id);
+          throw new Error('No email or portalId available for user creation');
         }
-      } catch (userDbErr) {
-        const frontendUrl = process.env.FRONTEND_URL;
-        if (!frontendUrl)
-          throw new Error('FRONTEND_URL must be set in environment variables');
-        const errorMsg = encodeURIComponent(
-          'Failed to create or update user. Please try again or contact support.',
+        await this.authService.updateUserHubspotTokens(
+          user.id,
+          access_token,
+          refresh_token,
+          expires_in,
         );
-        this.logger.error('Failed to create or update user', userDbErr);
+        await this.authService.updateUserLastActive(user.id);
+      } catch (userCreateErr) {
+        this.logger.error('Failed to create or update user in OAuth callback', userCreateErr);
+        const frontendUrl = process.env.FRONTEND_URL;
+        const errorMsg = encodeURIComponent(
+          'Failed to create or update user. Please try again or contact support.'
+        );
         return res.redirect(`${frontendUrl}/?oauth_error=${errorMsg}`);
       }
 
