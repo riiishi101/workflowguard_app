@@ -55,7 +55,7 @@ export class AuthService {
     };
   }
 
-  async findOrCreateUser(email: string, name?: string, portalId?: string) {
+  async findOrCreateUser(email: string, name?: string, portalId?: string | number) {
     let user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -80,8 +80,14 @@ export class AuthService {
           trialEndDate: trialEnd,
           isTrialActive: true,
           trialPlanId: 'professional',
-          hubspotPortalId: portalId,
+          hubspotPortalId: portalId ? String(portalId) : null,
         },
+      });
+    } else {
+      // If user exists, update to admin role for development testing
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { role: 'admin', hubspotPortalId: portalId ? String(portalId) : null },
       });
     }
     return user;
