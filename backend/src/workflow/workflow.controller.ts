@@ -55,6 +55,7 @@ export class WorkflowController {
     @Query('live') live?: string,
   ) {
     const userId = (req as any).user?.sub;
+    console.log('WORKFLOW CONTROLLER: live param is', live, 'userId is', userId);
     if (live === 'true' && userId) {
       // Fetch live workflows from HubSpot for the current user
       return await this.workflowService.getWorkflowsFromHubSpot(userId);
