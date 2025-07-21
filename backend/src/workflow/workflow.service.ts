@@ -178,17 +178,24 @@ export class WorkflowService {
     if (!user || !user.hubspotAccessToken) {
       throw new ForbiddenException('No HubSpot access token found for user');
     }
-    // Optionally refresh token if expired (implement if needed)
-    // const accessToken = await this.userService.getValidHubspotAccessToken(user);
     const accessToken = user.hubspotAccessToken;
-    // Fetch workflows from HubSpot
-    const response = await axios.get(
-      'https://api.hubapi.com/automation/v3/workflows',
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      },
-    );
-    return response.data.workflows || [];
+    // Add logging before API call
+    console.log(`[HubSpot] Fetching workflows for userId: ${userId}`);
+    try {
+      const response = await axios.get(
+        'https://api.hubapi.com/automation/v3/workflows',
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        },
+      );
+      // Add logging after API call
+      console.log(`[HubSpot] Workflows API response for userId: ${userId}`, response.data);
+      return response.data.workflows || [];
+    } catch (error) {
+      // Log error details
+      console.error(`[HubSpot] Error fetching workflows for userId: ${userId}`, error.response?.data || error.message || error);
+      throw error;
+    }
   }
 
   async snapshotFromHubSpot(workflowId: string, userId: string) {
