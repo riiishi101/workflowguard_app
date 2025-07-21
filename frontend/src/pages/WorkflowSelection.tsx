@@ -17,7 +17,7 @@ import apiService from "@/services/api";
 import { useRequireAuth } from '../components/AuthContext';
 import { useToast } from "@/hooks/use-toast";
 import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
-import { useUser } from '@/hooks/useUser';
+import { useAuth } from '@/components/AuthContext';
 
 // Define the workflow type
 interface Workflow {
@@ -48,7 +48,7 @@ const WorkflowSelection = () => {
   useRequireAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuth();
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
