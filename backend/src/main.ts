@@ -105,16 +105,12 @@ export async function createNestServer() {
   app.use(limiter);
 
   // CORS configuration
-  const allowedOrigins = (process.env.CORS_ORIGIN || '')
-    .split(',')
-    .filter(Boolean);
-  if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
-    throw new Error(
-      'CORS_ORIGIN environment variable must be set in production!',
-    );
-  }
+  const allowedOrigins = [
+    'https://www.workflowguard.pro',
+    'http://localhost:3000',
+  ];
   app.enableCors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -243,9 +239,10 @@ if (process.env.VERCEL !== '1') {
       app.use(limiter);
 
       // CORS configuration
-      const allowedOrigins = (
-        process.env.CORS_ORIGIN || 'https://workflowguard-app.vercel.app'
-      ).split(',');
+      const allowedOrigins = [
+        'https://www.workflowguard.pro',
+        'http://localhost:3000',
+      ];
       app.enableCors({
         origin: allowedOrigins,
         credentials: true,
