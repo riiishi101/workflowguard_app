@@ -130,8 +130,8 @@ class ApiService {
   }
 
   async getWorkflows(ownerId?: string) {
-    // Production: Fetch workflows from the real API
-    return this.request('/workflows');
+    // Fetch live workflows from HubSpot for the connected user
+    return this.request('/workflows?live=true');
   }
 
   async getWorkflowById(id: string) {

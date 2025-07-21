@@ -62,6 +62,7 @@ const WorkflowSelection = () => {
       try {
         setLoading(true);
         setError(null);
+        // Fetch live workflows from HubSpot for the connected user
         const workflowsData = await apiService.getWorkflows();
         // Defensive: Validate and filter out malformed data
         const validWorkflows = Array.isArray(workflowsData)
