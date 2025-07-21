@@ -29,6 +29,24 @@ import {
 export class WorkflowController {
   constructor(private readonly workflowService: WorkflowService) {}
 
+  // Utility to deeply convert objects to JSON-serializable form
+  private toSerializable(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.toSerializable(item));
+    } else if (obj && typeof obj === 'object') {
+      const plain: any = {};
+      for (const key of Object.keys(obj)) {
+        const value = obj[key];
+        // Remove undefined, functions, and symbols
+        if (typeof value !== 'function' && typeof value !== 'symbol') {
+          plain[key] = this.toSerializable(value);
+        }
+      }
+      return plain;
+    }
+    return obj;
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new workflow' })
   @ApiResponse({ status: 201, description: 'Workflow created successfully.' })
@@ -58,15 +76,16 @@ export class WorkflowController {
     console.log('WORKFLOW CONTROLLER: live param is', live, 'userId is', userId);
     if (live === 'true' && userId) {
       // Fetch live workflows from HubSpot for the current user
-      return await this.workflowService.getWorkflowsFromHubSpot(userId);
+      const workflows = await this.workflowService.getWorkflowsFromHubSpot(userId);
+      return this.toSerializable(workflows);
     }
     if (ownerId) {
       // Filter by owner if provided
-      return await this.workflowService
-        .findAll()
-        .then((workflows) => workflows.filter((w) => w.ownerId === ownerId));
+      const workflows = await this.workflowService.findAll();
+      return this.toSerializable(workflows.filter((w) => w.ownerId === ownerId));
     }
-    return await this.workflowService.findAll();
+    const workflows = await this.workflowService.findAll();
+    return this.toSerializable(workflows);
   }
 
   @Get(':id')
