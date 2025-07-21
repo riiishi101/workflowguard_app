@@ -66,14 +66,13 @@ const WorkflowSelection = () => {
         setError(null);
         // Fetch live workflows from HubSpot for the connected user
         const workflowsData = await apiService.getWorkflows();
-        // Normalize: ensure id, hubspotId, ownerId are strings
+        // Use backend structure directly; fallback for legacy/edge cases
         const normalized = Array.isArray(workflowsData)
           ? workflowsData.map((w: any) => ({
-              id: String(w.id),
-              name: w.name,
-              hubspotId: String(w.id),
-              ownerId: (user?.id || ""),
               ...w,
+              id: w.id ? String(w.id) : (w.hubspotId ? String(w.hubspotId) : undefined),
+              hubspotId: w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined),
+              ownerId: w.ownerId || (user?.id || ""),
             }))
           : [];
         const validWorkflows = normalized.filter(isValidWorkflow);
