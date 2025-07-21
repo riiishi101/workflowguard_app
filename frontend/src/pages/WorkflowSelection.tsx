@@ -17,6 +17,7 @@ import apiService from "@/services/api";
 import { useRequireAuth } from '../components/AuthContext';
 import { useToast } from "@/hooks/use-toast";
 import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
+import { useUser } from '@/hooks/useUser';
 
 // Define the workflow type
 interface Workflow {
@@ -47,6 +48,7 @@ const WorkflowSelection = () => {
   useRequireAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useUser();
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -64,10 +66,17 @@ const WorkflowSelection = () => {
         setError(null);
         // Fetch live workflows from HubSpot for the connected user
         const workflowsData = await apiService.getWorkflows();
-        // Defensive: Validate and filter out malformed data
-        const validWorkflows = Array.isArray(workflowsData)
-          ? workflowsData.filter(isValidWorkflow)
+        // Normalize: ensure id, hubspotId, ownerId are strings
+        const normalized = Array.isArray(workflowsData)
+          ? workflowsData.map((w: any) => ({
+              id: String(w.id),
+              name: w.name,
+              hubspotId: String(w.id),
+              ownerId: (user?.id || ""),
+              ...w,
+            }))
           : [];
+        const validWorkflows = normalized.filter(isValidWorkflow);
         if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
           setBanner({ type: 'error', message: 'Some workflows were ignored due to invalid data.' });
         }
@@ -88,7 +97,7 @@ const WorkflowSelection = () => {
       }
     };
     fetchWorkflows();
-  }, [toast]);
+  }, [toast, user]);
 
   // Filtering logic
   const filteredWorkflows = workflows.filter((workflow) => {
