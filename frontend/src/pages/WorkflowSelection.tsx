@@ -231,7 +231,7 @@ const WorkflowSelection = () => {
               Your trial includes Professional Plan features, allowing you to
               monitor up to 500 workflows and retain 90 days of history. Get
               started by selecting your critical workflows below.
-            </p>
+            </p>in console
           </div>
         </div>
 
