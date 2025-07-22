@@ -189,4 +189,20 @@ export class WorkflowController {
       );
     }
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('monitored')
+  async setMonitoredWorkflows(@Req() req: Request, @Body() body: { workflowIds: string[] }) {
+    const userId = (req as any).user?.sub;
+    if (!userId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+    if (!body || !Array.isArray(body.workflowIds)) {
+      throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
+    }
+    // For now, just log the request. In production, you would update the DB to mark these workflows as monitored.
+    console.log(`[setMonitoredWorkflows] User ${userId} selected workflows:`, body.workflowIds);
+    // TODO: Implement DB update to mark workflows as monitored for this user
+    return { success: true, message: 'Monitored workflows updated (mock).' };
+  }
 }
