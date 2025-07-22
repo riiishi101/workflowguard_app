@@ -22,6 +22,14 @@ if (!API_BASE_URL) {
   throw new Error('VITE_API_URL must be set in the environment variables');
 }
 
+// Helper to get a cookie by name
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
 class ApiService {
   private token: string | null = null;
 
@@ -34,7 +42,8 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    const token = this.token || localStorage.getItem('authToken');
+    // Try all sources for JWT
+    const token = this.token || localStorage.getItem('authToken') || getCookie('jwt');
     
     // Only send Authorization header if we have a valid token
     // If no token, rely on JWT cookie authentication
