@@ -182,12 +182,12 @@ export class WorkflowService {
     // Add logging before API call
     console.log(`[HubSpot] Fetching workflows for userId: ${userId}`);
     try {
-      const response = await axios.get(
-        'https://api.hubapi.com/automation/v3/workflows',
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        },
-      );
+    const response = await axios.get(
+      'https://api.hubapi.com/automation/v3/workflows',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
       // Add logging after API call
       console.log(`[HubSpot] Workflows API response for userId: ${userId}`, response.data);
       // Map to expected structure for frontend

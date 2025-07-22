@@ -9,7 +9,11 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "react-router-dom": path.resolve(__dirname, "./node_modules/react-router-dom"),
+      "debounce": path.resolve(__dirname, "./node_modules/debounce"),
     },
+  },
+  optimizeDeps: {
+    include: ['debounce'],
   },
   test: {
     environment: 'jsdom',

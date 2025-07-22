@@ -169,13 +169,13 @@ export class AuthController {
         } else {
           throw new Error('No email or portalId available for user creation');
         }
-        await this.authService.updateUserHubspotTokens(
-          user.id,
-          access_token,
-          refresh_token,
-          expires_in,
-        );
-        await this.authService.updateUserLastActive(user.id);
+          await this.authService.updateUserHubspotTokens(
+            user.id,
+            access_token,
+            refresh_token,
+            expires_in,
+          );
+          await this.authService.updateUserLastActive(user.id);
       } catch (userCreateErr) {
         this.logger.error('Failed to create or update user in OAuth callback', userCreateErr);
         const frontendUrl = process.env.FRONTEND_URL;
