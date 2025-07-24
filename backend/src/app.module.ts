@@ -23,8 +23,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 100,
+          ttl: 60,
+          limit: 100,
     }),
     PrismaModule,
     AuthModule,
