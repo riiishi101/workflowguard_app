@@ -101,7 +101,11 @@
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
+<<<<<<< HEAD
     "vite": "^5.4.19",
+=======
+    "vite": "^7.0.6",
+>>>>>>> 37ce783 (Remove unnecessary Dashboard tests and prepare for production)
     "vitest": "^3.2.4"
   },
   "overrides": {
