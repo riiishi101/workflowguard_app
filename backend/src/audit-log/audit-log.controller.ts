@@ -17,6 +17,7 @@ import { CreateAuditLogDto } from './dto';
 import { Roles } from '../auth/roles.decorator';
 import { UserService } from '../user/user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiParam } from '@nestjs/swagger';
 
 @Controller('audit-logs')
 export class AuditLogController {
@@ -80,6 +81,7 @@ export class AuditLogController {
   }
 
   @Get(':id')
+  @ApiParam({ name: 'id', type: String, description: 'Audit Log ID' })
   @UseGuards(JwtAuthGuard)
   async findOne(@Req() req: Request, @Param('id') id: string) {
     const userIdFromJwt = (req.user as any)?.sub;
@@ -102,6 +104,7 @@ export class AuditLogController {
   }
 
   @Get('user/:userId')
+  @ApiParam({ name: 'userId', type: String, description: 'User ID' })
   @UseGuards(JwtAuthGuard)
   async findByUser(@Req() req: Request, @Param('userId') userId: string) {
     const userIdFromJwt = (req.user as any)?.sub;
@@ -120,6 +123,8 @@ export class AuditLogController {
   }
 
   @Get('entity/:entityType/:entityId')
+  @ApiParam({ name: 'entityType', type: String, description: 'Entity Type' })
+  @ApiParam({ name: 'entityId', type: String, description: 'Entity ID' })
   @UseGuards(JwtAuthGuard)
   async findByEntity(
     @Req() req: Request,
