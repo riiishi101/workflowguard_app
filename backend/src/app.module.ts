@@ -37,8 +37,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     HubSpotBillingModule,
     AnalyticsModule,
     EmailModule,
-    RealtimeModule,
-    // MetricsModule, // Temporarily commented out for debugging
+    // RealtimeModule, // Temporarily commented out for debugging
+    // MetricsModule, // Still commented out
   ],
   controllers: [AppController],
   providers: [
