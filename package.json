@@ -5,9 +5,5 @@
   "workspaces": [
     "backend",
     "frontend"
-  ],
-  "scripts": {
-    "install:all": "npm install --workspaces",
-    "start": "echo 'Use scripts in backend/ or frontend/'"
-  }
+  ]
 }
