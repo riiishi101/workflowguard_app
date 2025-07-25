@@ -21,6 +21,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger';
 
 @ApiTags('Workflows')
@@ -90,6 +91,7 @@ export class WorkflowController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a workflow by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'Workflow ID' })
   @ApiResponse({ status: 200, description: 'Workflow found.' })
   @ApiResponse({ status: 404, description: 'Workflow not found.' })
   async findOne(@Param('id') id: string) {
@@ -102,6 +104,7 @@ export class WorkflowController {
 
   @Get('hubspot/:hubspotId')
   @ApiOperation({ summary: 'Get a workflow by HubSpot ID' })
+  @ApiParam({ name: 'hubspotId', type: String, description: 'HubSpot Workflow ID' })
   @ApiResponse({ status: 200, description: 'Workflow found.' })
   @ApiResponse({ status: 404, description: 'Workflow not found.' })
   async findByHubspotId(@Param('hubspotId') hubspotId: string) {
@@ -115,6 +118,7 @@ export class WorkflowController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a workflow' })
+  @ApiParam({ name: 'id', type: String, description: 'Workflow ID' })
   @ApiResponse({ status: 200, description: 'Workflow updated.' })
   @ApiResponse({ status: 404, description: 'Workflow not found.' })
   @ApiResponse({ status: 500, description: 'Failed to update workflow.' })
@@ -145,6 +149,7 @@ export class WorkflowController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a workflow' })
+  @ApiParam({ name: 'id', type: String, description: 'Workflow ID' })
   @ApiResponse({ status: 200, description: 'Workflow deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Workflow not found.' })
   @ApiResponse({ status: 500, description: 'Failed to delete workflow.' })
@@ -168,6 +173,7 @@ export class WorkflowController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/sync-from-hubspot')
   @ApiOperation({ summary: 'Sync workflow from HubSpot' })
+  @ApiParam({ name: 'id', type: String, description: 'Workflow ID' })
   @ApiResponse({ status: 200, description: 'Workflow synced from HubSpot.' })
   async syncFromHubSpot(@Req() req: Request, @Param('id') id: string) {
     const userId = (req as any).user?.sub;
@@ -176,6 +182,7 @@ export class WorkflowController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/rollback')
+  @ApiParam({ name: 'id', type: String, description: 'Workflow ID' })
   async rollback(@Req() req: Request, @Param('id') id: string) {
     try {
       const userId = (req as any).user?.sub;
