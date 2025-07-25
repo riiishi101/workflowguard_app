@@ -178,35 +178,31 @@ export default createNestServer;
 // Only run this for local/dev, not on Vercel
 if (process.env.VERCEL !== '1') {
   async function bootstrap() {
-    console.log('🚀 Starting WorkflowGuard API...');
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(
-      `🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com'}`,
-    );
-
-    // Check if DATABASE_URL is set
-    if (!process.env.DATABASE_URL) {
-      console.error('❌ DATABASE_URL environment variable is not set!');
-      console.error(
-        'Please set the DATABASE_URL environment variable in your Render dashboard.',
-      );
-      process.exit(1);
-    }
-
-    console.log(
-      '🔌 Database URL configured:',
-      process.env.DATABASE_URL ? 'Yes' : 'No',
-    );
-
-    if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
-      Sentry.init({
-        dsn: process.env.SENTRY_DSN,
-        tracesSampleRate: 0.1,
-        environment: process.env.NODE_ENV,
-      });
-    }
-
     try {
+      console.log('🚀 Starting WorkflowGuard API...');
+      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(
+        `🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com'}`,
+      );
+      // Check if DATABASE_URL is set
+      if (!process.env.DATABASE_URL) {
+        console.error('❌ DATABASE_URL environment variable is not set!');
+        console.error(
+          'Please set the DATABASE_URL environment variable in your Render dashboard.',
+        );
+        process.exit(1);
+      }
+      console.log(
+        '🔌 Database URL configured:',
+        process.env.DATABASE_URL ? 'Yes' : 'No',
+      );
+      if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
+        Sentry.init({
+          dsn: process.env.SENTRY_DSN,
+          tracesSampleRate: 0.1,
+          environment: process.env.NODE_ENV,
+        });
+      }
       const app = await NestFactory.create<NestExpressApplication>(AppModule);
       // Swagger setup
       const config = new DocumentBuilder()
@@ -325,7 +321,11 @@ if (process.env.VERCEL !== '1') {
       console.log(`📡 API Base URL: http://localhost:${port}/api`);
     } catch (error) {
       console.error('❌ Failed to start WorkflowGuard API:', error);
-
+      if (error && error.stack) {
+        console.error('Error stack:', error.stack);
+      }
+      // Log all environment variables for debugging (remove sensitive info in production)
+      console.error('Environment variables:', JSON.stringify(process.env, null, 2));
       if (error.message?.includes("Can't reach database server")) {
         console.error('🔌 Database Connection Error:');
         console.error('   - Check if your DATABASE_URL is correct');
@@ -333,7 +333,6 @@ if (process.env.VERCEL !== '1') {
         console.error('   - Verify network connectivity');
         console.error('   - Check if the database credentials are valid');
       }
-
       process.exit(1);
     }
   }
