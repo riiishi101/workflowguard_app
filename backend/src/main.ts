@@ -158,12 +158,12 @@ export async function createNestServer() {
   }
 
   // Root health route (must come BEFORE the catch-all)
-  server.get('/', (req, res) => {
+  server.get('/', (req: Request, res: Response) => {
     res.json({ message: 'WorkflowGuard API is running!' });
   });
 
   // Catch-all for SPA (must come LAST)
-  server.get('*', (req, res) => {
+  server.get('*', (req: Request, res: Response) => {
     if (!req.originalUrl.startsWith('/api')) {
       res.sendFile(join(__dirname, '..', 'public', 'index.html'));
     }
@@ -179,30 +179,30 @@ export default createNestServer;
 if (process.env.VERCEL !== '1') {
   async function bootstrap() {
     try {
-      console.log('🚀 Starting WorkflowGuard API...');
-      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(
-        `🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com'}`,
+    console.log('🚀 Starting WorkflowGuard API...');
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(
+      `🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://workflowguard-app.onrender.com'}`,
+    );
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL environment variable is not set!');
+      console.error(
+        'Please set the DATABASE_URL environment variable in your Render dashboard.',
       );
-      // Check if DATABASE_URL is set
-      if (!process.env.DATABASE_URL) {
-        console.error('❌ DATABASE_URL environment variable is not set!');
-        console.error(
-          'Please set the DATABASE_URL environment variable in your Render dashboard.',
-        );
-        process.exit(1);
-      }
-      console.log(
-        '🔌 Database URL configured:',
-        process.env.DATABASE_URL ? 'Yes' : 'No',
-      );
-      if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
-        Sentry.init({
-          dsn: process.env.SENTRY_DSN,
-          tracesSampleRate: 0.1,
-          environment: process.env.NODE_ENV,
-        });
-      }
+      process.exit(1);
+    }
+    console.log(
+      '🔌 Database URL configured:',
+      process.env.DATABASE_URL ? 'Yes' : 'No',
+    );
+    if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
+      Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        tracesSampleRate: 0.1,
+        environment: process.env.NODE_ENV,
+      });
+    }
       const app = await NestFactory.create<NestExpressApplication>(AppModule);
       // Swagger setup
       const config = new DocumentBuilder()
@@ -310,7 +310,7 @@ if (process.env.VERCEL !== '1') {
 
       // Catch-all route to serve index.html for SPA support (non-API routes)
       const expressApp = app.getHttpAdapter().getInstance();
-      expressApp.get('*', (req, res) => {
+      expressApp.get('*', (req: Request, res: Response) => {
         if (!req.originalUrl.startsWith('/api')) {
           res.sendFile(join(__dirname, '..', 'public', 'index.html'));
         }
