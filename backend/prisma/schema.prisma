@@ -1,130 +1,125 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  name          String?
-  role          String   // e.g., 'admin', 'viewer'
-  password      String?  // Hashed password for email/password auth
-  jobTitle      String?
-  timezone      String?
-  language      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  firstInstalledAt DateTime?
-  lastActiveAt     DateTime?
-  workflows     Workflow[]
-  auditLogs     AuditLog[]
-  subscription  Subscription?
-  webhooks      Webhook[]
-  hubspotPortalId String? @unique
-  overages      Overage[]
-  notificationSettings NotificationSettings?
-  apiKeys       ApiKey[]
-  hubspotAccessToken   String?
-  hubspotRefreshToken  String?
+  id                    String                @id @default(uuid())
+  email                 String                @unique
+  name                  String?
+  role                  String
+  password              String?
+  jobTitle              String?
+  timezone              String?
+  language              String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  firstInstalledAt      DateTime?
+  lastActiveAt          DateTime?
+  hubspotPortalId       String?               @unique
+  hubspotAccessToken    String?
+  hubspotRefreshToken   String?
   hubspotTokenExpiresAt DateTime?
-  resetToken    String?
-  resetTokenExpires DateTime?
-  planId         String?   @default("professional")
-  trialStartDate DateTime?
-  trialEndDate   DateTime?
-  isTrialActive  Boolean?  @default(true)
-  trialPlanId    String?
+  resetToken            String?
+  resetTokenExpires     DateTime?
+  planId                String?               @default("professional")
+  trialStartDate        DateTime?
+  trialEndDate          DateTime?
+  isTrialActive         Boolean?              @default(true)
+  trialPlanId           String?
+  apiKeys               ApiKey[]
+  auditLogs             AuditLog[]
+  notificationSettings  NotificationSettings?
+  overages              Overage[]
+  subscription          Subscription?
+  webhooks              Webhook[]
+  workflows             Workflow[]
 }
 
 model Workflow {
-  id            String            @id @default(uuid())
-  hubspotId     String            @unique // HubSpot workflow ID
-  name          String
-  ownerId       String
-  owner         User              @relation(fields: [ownerId], references: [id])
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  versions      WorkflowVersion[]
+  id        String            @id @default(uuid())
+  hubspotId String            @unique
+  name      String
+  ownerId   String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  owner     User              @relation(fields: [ownerId], references: [id])
+  versions  WorkflowVersion[]
 }
 
 model WorkflowVersion {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   workflowId    String
-  workflow      Workflow  @relation(fields: [workflowId], references: [id])
   versionNumber Int
-  snapshotType  String    // e.g., 'manual', 'on-publish', 'daily-backup'
-  createdBy     String    // User ID or 'system'
-  createdAt     DateTime  @default(now())
-  data          Json      // Raw workflow JSON from HubSpot
+  snapshotType  String
+  createdBy     String
+  createdAt     DateTime @default(now())
+  data          Json
+  workflow      Workflow @relation(fields: [workflowId], references: [id])
 
   @@unique([workflowId, versionNumber])
 }
 
 model AuditLog {
-  id            String   @id @default(uuid())
-  userId        String?
-  user          User?    @relation(fields: [userId], references: [id])
-  action        String   // e.g., 'restore', 'create', 'update', 'delete'
-  entityType    String   // e.g., 'workflow', 'version', 'settings'
-  entityId      String   // ID of the affected entity
-  oldValue      Json?
-  newValue      Json?
-  timestamp     DateTime @default(now())
-  ipAddress     String?
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  oldValue   Json?
+  newValue   Json?
+  timestamp  DateTime @default(now())
+  ipAddress  String?
+  user       User?    @relation(fields: [userId], references: [id])
 }
 
 model Subscription {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id])
-  planId          String   // 'starter', 'professional', 'enterprise'
-  status          String   // 'active', 'trial', 'cancelled', 'overdue'
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  planId          String
+  status          String
   trialEndDate    DateTime?
   nextBillingDate DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
 }
 
 model Webhook {
   id          String   @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
   name        String?
   endpointUrl String
   secret      String?
   events      String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
 }
 
 model Plan {
-  id           String   @id // 'starter', 'professional', 'enterprise'
+  id           String   @id
   name         String
-  maxWorkflows Int?     // null = unlimited
-  historyDays  Int?     // null = unlimited
-  features     String[] // List of feature keys
+  maxWorkflows Int?
+  historyDays  Int?
+  features     String[]
 }
 
 model Overage {
   id          String   @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  type        String   // e.g., 'workflow'
-  amount      Int      // number of overages
-  periodStart DateTime // start of billing period
-  periodEnd   DateTime // end of billing period
+  type        String
+  amount      Int
+  periodStart DateTime
+  periodEnd   DateTime
   billed      Boolean  @default(false)
   createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, type, periodStart, periodEnd])
 }
@@ -132,7 +127,6 @@ model Overage {
 model NotificationSettings {
   id                        String   @id @default(uuid())
   userId                    String   @unique
-  user                      User     @relation(fields: [userId], references: [id])
   notificationsEnabled      Boolean  @default(true)
   notificationEmail         String
   workflowDeleted           Boolean  @default(true)
@@ -141,17 +135,18 @@ model NotificationSettings {
   criticalActionModified    Boolean  @default(false)
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
+  user                      User     @relation(fields: [userId], references: [id])
 }
 
 model ApiKey {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
   description String
-  keyHash     String   // Store only the hash of the API key
-  createdAt   DateTime @default(now())
+  keyHash     String
+  createdAt   DateTime  @default(now())
   lastUsed    DateTime?
-  revoked     Boolean  @default(false)
+  revoked     Boolean   @default(false)
+  user        User      @relation(fields: [userId], references: [id])
 }
 
 model SsoConfig {
