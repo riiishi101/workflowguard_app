@@ -15,6 +15,7 @@ import { WorkflowVersionService } from './workflow-version.service';
 import { CreateWorkflowVersionDto } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Request } from 'express';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 @Controller('workflow-versions')
 export class WorkflowVersionController {
@@ -44,6 +45,10 @@ export class WorkflowVersionController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a workflow version by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'Workflow Version ID' })
+  @ApiResponse({ status: 200, description: 'Workflow version found.' })
+  @ApiResponse({ status: 404, description: 'Workflow version not found.' })
   async findOne(@Param('id') id: string) {
     const version = await this.workflowVersionService.findOne(id);
     if (!version) {
@@ -56,6 +61,10 @@ export class WorkflowVersionController {
   }
 
   @Get('workflow/:workflowId/latest')
+  @ApiOperation({ summary: 'Get latest workflow version by workflow ID' })
+  @ApiParam({ name: 'workflowId', type: String, description: 'Workflow ID' })
+  @ApiResponse({ status: 200, description: 'Latest workflow version found.' })
+  @ApiResponse({ status: 404, description: 'Workflow version not found.' })
   async findLatestByWorkflowId(@Param('workflowId') workflowId: string) {
     const version =
       await this.workflowVersionService.findLatestByWorkflowId(workflowId);
@@ -70,6 +79,10 @@ export class WorkflowVersionController {
 
   @Get('workflow/:workflowId/history')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get workflow version history by workflow ID' })
+  @ApiParam({ name: 'workflowId', type: String, description: 'Workflow ID' })
+  @ApiResponse({ status: 200, description: 'Workflow version history found.' })
+  @ApiResponse({ status: 404, description: 'Workflow version not found.' })
   async getWorkflowHistory(
     @Req() req: Request,
     @Param('workflowId') workflowId: string,
@@ -84,6 +97,11 @@ export class WorkflowVersionController {
   }
 
   @Get('compare/:version1Id/:version2Id')
+  @ApiOperation({ summary: 'Compare two workflow versions' })
+  @ApiParam({ name: 'version1Id', type: String, description: 'First Workflow Version ID' })
+  @ApiParam({ name: 'version2Id', type: String, description: 'Second Workflow Version ID' })
+  @ApiResponse({ status: 200, description: 'Comparison result.' })
+  @ApiResponse({ status: 404, description: 'Workflow version not found.' })
   async compareVersions(
     @Param('version1Id') version1Id: string,
     @Param('version2Id') version2Id: string,
@@ -120,6 +138,10 @@ export class WorkflowVersionController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a workflow version by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'Workflow Version ID' })
+  @ApiResponse({ status: 200, description: 'Workflow version deleted.' })
+  @ApiResponse({ status: 404, description: 'Workflow version not found.' })
   async remove(@Param('id') id: string) {
     try {
       const version = await this.workflowVersionService.remove(id);

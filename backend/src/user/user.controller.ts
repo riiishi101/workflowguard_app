@@ -26,6 +26,7 @@ import { PlanFeature, PlanFeatureGuard } from '../auth/roles.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Request, Response } from 'express';
 import { RolesGuard } from '../auth/roles.guard';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 @Controller('users')
 export class UserController {
@@ -59,6 +60,10 @@ export class UserController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a user by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User found.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async findOne(@Param('id') id: string) {
     const user = await this.userService.findOne(id);
     if (!user) {
@@ -68,6 +73,10 @@ export class UserController {
   }
 
   @Get('email/:email')
+  @ApiOperation({ summary: 'Get a user by email' })
+  @ApiParam({ name: 'email', type: String, description: 'User email' })
+  @ApiResponse({ status: 200, description: 'User found.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async findByEmail(@Param('email') email: string) {
     const user = await this.userService.findByEmail(email);
     if (!user) {
@@ -79,6 +88,10 @@ export class UserController {
   @Patch(':id')
   @PlanFeature('user_permissions')
   @UseGuards(PlanFeatureGuard)
+  @ApiOperation({ summary: 'Update a user by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User updated.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async update(
     @Req() req: Request,
     @Param('id') id: string,
@@ -112,6 +125,10 @@ export class UserController {
   @Roles('admin')
   @PlanFeature('user_permissions')
   @UseGuards(PlanFeatureGuard)
+  @ApiOperation({ summary: 'Delete a user by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User deleted.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async remove(@Req() req: Request, @Param('id') id: string) {
     try {
       const actorUserId = (req as any).user?.sub;
@@ -160,6 +177,10 @@ export class UserController {
   @Get(':id/plan')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiOperation({ summary: 'Get a user plan by user ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User plan found.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async getUserPlan(@Param('id') id: string) {
     return this.userService.getUserPlan(id);
   }
@@ -167,6 +188,10 @@ export class UserController {
   @Get(':id/overages')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiOperation({ summary: 'Get user overages by user ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User overages found.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async getUserOverages(
     @Param('id') id: string,
     @Query('periodStart') periodStart?: string,
@@ -180,6 +205,10 @@ export class UserController {
   @Get(':id/overages/stats')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiOperation({ summary: 'Get user overages stats by user ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User overages stats found.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async getOverageStats(@Param('id') id: string) {
     return this.userService.getOverageStats(id);
   }
@@ -225,6 +254,10 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('me/api-keys/:id')
+  @ApiOperation({ summary: 'Delete an API key by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'API Key ID' })
+  @ApiResponse({ status: 200, description: 'API key deleted.' })
+  @ApiResponse({ status: 404, description: 'API key not found.' })
   async deleteMyApiKey(@Req() req: Request, @Param('id') id: string) {
     const userId = (req as any).user?.sub;
     if (!userId)
@@ -266,6 +299,10 @@ export class UserController {
   @Post(':id/reset-password')
   @Roles('admin')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Reset user password by user ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Password reset.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async resetPassword(@Param('id') id: string) {
     await this.userService.resetPassword(id);
     return { message: 'Password reset initiated.' };
@@ -374,6 +411,10 @@ export class UserController {
   @Get(':id/export')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiOperation({ summary: 'Export user data by user ID' })
+  @ApiParam({ name: 'id', type: String, description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User data exported.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async exportUserData(@Param('id') id: string, @Res() res: Response) {
     const data = await this.userService.exportUserData(id);
     res.setHeader('Content-Type', 'application/json');

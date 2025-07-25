@@ -20,6 +20,7 @@ import { UserService } from '../user/user.service';
 import { Public } from '../auth/public.decorator';
 import * as crypto from 'crypto';
 import { CreateWebhookDto } from './dto/create-webhook.dto';
+import { ApiParam } from '@nestjs/swagger';
 
 @Controller('webhooks')
 @UseGuards(JwtAuthGuard, PlanFeatureGuard)
@@ -51,6 +52,7 @@ export class WebhookController {
   }
 
   @Delete(':id')
+  @ApiParam({ name: 'id', type: String, description: 'Webhook ID' })
   async remove(@Req() req: Request, @Param('id') id: string) {
     const userId = (req as any).user?.sub;
     if (!userId)

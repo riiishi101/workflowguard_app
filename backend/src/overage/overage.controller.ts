@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { HubSpotBillingService } from '../services/hubspot-billing.service';
+import { ApiParam } from '@nestjs/swagger';
 
 @Controller('overages')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,6 +45,7 @@ export class OverageController {
   }
 
   @Get(':id')
+  @ApiParam({ name: 'id', type: String, description: 'Overage ID' })
   async findOne(@Param('id') id: string) {
     const overage = await this.overageService.findOne(id);
     if (!overage) {
@@ -53,6 +55,7 @@ export class OverageController {
   }
 
   @Patch(':id/bill')
+  @ApiParam({ name: 'id', type: String, description: 'Overage ID' })
   async markAsBilled(@Param('id') id: string) {
     return this.overageService.markAsBilled(id);
   }

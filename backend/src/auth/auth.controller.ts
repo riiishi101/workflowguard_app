@@ -22,6 +22,7 @@ import axios from 'axios';
 import { Public } from './public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
+import { ApiParam } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -347,6 +348,7 @@ export class AuthController {
   }
 
   @Get('user/:email')
+  @ApiParam({ name: 'email', type: String, description: 'User email' })
   async findOrCreateUser(@Param('email') email: string) {
     try {
       return await this.authService.findOrCreateUser(email);
@@ -361,6 +363,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('hubspot-contacts/:email')
+  @ApiParam({ name: 'email', type: String, description: 'User email' })
   async getHubspotContacts(
     @Param('email') email: string,
     @Res() res: Response,
@@ -394,6 +397,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('hubspot-companies/:email')
+  @ApiParam({ name: 'email', type: String, description: 'User email' })
   async getHubspotCompanies(
     @Param('email') email: string,
     @Res() res: Response,
@@ -424,6 +428,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('hubspot-deals/:email')
+  @ApiParam({ name: 'email', type: String, description: 'User email' })
   async getHubspotDeals(@Param('email') email: string, @Res() res: Response) {
     try {
       const user = await this.authService.validateUser(email);
@@ -450,6 +455,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('hubspot-contacts/:email')
+  @ApiParam({ name: 'email', type: String, description: 'User email' })
   async createHubspotContact(
     @Param('email') email: string,
     @Body() body: any,

@@ -17,6 +17,7 @@ import { Roles } from '../auth/roles.decorator';
 import { Public } from '../auth/public.decorator';
 import { Request, Response } from 'express';
 import * as crypto from 'crypto';
+import { ApiParam } from '@nestjs/swagger';
 
 @Controller('hubspot-billing')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -55,6 +56,7 @@ export class HubSpotBillingController {
   }
 
   @Get('user/:userId/billing-summary')
+  @ApiParam({ name: 'userId', type: String, description: 'User ID' })
   @Roles('admin')
   async getUserBillingSummary(@Param('userId') userId: string) {
     try {
