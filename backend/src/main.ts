@@ -137,6 +137,26 @@ export async function createNestServer() {
 
   await app.init();
 
+  // Route logging after app.init
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const server: any = app.getHttpServer();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const router: any = server._events?.request?._router;
+    if (router && router.stack) {
+      console.log('Registered routes after app.init:');
+      router.stack.forEach((layer: any) => {
+        if (layer.route) {
+          const path = layer.route.path;
+          const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
+          console.log(`${methods} ${path}`);
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Error logging routes:', e);
+  }
+
   // Root health route (must come BEFORE the catch-all)
   server.get('/', (req, res) => {
     res.json({ message: 'WorkflowGuard API is running!' });
@@ -271,6 +291,26 @@ if (process.env.VERCEL !== '1') {
 
       const port = process.env.PORT || 3000;
       await app.listen(port);
+
+      // Route logging after app.listen
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const server: any = app.getHttpServer();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const router: any = server._events?.request?._router;
+        if (router && router.stack) {
+          console.log('Registered routes after app.listen:');
+          router.stack.forEach((layer: any) => {
+            if (layer.route) {
+              const path = layer.route.path;
+              const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
+              console.log(`${methods} ${path}`);
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error logging routes:', e);
+      }
 
       // Catch-all route to serve index.html for SPA support (non-API routes)
       const expressApp = app.getHttpAdapter().getInstance();
