@@ -32,12 +32,12 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     WorkflowVersionModule,
     AuditLogModule,
     UserModule,
-    WebhookModule,
-    OverageModule,
-    HubSpotBillingModule,
-    AnalyticsModule,
+    // WebhookModule, // Temporarily commented out for debugging
+    // OverageModule,
+    // HubSpotBillingModule,
+    // AnalyticsModule,
     EmailModule,
-    // RealtimeModule, // Temporarily commented out for debugging
+    // RealtimeModule, // Still commented out
     // MetricsModule, // Still commented out
   ],
   controllers: [AppController],
