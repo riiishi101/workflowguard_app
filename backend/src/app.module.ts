@@ -22,25 +22,43 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
-    // ThrottlerModule.forRoot({
-    //       ttl: 60,
-    //       limit: 100,
-    // }),
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 100,
+    }),
     PrismaModule,
     AuthModule,
-    // WorkflowModule,
-    // WorkflowVersionModule,
-    // AuditLogModule,
-    // UserModule,
-    // WebhookModule, // Temporarily commented out for debugging
-    // OverageModule,
-    // HubSpotBillingModule,
-    // AnalyticsModule,
-    // EmailModule,
-    // RealtimeModule, // Still commented out
-    // MetricsModule, // Still commented out
+    WorkflowModule,
+    WorkflowVersionModule,
+    AuditLogModule,
+    UserModule,
+    WebhookModule,
+    OverageModule,
+    HubSpotBillingModule,
+    AnalyticsModule,
+    EmailModule,
+    RealtimeModule,
+    MetricsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LastActiveInterceptor,
+    },
+  ],
 })
 export class AppModule {}
