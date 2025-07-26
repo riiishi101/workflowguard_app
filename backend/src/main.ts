@@ -128,24 +128,24 @@ export default createNestServer;
 if (process.env.VERCEL !== '1') {
   async function bootstrap() {
     try {
-      console.log('🚀 Starting WorkflowGuard API...');
-      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log('🚀 Starting WorkflowGuard API...');
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://www.workflowguard.pro'}`);
-      
-      // Check if DATABASE_URL is set
-      if (!process.env.DATABASE_URL) {
-        console.error('❌ DATABASE_URL environment variable is not set!');
-        process.exit(1);
-      }
+
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL environment variable is not set!');
+      process.exit(1);
+    }
       console.log('🔌 Database URL configured: Yes');
 
-      if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
-        Sentry.init({
-          dsn: process.env.SENTRY_DSN,
-          tracesSampleRate: 0.1,
-          environment: process.env.NODE_ENV,
-        });
-      }
+    if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
+      Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        tracesSampleRate: 0.1,
+        environment: process.env.NODE_ENV,
+      });
+    }
 
       const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
@@ -166,14 +166,14 @@ if (process.env.VERCEL !== '1') {
       app.useStaticAssets(join(__dirname, '..', 'public'));
 
       app.use(helmet({
-        contentSecurityPolicy: {
-          directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", 'data:', 'https:'],
+          contentSecurityPolicy: {
+            directives: {
+              defaultSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              scriptSrc: ["'self'"],
+              imgSrc: ["'self'", 'data:', 'https:'],
+            },
           },
-        },
       }));
 
       app.use(compression());
@@ -222,7 +222,7 @@ if (process.env.VERCEL !== '1') {
       console.log(`🔌 Attempting to bind to port ${port}...`);
       
       await app.listen(port, '0.0.0.0');
-      
+
       console.log(`✅ WorkflowGuard API running on port ${port}`);
       console.log(`🌐 Server URL: http://0.0.0.0:${port}`);
       console.log(`📡 API Base URL: http://0.0.0.0:${port}/api`);

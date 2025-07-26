@@ -45,7 +45,7 @@ const AnalyticsDashboard = () => {
 
   useEffect(() => {
     fetchAnalytics();
-    // eslint-disable-next-line
+     
   }, [dateRange, plan, portal]);
 
   const handleRefresh = () => {

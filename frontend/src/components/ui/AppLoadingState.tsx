@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 import { Button } from './button';
+import { Progress } from './progress';
+import { Alert, AlertDescription } from './alert';
+import { Loader2, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface AppLoadingStateProps {
   message?: string;
@@ -8,6 +11,8 @@ interface AppLoadingStateProps {
   onTimeout?: () => void;
   onRetry?: () => void;
   showRetry?: boolean;
+  showProgress?: boolean;
+  progressSteps?: string[];
 }
 
 const AppLoadingState: React.FC<AppLoadingStateProps> = ({
@@ -15,10 +20,14 @@ const AppLoadingState: React.FC<AppLoadingStateProps> = ({
   timeout = 30000, // 30 seconds
   onTimeout,
   onRetry,
-  showRetry = true
+  showRetry = true,
+  showProgress = false,
+  progressSteps = []
 }) => {
   const [hasTimedOut, setHasTimedOut] = useState(false);
   const [loadingTime, setLoadingTime] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -34,6 +43,36 @@ const AppLoadingState: React.FC<AppLoadingStateProps> = ({
 
     return () => clearInterval(timer);
   }, [timeout, hasTimedOut, onTimeout]);
+
+  // Progress tracking effect
+  useEffect(() => {
+    if (!showProgress) return;
+
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) return prev; // Don't go to 100% until actually loaded
+        return prev + Math.random() * 10;
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [showProgress]);
+
+  // Progress steps effect
+  useEffect(() => {
+    if (!showProgress || progressSteps.length === 0) return;
+
+    const stepInterval = setInterval(() => {
+      setCurrentStep(prev => {
+        if (prev < progressSteps.length - 1) {
+          return prev + 1;
+        }
+        return prev;
+      });
+    }, 2000);
+
+    return () => clearInterval(stepInterval);
+  }, [showProgress, progressSteps]);
 
   if (hasTimedOut) {
     return (

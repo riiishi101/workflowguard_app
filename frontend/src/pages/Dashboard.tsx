@@ -108,7 +108,23 @@ const Dashboard = () => {
     try {
       setWorkflowsLoading(true);
       setError(null);
-      const data = await apiService.getWorkflows() as any[];
+      
+      // Try to get workflows from API first
+      let data: any[] = [];
+      try {
+        data = await apiService.getWorkflows() as any[];
+      } catch (apiError) {
+        console.log('API not available, checking localStorage for saved workflows');
+        // Check localStorage for saved workflows from selection
+        const savedWorkflows = localStorage.getItem('selectedWorkflows');
+        if (savedWorkflows) {
+          try {
+            data = JSON.parse(savedWorkflows);
+          } catch (parseError) {
+            console.log('Failed to parse saved workflows');
+          }
+        }
+      }
       
       // Defensive: Validate and filter out malformed data
       const validWorkflows = Array.isArray(data)

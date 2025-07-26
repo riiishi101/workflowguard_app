@@ -1,5 +1,20 @@
 console.log('REAL API SERVICE MODULE LOADED');
 
+// Import mock data for fallback
+import { 
+  mockWorkflows, 
+  mockAnalytics, 
+  mockUser, 
+  mockNotifications, 
+  mockAuditLog, 
+  mockSyncStatus, 
+  mockBillingData, 
+  mockWebhooks, 
+  mockApiKeys,
+  isMockMode,
+  getMockData 
+} from './mockData';
+
 // Simple WebSocket service that gracefully handles connection failures
 class WebSocketService {
   private socket: any = null;
@@ -90,6 +105,55 @@ class ApiService {
     this.token = token;
   }
 
+  private async getMockResponse<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Route mock data based on endpoint
+    if (endpoint.includes('/workflows') && !endpoint.includes('/versions')) {
+      // Check if we have real workflow data from HubSpot selection
+      const savedWorkflows = localStorage.getItem('selectedWorkflows');
+      if (savedWorkflows) {
+        try {
+          const realWorkflows = JSON.parse(savedWorkflows);
+          if (Array.isArray(realWorkflows) && realWorkflows.length > 0) {
+            return realWorkflows as T;
+          }
+        } catch (e) {
+          console.log('Failed to parse saved workflows, using mock data');
+        }
+      }
+      return mockWorkflows as T;
+    }
+    if (endpoint.includes('/analytics') || endpoint.includes('/business-intelligence')) {
+      return mockAnalytics as T;
+    }
+    if (endpoint.includes('/me') || endpoint.includes('/user')) {
+      return mockUser as T;
+    }
+    if (endpoint.includes('/notifications')) {
+      return mockNotifications as T;
+    }
+    if (endpoint.includes('/audit-logs')) {
+      return mockAuditLog as T;
+    }
+    if (endpoint.includes('/sync-status')) {
+      return mockSyncStatus as T;
+    }
+    if (endpoint.includes('/billing')) {
+      return mockBillingData as T;
+    }
+    if (endpoint.includes('/webhooks')) {
+      return mockWebhooks as T;
+    }
+    if (endpoint.includes('/api-keys')) {
+      return mockApiKeys as T;
+    }
+    
+    // Default empty response
+    return {} as T;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -97,6 +161,11 @@ class ApiService {
     const url = `${API_BASE_URL}${endpoint}`;
     // Try all sources for JWT
     const token = this.token || localStorage.getItem('authToken') || getCookie('jwt');
+    
+    // Check if we should use mock data
+    if (isMockMode()) {
+      return this.getMockResponse<T>(endpoint, options);
+    }
     
     // Only send Authorization header if we have a valid token
     // If no token, rely on JWT cookie authentication
@@ -848,6 +917,49 @@ class ApiService {
     });
   }
 
+  // Workflow sync status endpoint
+  async getWorkflowSyncStatus(workflowId?: string) {
+    const endpoint = workflowId 
+      ? `/workflows/sync-status/${workflowId}`
+      : '/workflows/sync-status';
+    return this.request(endpoint);
+  }
+
+  // Workflow comparison endpoint
+  async compareWorkflowVersions(version1Id: string, version2Id: string) {
+    return this.request(`/workflows/compare-versions`, {
+      method: 'POST',
+      body: JSON.stringify({ version1Id, version2Id }),
+    });
+  }
+
+  // Workflow backup endpoint
+  async createWorkflowBackup(workflowId: string, description?: string) {
+    return this.request(`/workflows/${workflowId}/backup`, {
+      method: 'POST',
+      body: JSON.stringify({ description }),
+    });
+  }
+
+  // Workflow restore endpoint
+  async restoreWorkflowFromBackup(workflowId: string, backupId: string) {
+    return this.request(`/workflows/${workflowId}/restore`, {
+      method: 'POST',
+      body: JSON.stringify({ backupId }),
+    });
+  }
+
+  // Workflow monitoring settings
+  async updateWorkflowMonitoringSettings(workflowId: string, settings: {
+    autoSync: boolean;
+    syncInterval: number;
+    notificationsEnabled: boolean;
+  }) {
+    return this.request(`/workflows/${workflowId}/monitoring-settings`, {
+      method: 'PATCH',
+      body: JSON.stringify(settings),
+    });
+  }
 
 }
 

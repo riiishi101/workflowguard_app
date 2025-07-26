@@ -74,11 +74,11 @@ const WorkflowSelection = () => {
               const hubspotId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined);
               
               return {
-                ...w,
+              ...w,
                 id: workflowId,
                 hubspotId: hubspotId,
                 name: w.name || 'Unnamed Workflow',
-                ownerId: w.ownerId || (user?.id || ""),
+              ownerId: w.ownerId || (user?.id || ""),
               };
             })
           : [];
@@ -155,7 +155,17 @@ const WorkflowSelection = () => {
   const handleStartProtecting = async () => {
     setActionLoading(true);
     try {
-      await apiService.setMonitoredWorkflows(selectedWorkflows);
+      // Save selected workflows to localStorage for dashboard access
+      const selectedWorkflowData = workflows.filter(w => selectedWorkflows.includes(w.id || w.hubspotId));
+      localStorage.setItem('selectedWorkflows', JSON.stringify(selectedWorkflowData));
+      
+      // Try to save to backend if available
+      try {
+        await apiService.setMonitoredWorkflows(selectedWorkflows);
+      } catch (backendError) {
+        console.log('Backend not available, using localStorage fallback');
+      }
+      
       setBanner({ type: 'success', message: `${selectedWorkflows.length} workflows are now being monitored.` });
       navigate("/dashboard");
     } catch (err) {

@@ -224,9 +224,78 @@ export class WorkflowController {
     if (!body || !Array.isArray(body.workflowIds)) {
       throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
     }
-    // For now, just log the request. In production, you would update the DB to mark these workflows as monitored.
+    
+    try {
+      // Save monitored workflows for the user
+      const result = await this.workflowService.setMonitoredWorkflows(userId, body.workflowIds);
     console.log(`[setMonitoredWorkflows] User ${userId} selected workflows:`, body.workflowIds);
-    // TODO: Implement DB update to mark workflows as monitored for this user
-    return { success: true, message: 'Monitored workflows updated (mock).' };
+      return result;
+    } catch (error) {
+      console.error('[setMonitoredWorkflows] Error saving monitored workflows:', error);
+      throw new HttpException('Failed to save monitored workflows', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('sync-status/:id?')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get workflow sync status' })
+  @ApiResponse({ status: 200, description: 'Sync status retrieved successfully.' })
+  async getSyncStatus(@Param('id') workflowId?: string, @Req() req?: Request) {
+    const userId = (req as any).user?.id || (req as any).user?.sub;
+    if (workflowId) {
+      return await this.workflowService.getWorkflowSyncStatus(workflowId, userId);
+    }
+    return await this.workflowService.getAllWorkflowSyncStatus(userId);
+  }
+
+  @Post('compare-versions')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Compare two workflow versions' })
+  @ApiResponse({ status: 200, description: 'Version comparison completed.' })
+  async compareVersions(
+    @Body() body: { version1Id: string; version2Id: string },
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user?.id || (req as any).user?.sub;
+    return await this.workflowService.compareVersions(body.version1Id, body.version2Id, userId);
+  }
+
+  @Post(':id/backup')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Create a workflow backup' })
+  @ApiResponse({ status: 201, description: 'Backup created successfully.' })
+  async createBackup(
+    @Param('id') workflowId: string,
+    @Body() body: { description?: string },
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user?.id || (req as any).user?.sub;
+    return await this.workflowService.createBackup(workflowId, userId, body.description);
+  }
+
+  @Post(':id/restore')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Restore workflow from backup' })
+  @ApiResponse({ status: 200, description: 'Workflow restored successfully.' })
+  async restoreFromBackup(
+    @Param('id') workflowId: string,
+    @Body() body: { backupId: string },
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user?.id || (req as any).user?.sub;
+    return await this.workflowService.restoreFromBackup(workflowId, body.backupId, userId);
+  }
+
+  @Patch(':id/monitoring-settings')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update workflow monitoring settings' })
+  @ApiResponse({ status: 200, description: 'Settings updated successfully.' })
+  async updateMonitoringSettings(
+    @Param('id') workflowId: string,
+    @Body() body: { autoSync: boolean; syncInterval: number; notificationsEnabled: boolean },
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user?.id || (req as any).user?.sub;
+    return await this.workflowService.updateMonitoringSettings(workflowId, userId, body);
   }
 }

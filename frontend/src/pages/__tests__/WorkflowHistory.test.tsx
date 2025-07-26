@@ -83,7 +83,7 @@ describe('WorkflowHistory', () => {
       errorFound = true;
     } catch (e) {
       // Print the DOM for debugging
-      // eslint-disable-next-line no-console
+       
       console.log('DEBUG DOM:');
       screen.debug();
     }

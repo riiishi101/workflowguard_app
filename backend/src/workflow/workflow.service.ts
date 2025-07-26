@@ -191,10 +191,10 @@ export class WorkflowService {
       // Add logging after API call
       console.log(`[HubSpot] Workflows API response for userId: ${userId}`, response.data);
       // Map to expected structure for frontend
-      const workflows = Array.isArray(response.data.workflows) ? response.data.workflows.map((w: any) => ({
-        id: w.id ? String(w.id) : undefined,
-        name: w.name || '',
-        hubspotId: w.id ? String(w.id) : undefined,
+      const workflows = Array.isArray(response.data.workflows) ? response.data.workflows.map((w: any, idx: number) => ({
+        id: w.id ? String(w.id) : `fallback-id-${idx}`,
+        name: w.name && w.name.trim() !== '' ? w.name : `Unnamed Workflow ${idx + 1}`,
+        hubspotId: w.id ? String(w.id) : `fallback-hubspotId-${idx}`,
         ownerId: userId,
         folder: w.folderId ? String(w.folderId) : undefined, // if available
         status: w.enabled === false ? 'inactive' : 'active', // if available
@@ -303,5 +303,72 @@ export class WorkflowService {
     if (!latestVersion) return true;
     // Compare the raw data (can be improved for deep diff)
     return JSON.stringify(hubspotData) !== JSON.stringify(latestVersion.data);
+  }
+
+  async setMonitoredWorkflows(userId: string, workflowIds: string[]): Promise<any> {
+    try {
+      // First, clear existing monitored workflows for this user
+      await this.prisma.monitoredWorkflow.deleteMany({
+        where: { userId }
+      });
+
+      // Then, add the new monitored workflows
+      const monitoredWorkflows = await Promise.all(
+        workflowIds.map(workflowId =>
+          this.prisma.monitoredWorkflow.create({
+            data: {
+              userId,
+              workflowId
+            },
+            include: {
+              workflow: {
+                include: {
+                  owner: true,
+                  versions: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
+                  }
+                }
+              }
+            }
+          })
+        )
+      );
+
+      console.log(`[WorkflowService] Saved ${monitoredWorkflows.length} monitored workflows for user ${userId}`);
+      
+      return {
+        success: true,
+        message: `Successfully saved ${monitoredWorkflows.length} monitored workflows`,
+        monitoredWorkflows: monitoredWorkflows.map(mw => mw.workflow)
+      };
+    } catch (error) {
+      console.error('[WorkflowService] Error setting monitored workflows:', error);
+      throw error;
+    }
+  }
+
+  async getMonitoredWorkflows(userId: string): Promise<any[]> {
+    try {
+      const monitoredWorkflows = await this.prisma.monitoredWorkflow.findMany({
+        where: { userId },
+        include: {
+          workflow: {
+            include: {
+              owner: true,
+              versions: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
+              }
+            }
+          }
+        }
+      });
+
+      return monitoredWorkflows.map(mw => mw.workflow);
+    } catch (error) {
+      console.error('[WorkflowService] Error getting monitored workflows:', error);
+      throw error;
+    }
   }
 }

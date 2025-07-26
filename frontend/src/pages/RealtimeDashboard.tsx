@@ -154,19 +154,19 @@ export default function RealTimeDashboard() {
     let socket: any = null;
     
     try {
-      const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
       socket = io('/realtime', {
-        path: '/socket.io',
-        auth: { token },
-        transports: ['websocket'],
-        autoConnect: true,
-        reconnection: true,
+      path: '/socket.io',
+      auth: { token },
+      transports: ['websocket'],
+      autoConnect: true,
+      reconnection: true,
         reconnectionAttempts: 3,
         reconnectionDelay: 1000,
         timeout: 10000,
-      });
+    });
       
-      socketRef.current = socket;
+    socketRef.current = socket;
       
       socket.on('connect', () => {
         console.log('✅ WebSocket connected successfully');
@@ -179,12 +179,12 @@ export default function RealTimeDashboard() {
       });
       
       socket.on('notification', (notif: any) => {
-        setLiveNotifications((prev) => [{ ...notif, _ts: Date.now() }, ...prev].slice(0, 20));
-      });
+      setLiveNotifications((prev) => [{ ...notif, _ts: Date.now() }, ...prev].slice(0, 20));
+    });
       
       socket.on('update', (update: any) => {
-        setLiveUpdates((prev) => [{ ...update, _ts: Date.now() }, ...prev].slice(0, 20));
-      });
+      setLiveUpdates((prev) => [{ ...update, _ts: Date.now() }, ...prev].slice(0, 20));
+    });
       
       socket.on('connected', (data: any) => {
         console.log('WebSocket connected event received:', data);
@@ -210,7 +210,7 @@ export default function RealTimeDashboard() {
     
     return () => {
       if (socket) {
-        socket.disconnect();
+      socket.disconnect();
       }
     };
   }, []);

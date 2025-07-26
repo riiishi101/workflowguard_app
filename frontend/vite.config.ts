@@ -30,14 +30,58 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs'],
-          utils: ['clsx', 'tailwind-merge', 'class-variance-authority']
+          // Core React libraries
+          'react-vendor': ['react', 'react-dom'],
+          // Router
+          'router': ['react-router-dom'],
+          // UI Components
+          'ui-core': [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-dropdown-menu', 
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-collapsible',
+            '@radix-ui/react-context-menu',
+            '@radix-ui/react-hover-card',
+            '@radix-ui/react-label',
+            '@radix-ui/react-menubar',
+            '@radix-ui/react-navigation-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-progress',
+            '@radix-ui/react-radio-group',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-select',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-toggle',
+            '@radix-ui/react-toggle-group',
+            '@radix-ui/react-tooltip'
+          ],
+          // Utilities
+          'utils': ['clsx', 'tailwind-merge', 'class-variance-authority', 'date-fns'],
+          // Charts and Analytics
+          'charts': ['recharts'],
+          // Forms and Validation
+          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          // Icons and UI helpers
+          'icons': ['lucide-react'],
+          // Socket and real-time
+          'realtime': ['socket.io-client'],
+          // Animation
+          'animation': ['framer-motion']
         }
       }
     },
     target: 'es2020',
-    minify: 'esbuild'
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
+    sourcemap: false
   },
   test: {
     environment: 'jsdom',
