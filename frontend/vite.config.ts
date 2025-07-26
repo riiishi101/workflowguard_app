@@ -1,10 +1,21 @@
 import { defineConfig } from 'vitest/config';
 import react from "@vitejs/plugin-react-swc";
+import reactDefault from "@vitejs/plugin-react";
 import path from "path";
+
+// Check if SWC is available
+let plugin;
+try {
+  require('@swc/core');
+  plugin = react;
+} catch {
+  // Fallback to default React plugin if SWC is not available
+  plugin = reactDefault;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [plugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

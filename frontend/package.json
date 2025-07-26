@@ -48,7 +48,6 @@
     "@react-three/fiber": "^8.18.0",
     "@sentry/react": "^9.38.0",
     "@sentry/tracing": "^7.120.3",
-    "@swc/core": "^1.11.24",
     "@tanstack/react-query": "^5.56.2",
     "@types/three": "^0.176.0",
     "class-variance-authority": "^0.7.1",
@@ -89,6 +88,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
     "cypress": "^14.5.1",
@@ -105,7 +105,9 @@
     "vitest": "^3.2.4"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.6.1"
+    "@rollup/rollup-linux-x64-gnu": "4.6.1",
+    "@swc/core": "^1.11.24",
+    "@swc/core-linux-x64-gnu": "^1.11.24"
   },
   "overrides": {
     "eslint": "^8.57.1"
