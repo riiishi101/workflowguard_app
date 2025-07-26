@@ -150,32 +150,68 @@ export default function RealTimeDashboard() {
   };
 
   useEffect(() => {
-    // Connect to WebSocket
-    const token = localStorage.getItem('token');
-    const socket = io('/realtime', {
-      path: '/socket.io',
-      auth: { token },
-      transports: ['websocket'],
-      autoConnect: true,
-      reconnection: true,
-    });
-    socketRef.current = socket;
-    socket.on('connect', () => setSocketConnected(true));
-    socket.on('disconnect', () => setSocketConnected(false));
-    socket.on('notification', (notif) => {
-      setLiveNotifications((prev) => [{ ...notif, _ts: Date.now() }, ...prev].slice(0, 20));
-    });
-    socket.on('update', (update) => {
-      setLiveUpdates((prev) => [{ ...update, _ts: Date.now() }, ...prev].slice(0, 20));
-    });
-    socket.on('connected', (data) => {
-      // Optionally show a welcome message or update state
-    });
-    socket.on('connect_error', (err) => {
+    // Connect to WebSocket with better error handling
+    let socket: any = null;
+    
+    try {
+      const token = localStorage.getItem('token');
+      socket = io('/realtime', {
+        path: '/socket.io',
+        auth: { token },
+        transports: ['websocket'],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000,
+        timeout: 10000,
+      });
+      
+      socketRef.current = socket;
+      
+      socket.on('connect', () => {
+        console.log('✅ WebSocket connected successfully');
+        setSocketConnected(true);
+      });
+      
+      socket.on('disconnect', () => {
+        console.log('❌ WebSocket disconnected');
+        setSocketConnected(false);
+      });
+      
+      socket.on('notification', (notif: any) => {
+        setLiveNotifications((prev) => [{ ...notif, _ts: Date.now() }, ...prev].slice(0, 20));
+      });
+      
+      socket.on('update', (update: any) => {
+        setLiveUpdates((prev) => [{ ...update, _ts: Date.now() }, ...prev].slice(0, 20));
+      });
+      
+      socket.on('connected', (data: any) => {
+        console.log('WebSocket connected event received:', data);
+      });
+      
+      socket.on('connect_error', (err: any) => {
+        console.log('WebSocket connection error (this is expected if WebSocket server is not running):', err.message);
+        setSocketConnected(false);
+      });
+      
+      socket.on('reconnect_attempt', (attemptNumber: number) => {
+        console.log(`WebSocket reconnection attempt ${attemptNumber}`);
+      });
+      
+      socket.on('reconnect_failed', () => {
+        console.log('WebSocket reconnection failed after all attempts');
+      });
+      
+    } catch (error) {
+      console.log('WebSocket connection failed (this is expected if WebSocket server is not running):', error);
       setSocketConnected(false);
-    });
+    }
+    
     return () => {
-      socket.disconnect();
+      if (socket) {
+        socket.disconnect();
+      }
     };
   }, []);
 

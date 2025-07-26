@@ -14,6 +14,7 @@ import * as Sentry from '@sentry/node';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { createLogger, format, transports } from 'winston';
 import { Request, Response, NextFunction } from 'express';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 // Winston logger setup
 const logger = createLogger({
@@ -36,6 +37,9 @@ export async function createNestServer() {
     AppModule,
     new ExpressAdapter(server),
   );
+
+  // Configure WebSocket adapter
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Helmet for security headers
   app.use(helmet());
@@ -145,6 +149,9 @@ if (process.env.VERCEL !== '1') {
 
       const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+      // Configure WebSocket adapter for real-time features
+      app.useWebSocketAdapter(new IoAdapter(app));
+
       // Swagger setup
       const config = new DocumentBuilder()
         .setTitle('WorkflowGuard API')
@@ -219,6 +226,7 @@ if (process.env.VERCEL !== '1') {
       console.log(`✅ WorkflowGuard API running on port ${port}`);
       console.log(`🌐 Server URL: http://0.0.0.0:${port}`);
       console.log(`📡 API Base URL: http://0.0.0.0:${port}/api`);
+      console.log(`🔌 WebSocket server enabled for real-time features`);
 
       // Keep the process alive
       process.on('SIGTERM', () => {
