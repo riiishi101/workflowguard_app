@@ -74,6 +74,7 @@ const WorkflowSelection = () => {
         setError(null);
         // Fetch live workflows from HubSpot for the connected user
         const workflowsData = await apiService.getWorkflows();
+        console.log('📊 Raw workflows data from API:', workflowsData);
         // Use backend structure directly; fallback for legacy/edge cases
         const normalized = Array.isArray(workflowsData)
           ? workflowsData.map((w: any, index: number) => {
@@ -99,6 +100,7 @@ const WorkflowSelection = () => {
         
         // Log invalid workflows for debugging
         if (invalidWorkflows.length > 0) {
+          console.log('🚨 INVALID WORKFLOWS DETECTED 🚨');
           console.log('Invalid workflows found:', invalidWorkflows);
           console.log('Validation issues:', invalidWorkflows.map(w => ({
             name: w.name,
@@ -109,6 +111,15 @@ const WorkflowSelection = () => {
             hasId: typeof w.id === 'string' || typeof w.hubspotId === 'string',
             hasOwnerId: typeof w.ownerId === 'string'
           })));
+          
+          // Also show in a toast for visibility
+          toast({
+            title: "Validation Issues Found",
+            description: `Found ${invalidWorkflows.length} workflows with validation issues. Check console for details.`,
+            variant: "destructive",
+          });
+        } else {
+          console.log('✅ All workflows passed validation');
         }
         
         if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
