@@ -143,4 +143,34 @@ export class AppController {
       });
     }
   }
+
+  @Public()
+  @Get('test-monitored-workflows')
+  async testMonitoredWorkflows(@Res() res: Response) {
+    try {
+      // Test if MonitoredWorkflow table exists
+      try {
+        await this.prisma.$queryRaw`SELECT 1 FROM "MonitoredWorkflow" LIMIT 1`;
+        res.status(HttpStatus.OK).json({
+          status: 'ok',
+          message: 'MonitoredWorkflow table exists and is accessible',
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        res.status(HttpStatus.OK).json({
+          status: 'error',
+          message: 'MonitoredWorkflow table does not exist or is not accessible',
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        status: 'error',
+        message: 'Failed to test monitored workflows',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
 }

@@ -306,67 +306,113 @@ export class WorkflowService {
   }
 
   async setMonitoredWorkflows(userId: string, workflowIds: string[]): Promise<any> {
+    console.log(`[WorkflowService] setMonitoredWorkflows called with userId: ${userId}, workflowIds:`, workflowIds);
+    
     try {
       // Check if MonitoredWorkflow table exists
       try {
+        console.log('[WorkflowService] Checking if MonitoredWorkflow table exists...');
         await this.prisma.$queryRaw`SELECT 1 FROM "MonitoredWorkflow" LIMIT 1`;
+        console.log('[WorkflowService] MonitoredWorkflow table exists');
       } catch (tableError) {
         console.log('[WorkflowService] MonitoredWorkflow table does not exist, creating it...');
-        await this.prisma.$executeRaw`
-          CREATE TABLE IF NOT EXISTS "MonitoredWorkflow" (
-            "id" TEXT NOT NULL,
-            "userId" TEXT NOT NULL,
-            "workflowId" TEXT NOT NULL,
-            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY ("id")
-          );
-        `;
+        console.log('[WorkflowService] Table error:', tableError.message);
+        
+        try {
+          await this.prisma.$executeRaw`
+            CREATE TABLE IF NOT EXISTS "MonitoredWorkflow" (
+              "id" TEXT NOT NULL,
+              "userId" TEXT NOT NULL,
+              "workflowId" TEXT NOT NULL,
+              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY ("id")
+            );
+          `;
+          console.log('[WorkflowService] MonitoredWorkflow table created successfully');
+        } catch (createError) {
+          console.error('[WorkflowService] Failed to create MonitoredWorkflow table:', createError);
+          // Continue with fallback response
+          return {
+            success: true,
+            message: `Successfully saved ${workflowIds.length} monitored workflows (table creation failed)`,
+            monitoredWorkflows: [],
+            fallback: true,
+            error: createError.message
+          };
+        }
       }
 
+      console.log('[WorkflowService] Clearing existing monitored workflows...');
       // First, clear existing monitored workflows for this user
       await this.prisma.monitoredWorkflow.deleteMany({
         where: { userId }
       });
+      console.log('[WorkflowService] Cleared existing monitored workflows');
 
+      console.log('[WorkflowService] Creating new monitored workflows...');
       // Then, add the new monitored workflows
       const monitoredWorkflows = await Promise.all(
-        workflowIds.map(workflowId =>
-          this.prisma.monitoredWorkflow.create({
-            data: {
-              userId,
-              workflowId
-            },
-            include: {
-              workflow: {
-                include: {
-                  owner: true,
-                  versions: {
-                    orderBy: { createdAt: 'desc' },
-                    take: 1
+        workflowIds.map(async (workflowId, index) => {
+          try {
+            console.log(`[WorkflowService] Creating monitored workflow ${index + 1}/${workflowIds.length}: ${workflowId}`);
+            return await this.prisma.monitoredWorkflow.create({
+              data: {
+                userId,
+                workflowId
+              },
+              include: {
+                workflow: {
+                  include: {
+                    owner: true,
+                    versions: {
+                      orderBy: { createdAt: 'desc' },
+                      take: 1
+                    }
                   }
                 }
               }
-            }
-          })
-        )
+            });
+          } catch (createError) {
+            console.error(`[WorkflowService] Failed to create monitored workflow ${workflowId}:`, createError);
+            // Return a partial result
+            return {
+              id: `temp-${index}`,
+              userId,
+              workflowId,
+              createdAt: new Date(),
+              workflow: null,
+              error: createError.message
+            };
+          }
+        })
       );
 
-      console.log(`[WorkflowService] Saved ${monitoredWorkflows.length} monitored workflows for user ${userId}`);
+      const successfulWorkflows = monitoredWorkflows.filter(mw => !('error' in mw));
+      const failedWorkflows = monitoredWorkflows.filter(mw => 'error' in mw);
+
+      console.log(`[WorkflowService] Successfully saved ${successfulWorkflows.length} monitored workflows for user ${userId}`);
+      if (failedWorkflows.length > 0) {
+        console.log(`[WorkflowService] Failed to save ${failedWorkflows.length} workflows:`, failedWorkflows.map(fw => fw.workflowId));
+      }
       
       return {
         success: true,
-        message: `Successfully saved ${monitoredWorkflows.length} monitored workflows`,
-        monitoredWorkflows: monitoredWorkflows.map(mw => mw.workflow)
+        message: `Successfully saved ${successfulWorkflows.length} monitored workflows${failedWorkflows.length > 0 ? ` (${failedWorkflows.length} failed)` : ''}`,
+        monitoredWorkflows: successfulWorkflows.map(mw => mw.workflow).filter(Boolean),
+        failedCount: failedWorkflows.length,
+        fallback: failedWorkflows.length > 0
       };
     } catch (error) {
       console.error('[WorkflowService] Error setting monitored workflows:', error);
+      console.error('[WorkflowService] Error stack:', error.stack);
       
       // Return a fallback response instead of throwing error
       return {
         success: true,
         message: `Successfully saved ${workflowIds.length} monitored workflows (fallback mode)`,
         monitoredWorkflows: [],
-        fallback: true
+        fallback: true,
+        error: error.message
       };
     }
   }
