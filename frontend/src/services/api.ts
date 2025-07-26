@@ -1,4 +1,57 @@
 console.log('REAL API SERVICE MODULE LOADED');
+
+// Simple WebSocket service that gracefully handles connection failures
+class WebSocketService {
+  private socket: any = null;
+  private isConnecting = false;
+
+  async connect() {
+    if (this.isConnecting || this.socket?.connected) {
+      return;
+    }
+
+    this.isConnecting = true;
+    
+    try {
+      // Only attempt WebSocket connection if socket.io is available
+      if (typeof window !== 'undefined' && (window as any).io) {
+        const io = (window as any).io;
+        this.socket = io('/realtime', {
+          path: '/socket.io',
+          transports: ['websocket'],
+          autoConnect: false,
+          reconnection: false,
+          timeout: 5000,
+        });
+
+        this.socket.on('connect', () => {
+          console.log('WebSocket connected successfully');
+        });
+
+        this.socket.on('connect_error', (error: any) => {
+          console.log('WebSocket connection failed (this is expected if WebSocket server is not running):', error.message);
+        });
+
+        this.socket.connect();
+      }
+    } catch (error) {
+      console.log('WebSocket connection failed (this is expected if WebSocket server is not running):', error);
+    } finally {
+      this.isConnecting = false;
+    }
+  }
+
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
+}
+
+// Initialize WebSocket service
+const webSocketService = new WebSocketService();
+
 // Add type definitions
 interface Webhook {
   id: string;
