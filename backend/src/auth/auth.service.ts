@@ -122,7 +122,13 @@ export class AuthService {
     email: string;
     role: string;
   }) {
-    return this.prisma.user.findUnique({ where: { id: payload.sub } });
+    console.log('[AUTH SERVICE] validateJwtPayload called with sub:', payload.sub);
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    console.log('[AUTH SERVICE] User found:', !!user);
+    if (user) {
+      console.log('[AUTH SERVICE] User details - id:', user.id, 'email:', user.email, 'role:', user.role);
+    }
+    return user;
   }
 
   async updateUserHubspotPortalId(userId: string, hubspotPortalId: string) {
