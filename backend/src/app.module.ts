@@ -16,7 +16,7 @@ import { HubSpotBillingModule } from './modules/hubspot-billing.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { EmailModule } from './email/email.module';
 import { RealtimeModule } from './realtime/realtime.module';
-import { MetricsModule } from './metrics/metrics.module';
+// import { MetricsModule } from './metrics/metrics.module';
 import { LastActiveInterceptor } from './auth/last-active.interceptor';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
@@ -38,7 +38,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     AnalyticsModule,
     EmailModule,
     RealtimeModule,
-    MetricsModule,
+    // MetricsModule, // Temporarily disabled due to Prometheus export error
   ],
   controllers: [AppController],
   providers: [
