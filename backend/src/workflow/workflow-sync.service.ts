@@ -32,7 +32,7 @@ export class WorkflowSyncService {
             'prisma'
           ].workflowVersion.findFirst({
             where: { workflowId: dbWorkflow.id },
-            orderBy: { versionNumber: 'desc' },
+            orderBy: { version: 'desc' },
           });
           // Compare and snapshot if changed
           if (

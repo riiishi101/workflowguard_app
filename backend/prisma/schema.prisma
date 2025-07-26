@@ -47,6 +47,9 @@ model Workflow {
   hubspotId String            @unique
   name      String
   ownerId   String
+  autoSync  Boolean           @default(true)
+  syncInterval Int            @default(3600) // 1 hour in seconds
+  notificationsEnabled Boolean @default(true)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   owner     User              @relation(fields: [ownerId], references: [id])
@@ -57,14 +60,15 @@ model Workflow {
 model WorkflowVersion {
   id            String   @id @default(uuid())
   workflowId    String
-  versionNumber Int
+  version       Int
   snapshotType  String
   createdBy     String
   createdAt     DateTime @default(now())
   data          Json
+  description   String?
   workflow      Workflow @relation(fields: [workflowId], references: [id])
 
-  @@unique([workflowId, versionNumber])
+  @@unique([workflowId, version])
 }
 
 model AuditLog {

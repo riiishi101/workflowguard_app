@@ -6,7 +6,7 @@ export class CreateWorkflowVersionDto {
   workflowId: string;
 
   @IsNumber()
-  versionNumber: number;
+  version: number;
 
   @IsString()
   @IsNotEmpty()
