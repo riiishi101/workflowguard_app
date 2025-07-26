@@ -11,10 +11,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         (req: Request) => {
+          console.log('[JWT STRATEGY] Cookie extraction - Request URL:', req.url);
+          console.log('[JWT STRATEGY] Cookie extraction - Request method:', req.method);
+          console.log('[JWT STRATEGY] Cookie extraction - All cookies:', req.cookies);
           const jwt = req?.cookies?.jwt;
           console.log('[JWT STRATEGY] Cookie extraction - jwt present:', !!jwt);
           if (jwt) {
             console.log('[JWT STRATEGY] JWT token length:', jwt.length);
+            console.log('[JWT STRATEGY] JWT token first 50 chars:', jwt.substring(0, 50));
           }
           return jwt;
         },
@@ -22,6 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'supersecretkey',
     });
+    console.log('[JWT STRATEGY] Initialized with secret length:', (process.env.JWT_SECRET || 'supersecretkey').length);
   }
 
   async validate(payload: { sub: string; email: string; role: string }) {
