@@ -33,13 +33,21 @@ interface Workflow {
 
 // Helper to validate workflow data
 function isValidWorkflow(obj: any): obj is Workflow {
-  return (
-    obj &&
-    typeof obj.name === 'string' &&
-    obj.name.trim() !== '' && // Ensure name is not empty
-    (typeof obj.id === 'string' || typeof obj.hubspotId === 'string') && // Either id or hubspotId must be present
-    typeof obj.ownerId === 'string'
-  );
+  // Basic object check
+  if (!obj || typeof obj !== 'object') {
+    return false;
+  }
+  
+  // Check if name exists and is not empty
+  const hasValidName = typeof obj.name === 'string' && obj.name.trim() !== '';
+  
+  // Check if we have either id or hubspotId
+  const hasValidId = typeof obj.id === 'string' || typeof obj.hubspotId === 'string';
+  
+  // Check if ownerId exists (but be more lenient)
+  const hasOwnerId = typeof obj.ownerId === 'string';
+  
+  return hasValidName && hasValidId && hasOwnerId;
 }
 
 const MAX_SELECTION = 500;
@@ -68,23 +76,43 @@ const WorkflowSelection = () => {
         const workflowsData = await apiService.getWorkflows();
         // Use backend structure directly; fallback for legacy/edge cases
         const normalized = Array.isArray(workflowsData)
-          ? workflowsData.map((w: any) => {
+          ? workflowsData.map((w: any, index: number) => {
               // Ensure we have a valid ID - prefer hubspotId over id
-              const workflowId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined);
-              const hubspotId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined);
+              const workflowId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : `fallback-${index}`);
+              const hubspotId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : `fallback-${index}`);
               
               return {
-              ...w,
+                ...w,
                 id: workflowId,
                 hubspotId: hubspotId,
-                name: w.name || 'Unnamed Workflow',
-              ownerId: w.ownerId || (user?.id || ""),
+                name: w.name && w.name.trim() !== '' ? w.name : `Unnamed Workflow ${index + 1}`,
+                ownerId: w.ownerId || user?.id || "unknown-owner",
+                status: w.status || w.enabled === false ? 'inactive' : 'active',
+                folder: w.folder || w.folderId || undefined,
+                createdAt: w.createdAt || w.insertedAt || undefined,
+                updatedAt: w.updatedAt || undefined,
               };
             })
           : [];
         const validWorkflows = normalized.filter(isValidWorkflow);
+        const invalidWorkflows = normalized.filter(w => !isValidWorkflow(w));
+        
+        // Log invalid workflows for debugging
+        if (invalidWorkflows.length > 0) {
+          console.log('Invalid workflows found:', invalidWorkflows);
+          console.log('Validation issues:', invalidWorkflows.map(w => ({
+            name: w.name,
+            id: w.id,
+            hubspotId: w.hubspotId,
+            ownerId: w.ownerId,
+            hasName: typeof w.name === 'string' && w.name.trim() !== '',
+            hasId: typeof w.id === 'string' || typeof w.hubspotId === 'string',
+            hasOwnerId: typeof w.ownerId === 'string'
+          })));
+        }
+        
         if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
-          setBanner({ type: 'error', message: 'Some workflows were ignored due to invalid data.' });
+          setBanner({ type: 'error', message: `Some workflows were ignored due to invalid data. (${invalidWorkflows.length} invalid, ${validWorkflows.length} valid)` });
         }
         setWorkflows(validWorkflows);
       } catch (err: any) {
