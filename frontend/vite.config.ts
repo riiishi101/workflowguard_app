@@ -14,11 +14,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['debounce'],
-    exclude: ['@rollup/rollup-linux-x64-gnu']
   },
   build: {
     rollupOptions: {
-      external: ['@rollup/rollup-linux-x64-gnu'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
