@@ -139,6 +139,104 @@ if (process.env.VERCEL !== '1') {
     }
       console.log('🔌 Database URL configured: Yes');
 
+    // Fix production schema if needed
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🔧 Running production schema fix...');
+      try {
+        const { PrismaClient } = require('@prisma/client');
+        const prisma = new PrismaClient();
+        
+        // Check if MonitoredWorkflow table exists and create it if needed
+        try {
+          await prisma.$executeRaw`
+            CREATE TABLE IF NOT EXISTS "MonitoredWorkflow" (
+              "id" TEXT NOT NULL,
+              "userId" TEXT NOT NULL,
+              "workflowId" TEXT NOT NULL,
+              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY ("id")
+            );
+          `;
+          console.log('✅ MonitoredWorkflow table created/verified');
+        } catch (error) {
+          console.log('⚠️ MonitoredWorkflow table already exists or error:', error.message);
+        }
+
+        // Add missing columns to Workflow table if they don't exist
+        try {
+          await prisma.$executeRaw`
+            ALTER TABLE "Workflow" ADD COLUMN IF NOT EXISTS "autoSync" BOOLEAN DEFAULT true;
+          `;
+          console.log('✅ Added autoSync column to Workflow table');
+        } catch (error) {
+          console.log('⚠️ autoSync column already exists or error:', error.message);
+        }
+
+        try {
+          await prisma.$executeRaw`
+            ALTER TABLE "Workflow" ADD COLUMN IF NOT EXISTS "syncInterval" INTEGER DEFAULT 3600;
+          `;
+          console.log('✅ Added syncInterval column to Workflow table');
+        } catch (error) {
+          console.log('⚠️ syncInterval column already exists or error:', error.message);
+        }
+
+        try {
+          await prisma.$executeRaw`
+            ALTER TABLE "Workflow" ADD COLUMN IF NOT EXISTS "notificationsEnabled" BOOLEAN DEFAULT true;
+          `;
+          console.log('✅ Added notificationsEnabled column to Workflow table');
+        } catch (error) {
+          console.log('⚠️ notificationsEnabled column already exists or error:', error.message);
+        }
+
+        // Update WorkflowVersion table to rename versionNumber to version if needed
+        try {
+          const columns = await prisma.$queryRaw`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'WorkflowVersion' AND table_schema = 'public';
+          `;
+          
+          const columnNames = columns.map((col: any) => col.column_name);
+          const hasVersionNumber = columnNames.includes('versionNumber');
+          const hasVersion = columnNames.includes('version');
+          
+          if (hasVersionNumber && !hasVersion) {
+            await prisma.$executeRaw`
+              ALTER TABLE "WorkflowVersion" RENAME COLUMN "versionNumber" TO "version";
+            `;
+            console.log('✅ Renamed versionNumber to version in WorkflowVersion table');
+          } else if (hasVersion) {
+            console.log('✅ Version column already exists in WorkflowVersion table');
+          } else {
+            // Add version column if neither exists
+            await prisma.$executeRaw`
+              ALTER TABLE "WorkflowVersion" ADD COLUMN "version" INTEGER;
+            `;
+            console.log('✅ Added version column to WorkflowVersion table');
+          }
+        } catch (error) {
+          console.log('⚠️ WorkflowVersion table update error:', error.message);
+        }
+
+        // Add description column to WorkflowVersion if it doesn't exist
+        try {
+          await prisma.$executeRaw`
+            ALTER TABLE "WorkflowVersion" ADD COLUMN IF NOT EXISTS "description" TEXT;
+          `;
+          console.log('✅ Added description column to WorkflowVersion table');
+        } catch (error) {
+          console.log('⚠️ description column already exists or error:', error.message);
+        }
+
+        await prisma.$disconnect();
+        console.log('🎉 Production schema fix completed successfully!');
+      } catch (error) {
+        console.error('❌ Error fixing production schema:', error);
+        // Don't exit, continue with startup
+      }
+    }
+
     if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
       Sentry.init({
         dsn: process.env.SENTRY_DSN,

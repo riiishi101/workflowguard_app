@@ -37,6 +37,7 @@ COPY prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
 
 # Generate Prisma client (again, for production)
 RUN npx prisma generate
