@@ -35,9 +35,9 @@ interface Workflow {
 function isValidWorkflow(obj: any): obj is Workflow {
   return (
     obj &&
-    typeof obj.id === 'string' &&
     typeof obj.name === 'string' &&
-    typeof obj.hubspotId === 'string' &&
+    obj.name.trim() !== '' && // Ensure name is not empty
+    (typeof obj.id === 'string' || typeof obj.hubspotId === 'string') && // Either id or hubspotId must be present
     typeof obj.ownerId === 'string'
   );
 }
@@ -68,12 +68,19 @@ const WorkflowSelection = () => {
         const workflowsData = await apiService.getWorkflows();
         // Use backend structure directly; fallback for legacy/edge cases
         const normalized = Array.isArray(workflowsData)
-          ? workflowsData.map((w: any) => ({
-              ...w,
-              id: w.id ? String(w.id) : (w.hubspotId ? String(w.hubspotId) : undefined),
-              hubspotId: w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined),
-              ownerId: w.ownerId || (user?.id || ""),
-            }))
+          ? workflowsData.map((w: any) => {
+              // Ensure we have a valid ID - prefer hubspotId over id
+              const workflowId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined);
+              const hubspotId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined);
+              
+              return {
+                ...w,
+                id: workflowId,
+                hubspotId: hubspotId,
+                name: w.name || 'Unnamed Workflow',
+                ownerId: w.ownerId || (user?.id || ""),
+              };
+            })
           : [];
         const validWorkflows = normalized.filter(isValidWorkflow);
         if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
