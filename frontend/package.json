@@ -105,6 +105,11 @@
     "vitest": "^3.2.4"
   },
   "overrides": {
-    "eslint": "^8.57.1"
+    "eslint": "^8.57.1",
+    "rollup": {
+      "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "4.6.1"
+      }
+    }
   }
 } 
