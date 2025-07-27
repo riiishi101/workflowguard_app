@@ -276,12 +276,12 @@ const WorkflowHistoryDetail = () => {
           console.log('🔍 WorkflowHistoryDetail: Found workflow in localStorage:', localWorkflow);
           setWorkflowData({
             id: localWorkflow.id || localWorkflow.hubspotId,
-            name: localWorkflow.name,
+            name: localWorkflow.name || 'HubSpot Workflow',
             hubspotId: localWorkflow.hubspotId,
             isLive: localWorkflow.isLive || true,
             lastModified: localWorkflow.lastModified || localWorkflow.updatedAt || new Date().toISOString(),
             status: localWorkflow.status || 'active',
-            description: localWorkflow.description || 'Workflow from HubSpot'
+            description: localWorkflow.description || 'Workflow synchronized from HubSpot'
           });
           setWorkflowLoading(false);
           return;
@@ -300,15 +300,27 @@ const WorkflowHistoryDetail = () => {
       .catch((e) => {
         console.log('Failed to load workflow details from API:', e.message);
         setWorkflowError(e.message || "Failed to load workflow details");
-        // Use better fallback workflow data
+        // Use better fallback workflow data with dynamic name based on workflowId
+        const sampleNames = [
+          'Lead Nurturing Campaign',
+          'Customer Onboarding Flow',
+          'Email Marketing Sequence',
+          'Sales Follow-up Process',
+          'Support Ticket Workflow',
+          'Product Demo Scheduling',
+          'Newsletter Subscription',
+          'Event Registration Flow'
+        ];
+        const sampleName = sampleNames[parseInt(workflowId) % sampleNames.length] || 'Sample Workflow';
+        
         setWorkflowData({
           id: workflowId,
-          name: 'Sample Workflow',
-          hubspotId: '12345',
+          name: sampleName,
+          hubspotId: workflowId,
           isLive: true,
           lastModified: new Date().toISOString(),
           status: 'active',
-          description: 'This is a sample workflow for demonstration purposes'
+          description: `This is a sample ${sampleName.toLowerCase()} for demonstration purposes`
         });
       })
       .finally(() => setWorkflowLoading(false));
@@ -492,12 +504,12 @@ const WorkflowHistoryDetail = () => {
 
 
         {/* Sample Data Alert */}
-        {useSampleData && (
+        {(useSampleData || !workflowData?.hubspotId) && (
           <Alert className="mb-6 border-blue-200 bg-blue-50">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
               <strong>Demo Mode:</strong> Showing sample data to demonstrate functionality. 
-              Connect to HubSpot to see real workflow data.
+              Connect to HubSpot to see real workflow data and version history.
             </AlertDescription>
           </Alert>
         )}
