@@ -75,7 +75,7 @@ export const WorkflowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (!user) return;
 
-    const newSocket = io('/workflows', {
+    const newSocket = io('/realtime', {
       auth: {
         token: localStorage.getItem('authToken') || user.id
       }

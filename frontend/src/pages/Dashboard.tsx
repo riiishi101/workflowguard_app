@@ -1,517 +1,540 @@
-import React from 'react';
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useWorkflows } from '../contexts/WorkflowContext';
+import { useAuth } from '../components/AuthContext';
+import { usePlan } from '../components/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import TopNavigation from "@/components/TopNavigation";
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import {
-  Search,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Alert,
+  AlertDescription,
+} from '@/components/ui/alert';
+import {
+  Eye,
+  RefreshCw,
   Plus,
   Download,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Zap,
+  ZapOff,
   CheckCircle,
-  TrendingUp,
+  AlertCircle,
+  Clock,
   Users,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  RotateCcw,
-  Loader2,
-  Wifi,
-  WifiOff,
-} from "lucide-react";
-import EmptyDashboard from '../components/EmptyDashboard';
-import { usePlan } from '../components/AuthContext';
-import { useWorkflows } from '@/contexts/WorkflowContext';
-import RoleGuard from '../components/RoleGuard';
-import UpgradeRequiredModal from '@/components/UpgradeRequiredModal';
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import CreateNewWorkflowModal from "@/components/CreateNewWorkflowModal";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import RollbackConfirmModal from "@/components/RollbackConfirmModal";
-import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
+  Activity,
+  TrendingUp,
+  Shield,
+} from 'lucide-react';
+import apiService from '@/services/api';
 
-// Define the workflow type
-interface Workflow {
-  id: string;
-  name: string;
-  hubspotId: string;
-  ownerId: string;
-  createdAt: string;
-  updatedAt: string;
-  owner?: {
-    name?: string;
-    email: string;
-  };
-  versions?: Array<{
-    id: string;
-    createdAt: string;
-  }>;
-  status?: string;
+interface DashboardStats {
+  totalWorkflows: number;
+  activeWorkflows: number;
+  monitoredWorkflows: number;
+  recentActivity: number;
+  lastSync: Date | null;
 }
 
-const PAGE_SIZE = 10;
-const STATUS_COLORS = {
-  Active: "bg-green-100 text-green-800",
-  Inactive: "bg-gray-100 text-gray-800",
-  Error: "bg-red-100 text-red-800",
-  Syncing: "bg-yellow-100 text-yellow-800",
-} as const;
-
 const Dashboard = () => {
-  const { plan, hasFeature, isTrialing } = usePlan();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const { 
-    workflows, 
-    workflowsLoading, 
-    workflowsError: error,
+  const { user } = useAuth();
+  const { plan, hasFeature } = usePlan();
+  const { toast } = useToast();
+  
+  // Workflow context
+  const {
+    workflows,
+    workflowsLoading,
+    workflowsError,
     isConnected,
     lastUpdate,
     deleteWorkflow,
-    addWorkflow
+    addWorkflow,
   } = useWorkflows();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [showRollbackModal, setShowRollbackModal] = useState(false);
-  const [rollbackWorkflow, setRollbackWorkflow] = useState<Workflow | null>(null);
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const canAddMoreWorkflows = hasFeature('unlimited_workflows') || hasFeature('advanced_monitoring');
+  // Local state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [stats, setStats] = useState<DashboardStats>({
+    totalWorkflows: 0,
+    activeWorkflows: 0,
+    monitoredWorkflows: 0,
+    recentActivity: 0,
+    lastSync: null,
+  });
+  const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([]);
+  const [bulkAction, setBulkAction] = useState<string>('');
+
+  // Calculate stats when workflows change
+  useEffect(() => {
+    if (workflows) {
+      const activeWorkflows = workflows.filter(w => w.status === 'active').length;
+      const monitoredWorkflows = workflows.filter(w => w.autoSync).length;
+      
+      setStats({
+        totalWorkflows: workflows.length,
+        activeWorkflows,
+        monitoredWorkflows,
+        recentActivity: workflows.filter(w => {
+          const updatedAt = new Date(w.updatedAt || w.createdAt || '');
+          const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          return updatedAt > oneDayAgo;
+        }).length,
+        lastSync: lastUpdate,
+      });
+    }
+  }, [workflows, lastUpdate]);
 
   // Filter workflows based on search and status
-  const filteredWorkflows = workflows?.filter((workflow) => {
-    const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || (workflow.status || "Active").toLowerCase() === filterStatus.toLowerCase();
+  const filteredWorkflows = workflows?.filter(workflow => {
+    const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         workflow.hubspotId?.includes(searchTerm);
+    const matchesStatus = statusFilter === 'all' || workflow.status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
 
-  // Pagination
-  const totalPages = Math.ceil(filteredWorkflows.length / PAGE_SIZE);
-  const startIndex = (currentPage - 1) * PAGE_SIZE;
-  const paginatedWorkflows = filteredWorkflows.slice(startIndex, startIndex + PAGE_SIZE);
-
-  // Master checkbox logic
-  const allSelected = paginatedWorkflows.length > 0 && paginatedWorkflows.every(w => selectedIds.includes(w.id));
-  const someSelected = paginatedWorkflows.some(w => selectedIds.includes(w.id));
-
-  const handleSelectAll = () => {
-    if (allSelected) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(paginatedWorkflows.map(w => w.id));
-    }
-  };
-
-  const handleSelectOne = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+  // Handle workflow selection
+  const handleWorkflowSelect = (workflowId: string) => {
+    setSelectedWorkflows(prev => 
+      prev.includes(workflowId) 
+        ? prev.filter(id => id !== workflowId)
+        : [...prev, workflowId]
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    
-    setActionLoading(true);
-    try {
-      await Promise.all(selectedIds.map(id => deleteWorkflow(id)));
-      setSelectedIds([]);
-      toast({
-        title: "Workflows Deleted",
-        description: `${selectedIds.length} workflows have been deleted successfully.`,
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "Delete Failed",
-        description: "Failed to delete some workflows. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
+  // Handle bulk selection
+  const handleBulkSelect = () => {
+    if (selectedWorkflows.length === filteredWorkflows.length) {
+      setSelectedWorkflows([]);
+    } else {
+      setSelectedWorkflows(filteredWorkflows.map(w => w.id));
     }
   };
 
-  const handleAddWorkflow = () => {
-    if (!canAddMoreWorkflows) {
-      setShowUpgradeModal(true);
+  // Handle bulk actions
+  const handleBulkAction = async (action: string) => {
+    if (selectedWorkflows.length === 0) {
+      toast({
+        title: 'No workflows selected',
+        description: 'Please select workflows to perform this action.',
+        variant: 'destructive',
+      });
       return;
     }
-    setShowCreateModal(true);
-  };
 
-  const handleExport = async () => {
-    setActionLoading(true);
     try {
-      const data = filteredWorkflows.map(w => ({
-        name: w.name,
-        hubspotId: w.hubspotId,
-        status: w.status,
-        lastModified: w.updatedAt,
-        versionsCount: w.versions?.length || 0
-      }));
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `workflows-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Export Successful",
-        description: "Workflow data has been exported successfully.",
-        variant: "default",
-      });
+      switch (action) {
+        case 'delete':
+          for (const workflowId of selectedWorkflows) {
+            await deleteWorkflow(workflowId);
+          }
+          toast({
+            title: 'Workflows deleted',
+            description: `Successfully deleted ${selectedWorkflows.length} workflow(s).`,
+          });
+          break;
+        case 'sync':
+          // Trigger sync for selected workflows
+          toast({
+            title: 'Sync initiated',
+            description: `Syncing ${selectedWorkflows.length} workflow(s)...`,
+          });
+          break;
+      }
+      setSelectedWorkflows([]);
     } catch (error) {
       toast({
-        title: "Export Failed",
-        description: "Failed to export workflow data. Please try again.",
-        variant: "destructive",
+        title: 'Action failed',
+        description: 'Failed to perform bulk action. Please try again.',
+        variant: 'destructive',
       });
-    } finally {
-      setActionLoading(false);
     }
   };
 
-  const handleConfirmRollback = async () => {
-    if (!rollbackWorkflow) return;
-    
-    setActionLoading(true);
+  // Handle workflow actions
+  const handleWorkflowAction = async (workflowId: string, action: string) => {
     try {
-      // This would call the rollback API
-      toast({
-        title: "Rollback Successful",
-        description: `Workflow "${rollbackWorkflow.name}" has been rolled back successfully.`,
-        variant: "default",
-      });
-      setShowRollbackModal(false);
-      setRollbackWorkflow(null);
+      switch (action) {
+        case 'view':
+          navigate(`/workflow-history/${workflowId}`);
+          break;
+        case 'sync':
+          toast({
+            title: 'Sync initiated',
+            description: 'Workflow sync started...',
+          });
+          break;
+        case 'delete':
+          await deleteWorkflow(workflowId);
+          toast({
+            title: 'Workflow deleted',
+            description: 'Workflow has been removed.',
+          });
+          break;
+      }
     } catch (error) {
       toast({
-        title: "Rollback Failed",
-        description: "Failed to rollback workflow. Please try again.",
-        variant: "destructive",
+        title: 'Action failed',
+        description: 'Failed to perform action. Please try again.',
+        variant: 'destructive',
       });
-    } finally {
-      setActionLoading(false);
     }
   };
 
-  const getLastSnapshot = (workflow: Workflow) => {
-    if (!workflow.versions || workflow.versions.length === 0) {
-      return "No snapshots";
-    }
-    const latest = workflow.versions[workflow.versions.length - 1];
-    return new Date(latest.createdAt).toLocaleDateString();
-  };
+  // Handle export
+  const handleExport = () => {
+    const exportData = filteredWorkflows.map(w => ({
+      name: w.name,
+      hubspotId: w.hubspotId,
+      status: w.status,
+      folder: w.folder,
+      autoSync: w.autoSync,
+      createdAt: w.createdAt,
+      updatedAt: w.updatedAt,
+    }));
 
-  const getVersionsCount = (workflow: Workflow) => {
-    return workflow.versions?.length || 0;
-  };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `workflowguard-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
-  const getLastModifiedBy = (workflow: Workflow) => {
-    return workflow.owner?.name || workflow.owner?.email || "Unknown";
+    toast({
+      title: 'Export completed',
+      description: 'Workflow data has been exported.',
+    });
   };
 
   if (workflowsLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <TopNavigation />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner />
-          </div>
-        </main>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (workflowsError) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <TopNavigation />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <p className="text-red-500 mb-4">Failed to load workflows</p>
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Try Again
-            </Button>
-          </div>
-        </main>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 mb-4">Failed to load workflows</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
       </div>
     );
-  }
-
-  if (!workflows || workflows.length === 0) {
-    return <EmptyDashboard />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
-      
-      {banner && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Monitor and manage your protected workflows</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <Button onClick={() => navigate('/workflow-selection')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Workflow
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Real-time Status Alert */}
+      {!isConnected && (
+        <div className="px-6 py-3">
+          <Alert variant="destructive">
+            <ZapOff className="h-4 w-4" />
+            <AlertDescription>
+              Real-time updates are currently disabled. Some features may not work as expected.
+            </AlertDescription>
+          </Alert>
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Real-time status indicator */}
-        <div className="flex items-center gap-2 mb-4">
-          {isConnected ? (
-            <Wifi className="w-4 h-4 text-green-500" />
-          ) : (
-            <WifiOff className="w-4 h-4 text-red-500" />
-          )}
-          <span className="text-sm text-gray-600">
-            {isConnected ? 'Real-time updates enabled' : 'Real-time updates disabled'}
-          </span>
-          {lastUpdate && (
-            <span className="text-xs text-gray-500">
-              Last update: {lastUpdate.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 mt-1">
-                Monitor and manage your protected workflows
+      {/* Stats Cards */}
+      <div className="px-6 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Workflows</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalWorkflows}</div>
+              <p className="text-xs text-muted-foreground">
+                {plan?.maxWorkflows ? `${stats.totalWorkflows}/${plan.maxWorkflows} used` : 'No limit'}
               </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleExport}
-                variant="outline"
-                disabled={actionLoading}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-              <Button
-                onClick={handleAddWorkflow}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Workflow
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Workflows</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.activeWorkflows}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.totalWorkflows > 0 ? `${Math.round((stats.activeWorkflows / stats.totalWorkflows) * 100)}% active` : 'No workflows'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Monitored</CardTitle>
+              <Activity className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.monitoredWorkflows}</div>
+              <p className="text-xs text-muted-foreground">
+                Auto-sync enabled
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+              <TrendingUp className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.recentActivity}</div>
+              <p className="text-xs text-muted-foreground">
+                Last 24 hours
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search workflows..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-            {selectedIds.length > 0 && (
-              <Button
-                onClick={handleBulkDelete}
-                variant="destructive"
-                size="sm"
-                disabled={actionLoading}
-              >
-                Delete Selected ({selectedIds.length})
-              </Button>
-            )}
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search workflows..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {/* Bulk Actions */}
+        {selectedWorkflows.length > 0 && (
+          <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <span className="text-sm text-blue-800">
+              {selectedWorkflows.length} workflow(s) selected
+            </span>
+            <div className="flex space-x-2">
+              <Select value={bulkAction} onValueChange={setBulkAction}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Bulk actions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sync">Sync Selected</SelectItem>
+                  <SelectItem value="delete">Delete Selected</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                onClick={() => handleBulkAction(bulkAction)}
+                disabled={!bulkAction}
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Workflows Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="w-12 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Workflow</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Status</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Last Snapshot</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Versions</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Last Modified By</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {paginatedWorkflows.map((workflow) => (
-                  <tr key={workflow.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Protected Workflows</CardTitle>
+            <CardDescription>
+              Manage and monitor your HubSpot workflows
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredWorkflows.length === 0 ? (
+              <div className="text-center py-8">
+                <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No workflows found</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchTerm || statusFilter !== 'all' 
+                    ? 'Try adjusting your search or filters'
+                    : 'Get started by adding workflows to protect'
+                  }
+                </p>
+                {!searchTerm && statusFilter === 'all' && (
+                  <Button onClick={() => navigate('/workflow-selection')}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Workflows
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
                       <input
                         type="checkbox"
-                        checked={selectedIds.includes(workflow.id)}
-                        onChange={() => handleSelectOne(workflow.id)}
+                        checked={selectedWorkflows.length === filteredWorkflows.length && filteredWorkflows.length > 0}
+                        onChange={handleBulkSelect}
                         className="rounded border-gray-300"
                       />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div>
-                        <div className="font-medium text-gray-900">{workflow.name}</div>
-                        <div className="text-sm text-gray-500">ID: {workflow.hubspotId}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        variant="default"
-                        className={STATUS_COLORS[workflow.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.Active}
-                      >
-                        {workflow.status || "Active"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {getLastSnapshot(workflow)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {getVersionsCount(workflow)} versions
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center">
-                        <Avatar className="w-6 h-6 mr-2">
-                          <AvatarFallback className="text-xs">
-                            {getLastModifiedBy(workflow).charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm text-gray-600">{getLastModifiedBy(workflow)}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/workflow-history/${workflow.id}`)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setRollbackWorkflow(workflow);
-                            setShowRollbackModal(true);
-                          }}
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1} to {Math.min(startIndex + PAGE_SIZE, filteredWorkflows.length)} of {filteredWorkflows.length} workflows
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Modals */}
-      {showCreateModal && (
-        <CreateNewWorkflowModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={(workflow) => {
-            setShowCreateModal(false);
-            toast({
-              title: "Workflow Added",
-              description: `Workflow "${workflow.name}" has been added successfully.`,
-              variant: "default",
-            });
-          }}
-        />
-      )}
-
-      {showRollbackModal && rollbackWorkflow && (
-        <RollbackConfirmModal
-          workflow={rollbackWorkflow}
-          onClose={() => {
-            setShowRollbackModal(false);
-            setRollbackWorkflow(null);
-          }}
-          onConfirm={handleConfirmRollback}
-          loading={actionLoading}
-        />
-      )}
-
-      {showUpgradeModal && (
-        <UpgradeRequiredModal
-          onClose={() => setShowUpgradeModal(false)}
-          feature="unlimited_workflows"
-        />
-      )}
+                    </TableHead>
+                    <TableHead>Workflow</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Snapshot</TableHead>
+                    <TableHead>Versions</TableHead>
+                    <TableHead>Last Modified</TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredWorkflows.map((workflow) => (
+                    <TableRow key={workflow.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedWorkflows.includes(workflow.id)}
+                          onChange={() => handleWorkflowSelect(workflow.id)}
+                          className="rounded border-gray-300"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{workflow.name}</div>
+                          <div className="text-sm text-gray-500">ID: {workflow.hubspotId}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={workflow.status === 'active' ? 'default' : 'secondary'}>
+                          {workflow.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-500">
+                          {workflow.autoSync ? (
+                            <div className="flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Auto-sync
+                            </div>
+                          ) : (
+                            'Manual'
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-500">
+                          {/* This would be populated from workflow versions */}
+                          0 versions
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-500">
+                          {workflow.updatedAt 
+                            ? new Date(workflow.updatedAt).toLocaleDateString()
+                            : 'Unknown'
+                          }
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleWorkflowAction(workflow.id, 'view')}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleWorkflowAction(workflow.id, 'sync')}>
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Sync Now
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleWorkflowAction(workflow.id, 'delete')}
+                              className="text-red-600"
+                            >
+                              <MoreHorizontal className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
