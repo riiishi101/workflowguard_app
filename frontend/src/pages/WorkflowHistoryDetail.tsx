@@ -99,132 +99,168 @@ interface AuditLog {
 }
 
 // Sample data for demonstration
-const SAMPLE_VERSIONS: WorkflowVersion[] = [
-  {
-    id: 'v1',
-    versionNumber: 1,
-    version: 'v1.0',
-    dateTime: format(subHours(new Date(), 2), 'PPpp'),
-    createdAt: subHours(new Date(), 2).toISOString(),
-    modifiedBy: {
-      name: 'John Smith',
-      email: 'john.smith@company.com',
-      initials: 'JS'
+const generateSampleVersions = (workflowId: string): WorkflowVersion[] => {
+  const workflowNames = [
+    'Lead Nurturing Campaign',
+    'Customer Onboarding Flow', 
+    'Email Marketing Sequence',
+    'Sales Follow-up Process',
+    'Support Ticket Workflow',
+    'Product Demo Scheduling',
+    'Newsletter Subscription',
+    'Event Registration Flow'
+  ];
+  const workflowName = workflowNames[parseInt(workflowId) % workflowNames.length] || 'Sample Workflow';
+  
+  return [
+    {
+      id: `v1-${workflowId}`,
+      versionNumber: 1,
+      version: 'v1.0',
+      dateTime: format(subHours(new Date(), 2), 'PPpp'),
+      createdAt: subHours(new Date(), 2).toISOString(),
+      modifiedBy: {
+        name: 'Admin User',
+        email: 'admin@workflowguard.pro',
+        initials: 'AU'
+      },
+      changeSummary: `Initial setup of ${workflowName} with basic configuration`
     },
-    changeSummary: 'Initial workflow setup with lead qualification steps'
-  },
-  {
-    id: 'v2',
-    versionNumber: 2,
-    version: 'v1.1',
-    dateTime: format(subDays(new Date(), 1), 'PPpp'),
-    createdAt: subDays(new Date(), 1).toISOString(),
-    modifiedBy: {
-      name: 'Sarah Johnson',
-      email: 'sarah.j@company.com',
-      initials: 'SJ'
+    {
+      id: `v2-${workflowId}`,
+      versionNumber: 2,
+      version: 'v1.1',
+      dateTime: format(subDays(new Date(), 1), 'PPpp'),
+      createdAt: subDays(new Date(), 1).toISOString(),
+      modifiedBy: {
+        name: 'Admin User',
+        email: 'admin@workflowguard.pro',
+        initials: 'AU'
+      },
+      changeSummary: `Enhanced ${workflowName} with additional automation steps`
     },
-    changeSummary: 'Added email notification step for qualified leads'
-  },
-  {
-    id: 'v3',
-    versionNumber: 3,
-    version: 'v1.2',
-    dateTime: format(subDays(new Date(), 3), 'PPpp'),
-    createdAt: subDays(new Date(), 3).toISOString(),
-    modifiedBy: {
-      name: 'Mike Davis',
-      email: 'mike.davis@company.com',
-      initials: 'MD'
+    {
+      id: `v3-${workflowId}`,
+      versionNumber: 3,
+      version: 'v1.2',
+      dateTime: format(subDays(new Date(), 3), 'PPpp'),
+      createdAt: subDays(new Date(), 3).toISOString(),
+      modifiedBy: {
+        name: 'Admin User',
+        email: 'admin@workflowguard.pro',
+        initials: 'AU'
+      },
+      changeSummary: `Optimized ${workflowName} performance and added error handling`
     },
-    changeSummary: 'Updated lead scoring criteria and added follow-up task'
-  },
-  {
-    id: 'v4',
-    versionNumber: 4,
-    version: 'v1.3',
-    dateTime: format(subDays(new Date(), 5), 'PPpp'),
-    createdAt: subDays(new Date(), 5).toISOString(),
-    modifiedBy: {
-      name: 'John Smith',
-      email: 'john.smith@company.com',
-      initials: 'JS'
+    {
+      id: `v4-${workflowId}`,
+      versionNumber: 4,
+      version: 'v1.3',
+      dateTime: format(subDays(new Date(), 5), 'PPpp'),
+      createdAt: subDays(new Date(), 5).toISOString(),
+      modifiedBy: {
+        name: 'Admin User',
+        email: 'admin@workflowguard.pro',
+        initials: 'AU'
+      },
+      changeSummary: `Updated ${workflowName} with new HubSpot features and integrations`
     },
-    changeSummary: 'Optimized workflow performance and reduced processing time'
-  },
-  {
-    id: 'v5',
-    versionNumber: 5,
-    version: 'v1.4',
-    dateTime: format(subDays(new Date(), 7), 'PPpp'),
-    createdAt: subDays(new Date(), 7).toISOString(),
-    modifiedBy: {
-      name: 'Lisa Chen',
-      email: 'lisa.chen@company.com',
-      initials: 'LC'
-    },
-    changeSummary: 'Added integration with CRM system and custom fields'
-  }
-];
+    {
+      id: `v5-${workflowId}`,
+      versionNumber: 5,
+      version: 'v1.4',
+      dateTime: format(subDays(new Date(), 7), 'PPpp'),
+      createdAt: subDays(new Date(), 7).toISOString(),
+      modifiedBy: {
+        name: 'Admin User',
+        email: 'admin@workflowguard.pro',
+        initials: 'AU'
+      },
+      changeSummary: `Final optimization of ${workflowName} with advanced analytics`
+    }
+  ];
+};
 
-const SAMPLE_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'audit1',
-    action: 'Workflow Viewed',
-    user: { name: 'John Smith', email: 'john.smith@company.com' },
-    timestamp: format(subHours(new Date(), 1), 'PPpp'),
-    details: { page: 'workflow-history', action: 'view' },
-    entityType: 'workflow',
-    entityId: 'workflow-123',
-    ipAddress: '192.168.1.100'
-  },
-  {
-    id: 'audit2',
-    action: 'Version Created',
-    user: { name: 'Sarah Johnson', email: 'sarah.j@company.com' },
-    timestamp: format(subDays(new Date(), 1), 'PPpp'),
-    details: { version: 'v1.1', changes: 'Added email notification' },
-    entityType: 'workflow-version',
-    entityId: 'v2',
-    oldValue: { notifications: false },
-    newValue: { notifications: true },
-    ipAddress: '192.168.1.101'
-  },
-  {
-    id: 'audit3',
-    action: 'Workflow Modified',
-    user: { name: 'Mike Davis', email: 'mike.davis@company.com' },
-    timestamp: format(subDays(new Date(), 3), 'PPpp'),
-    details: { field: 'lead-scoring', action: 'update' },
-    entityType: 'workflow',
-    entityId: 'workflow-123',
-    oldValue: { score: 50 },
-    newValue: { score: 75 },
-    ipAddress: '192.168.1.102'
-  },
-  {
-    id: 'audit4',
-    action: 'Snapshot Taken',
-    user: { name: 'John Smith', email: 'john.smith@company.com' },
-    timestamp: format(subDays(new Date(), 5), 'PPpp'),
-    details: { snapshotType: 'manual', version: 'v1.3' },
-    entityType: 'workflow-snapshot',
-    entityId: 'snapshot-456',
-    ipAddress: '192.168.1.100'
-  },
-  {
-    id: 'audit5',
-    action: 'Rollback Performed',
-    user: { name: 'Lisa Chen', email: 'lisa.chen@company.com' },
-    timestamp: format(subDays(new Date(), 7), 'PPpp'),
-    details: { fromVersion: 'v1.4', toVersion: 'v1.3', reason: 'Performance issues' },
-    entityType: 'workflow-rollback',
-    entityId: 'rollback-789',
-    oldValue: { version: 'v1.4' },
-    newValue: { version: 'v1.3' },
-    ipAddress: '192.168.1.103'
-  }
-];
+const generateSampleAuditLogs = (workflowId: string): AuditLog[] => {
+  const workflowNames = [
+    'Lead Nurturing Campaign',
+    'Customer Onboarding Flow', 
+    'Email Marketing Sequence',
+    'Sales Follow-up Process',
+    'Support Ticket Workflow',
+    'Product Demo Scheduling',
+    'Newsletter Subscription',
+    'Event Registration Flow'
+  ];
+  const workflowName = workflowNames[parseInt(workflowId) % workflowNames.length] || 'Sample Workflow';
+  
+  return [
+    {
+      id: `audit1-${workflowId}`,
+      action: 'Workflow Viewed',
+      user: { name: 'Admin User', email: 'admin@workflowguard.pro' },
+      timestamp: format(subHours(new Date(), 1), 'PPpp'),
+      details: { page: 'workflow-history', action: 'view', workflowName },
+      entityType: 'workflow',
+      entityId: workflowId,
+      ipAddress: '192.168.1.100'
+    },
+    {
+      id: `audit2-${workflowId}`,
+      action: 'Version Created',
+      user: { name: 'Admin User', email: 'admin@workflowguard.pro' },
+      timestamp: format(subDays(new Date(), 1), 'PPpp'),
+      details: { version: 'v1.1', changes: `Enhanced ${workflowName}`, workflowName },
+      entityType: 'workflow-version',
+      entityId: `v2-${workflowId}`,
+      oldValue: { version: 'v1.0' },
+      newValue: { version: 'v1.1' },
+      ipAddress: '192.168.1.101'
+    },
+    {
+      id: `audit3-${workflowId}`,
+      action: 'Workflow Modified',
+      user: { name: 'Admin User', email: 'admin@workflowguard.pro' },
+      timestamp: format(subDays(new Date(), 3), 'PPpp'),
+      details: { field: 'performance', action: 'optimize', workflowName },
+      entityType: 'workflow',
+      entityId: workflowId,
+      oldValue: { performance: 'standard' },
+      newValue: { performance: 'optimized' },
+      ipAddress: '192.168.1.102'
+    },
+    {
+      id: `audit4-${workflowId}`,
+      action: 'Snapshot Created',
+      user: { name: 'Admin User', email: 'admin@workflowguard.pro' },
+      timestamp: format(subDays(new Date(), 5), 'PPpp'),
+      details: { snapshotType: 'manual', workflowName },
+      entityType: 'workflow-version',
+      entityId: `v4-${workflowId}`,
+      oldValue: { version: 'v1.2' },
+      newValue: { version: 'v1.3' },
+      ipAddress: '192.168.1.103'
+    },
+    {
+      id: `audit5-${workflowId}`,
+      action: 'Workflow Rollback',
+      user: { name: 'Admin User', email: 'admin@workflowguard.pro' },
+      timestamp: format(subDays(new Date(), 7), 'PPpp'),
+      details: { rollbackTo: 'v1.2', reason: 'Performance issues', workflowName },
+      entityType: 'workflow',
+      entityId: workflowId,
+      oldValue: { version: 'v1.4' },
+      newValue: { version: 'v1.2' },
+      ipAddress: '192.168.1.104'
+    }
+  ];
+};
+
+// Legacy sample data (kept for reference but not used)
+const SAMPLE_VERSIONS: WorkflowVersion[] = [];
+
+// Legacy sample data (kept for reference but not used)
+const SAMPLE_AUDIT_LOGS: AuditLog[] = [];
 
 const WorkflowHistoryDetail = () => {
   useRequireAuth();
@@ -355,13 +391,13 @@ const WorkflowHistoryDetail = () => {
           setUseSampleData(false);
         } else {
           console.log('🔍 WorkflowHistoryDetail: No real versions, using sample data');
-          setVersions(SAMPLE_VERSIONS);
+          setVersions(generateSampleVersions(workflowId));
           setUseSampleData(true);
         }
       })
       .catch((e) => {
         console.log('🔍 WorkflowHistoryDetail: API error, using sample data:', e.message);
-        setVersions(SAMPLE_VERSIONS);
+        setVersions(generateSampleVersions(workflowId));
         setUseSampleData(true);
         setError(""); // Don't show error when using sample data
       })
@@ -411,12 +447,12 @@ const WorkflowHistoryDetail = () => {
           setAuditLogs(realLogs);
         } else {
           console.log('🔍 WorkflowHistoryDetail: No real audit logs, using sample data');
-          setAuditLogs(SAMPLE_AUDIT_LOGS);
+          setAuditLogs(generateSampleAuditLogs(workflowId));
         }
       })
       .catch((e) => {
         console.log('🔍 WorkflowHistoryDetail: API error, using sample audit logs:', e.message);
-        setAuditLogs(SAMPLE_AUDIT_LOGS);
+        setAuditLogs(generateSampleAuditLogs(workflowId));
         setAuditError(""); // Don't show error when using sample data
       })
       .finally(() => setAuditLoading(false));
