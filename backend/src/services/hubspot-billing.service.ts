@@ -458,7 +458,7 @@ export class HubSpotBillingService {
           periodStart: overage.periodStart,
           periodEnd: overage.periodEnd,
           totalAmount: overage.amount * this.UNIT_PRICE,
-          isBilled: overage.isBilled,
+          isBilled: overage.billed,
           createdAt: overage.createdAt,
         })),
         hubspotBillingUrl: user.hubspotPortalId 
