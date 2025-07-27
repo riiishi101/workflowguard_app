@@ -66,6 +66,20 @@ interface WorkflowVersion {
   [key: string]: any;
 }
 
+interface Workflow {
+  id: string;
+  name: string;
+  hubspotId?: string;
+  ownerId?: string;
+  isLive?: boolean;
+  lastModified?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  status?: string;
+  description?: string;
+  [key: string]: any;
+}
+
 interface AuditLog {
   id: string;
   action: string;
@@ -241,6 +255,35 @@ const WorkflowHistoryDetail = () => {
   const [auditSearchTerm, setAuditSearchTerm] = useState("");
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [useSampleData, setUseSampleData] = useState(false);
+  const [workflowData, setWorkflowData] = useState<Workflow | null>(null);
+  const [workflowLoading, setWorkflowLoading] = useState(false);
+  const [workflowError, setWorkflowError] = useState("");
+  
+  // Fetch workflow details
+  useEffect(() => {
+    if (!workflowId) return;
+    setWorkflowLoading(true);
+    setWorkflowError("");
+    
+    apiService.getWorkflowById(workflowId)
+      .then((data: any) => {
+        setWorkflowData(data as Workflow);
+      })
+      .catch((e) => {
+        console.log('Failed to load workflow details:', e.message);
+        setWorkflowError(e.message || "Failed to load workflow details");
+        // Use sample workflow data as fallback
+        setWorkflowData({
+          id: workflowId,
+          name: 'Customer Onboarding',
+          hubspotId: '12345',
+          isLive: true,
+          lastModified: new Date().toISOString(),
+          status: 'active'
+        });
+      })
+      .finally(() => setWorkflowLoading(false));
+  }, [workflowId]);
   
   useEffect(() => {
     if (!workflowId) return;
@@ -433,7 +476,9 @@ const WorkflowHistoryDetail = () => {
             Workflow History
           </button>
           <span>&gt;</span>
-          <span className="text-gray-900 font-medium">Customer Onboarding</span>
+          <span className="text-gray-900 font-medium">
+            {workflowLoading ? 'Loading...' : workflowData?.name || 'Unknown Workflow'}
+          </span>
         </nav>
 
         {/* Sample Data Alert */}
@@ -450,9 +495,27 @@ const WorkflowHistoryDetail = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Workflow History: Customer Onboarding
-            </h1>
+            <div className="flex items-center gap-4">
+              {workflowLoading ? (
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                  <h1 className="text-2xl font-semibold text-gray-900">
+                    Loading workflow...
+                  </h1>
+                </div>
+              ) : workflowError ? (
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-6 h-6 text-red-500" />
+                  <h1 className="text-2xl font-semibold text-gray-900">
+                    Workflow History: {workflowData?.name || 'Unknown Workflow'}
+                  </h1>
+                </div>
+              ) : (
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  Workflow History: {workflowData?.name || 'Loading...'}
+                </h1>
+              )}
+            </div>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
@@ -518,17 +581,17 @@ const WorkflowHistoryDetail = () => {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Customer Onboarding
+                  {workflowLoading ? 'Loading...' : workflowData?.name || 'Unknown Workflow'}
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                  <Badge className={`${workflowData?.isLive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-opacity-80`}>
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    Active
+                    {workflowData?.isLive ? 'Active' : 'Inactive'}
                   </Badge>
                   <span className="text-sm text-gray-600">•</span>
                   <span className="text-sm text-gray-600 flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    Last modified: June 23, 2025, 2:30 PM IST
+                    Last modified: {workflowData?.lastModified ? format(new Date(workflowData.lastModified), 'PPpp') : 'Unknown'}
                   </span>
                 </div>
               </div>
