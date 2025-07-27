@@ -1,6 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import React, { useEffect, useState } from "react";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import { Progress } from "../ui/progress";
 import {
   Table,
   TableBody,
@@ -8,14 +9,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from "../ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { CheckCircle, Download, HelpCircle, Info, CreditCard, Calendar, FileText, Settings, AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import apiService from '@/services/api';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Alert } from '@/components/ui/alert';
+import { useToast } from "../ui/use-toast";
+import apiService from '../../services/api';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Alert } from '../ui/alert';
 import { usePlan } from '../../components/AuthContext';
 import { useAuth } from '../../components/AuthContext';
 
@@ -46,16 +46,55 @@ const PlanBillingTab = () => {
   // Plan definitions for display
   const plans = [
     {
+      id: 'starter',
+      name: 'Starter',
+      price: 29,
+      description: 'Perfect for small teams getting started',
+      features: [
+        '50 Workflows',
+        '30 Days History',
+        'Basic Monitoring',
+        'Email Support',
+        'Workflow Backup',
+        'Version History'
+      ],
+      popular: false,
+      recommended: false,
+    },
+    {
       id: 'professional',
       name: 'Professional',
       price: 59,
-      features: ['500 Workflows', '90 Days History', 'Advanced Monitoring', 'Priority Support', 'Custom Notifications'],
+      description: 'For growing businesses with advanced needs',
+      features: [
+        '500 Workflows',
+        '90 Days History',
+        'Advanced Monitoring',
+        'Priority Support',
+        'Custom Notifications',
+        'Bulk Operations',
+        'Advanced Analytics'
+      ],
+      popular: true,
+      recommended: true,
     },
     {
       id: 'enterprise',
       name: 'Enterprise',
       price: 199,
-      features: ['Unlimited Workflows', 'Unlimited History', '24/7 Support', 'API Access', 'User Permissions', 'Audit Logs'],
+      description: 'Enterprise-grade solution for large organizations',
+      features: [
+        'Unlimited Workflows',
+        'Unlimited History',
+        '24/7 Support',
+        'API Access',
+        'User Permissions',
+        'Audit Logs',
+        'Custom Integrations',
+        'Dedicated Support'
+      ],
+      popular: false,
+      recommended: false,
     },
   ];
 
@@ -68,7 +107,7 @@ const PlanBillingTab = () => {
       setLoading(true);
       
       // For HubSpot marketplace, redirect to HubSpot billing
-      if (planId === 'professional' || planId === 'enterprise') {
+      if (planId === 'starter' || planId === 'professional' || planId === 'enterprise') {
         const hubspotUrl = user?.hubspotPortalId
           ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
           : 'https://app.hubspot.com/ecosystem/marketplace/apps';
@@ -98,11 +137,42 @@ const PlanBillingTab = () => {
         description: `You have successfully upgraded to the ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan.`,
         duration: 7000,
       });
-    } catch (e: any) {
+    } catch (error) {
+      console.error('Error upgrading plan:', error);
       toast({
         title: 'Upgrade Failed',
-        description: e.message || 'Failed to upgrade plan',
+        description: 'Failed to upgrade plan. Please try again or contact support.',
         variant: 'destructive',
+        duration: 7000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDowngrade = async (planId: string) => {
+    try {
+      setLoading(true);
+      
+      // For HubSpot marketplace, redirect to HubSpot billing
+      const hubspotUrl = user?.hubspotPortalId
+        ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
+        : 'https://app.hubspot.com/ecosystem/marketplace/apps';
+      
+      window.open(hubspotUrl, '_blank');
+      
+      toast({
+        title: 'Redirecting to HubSpot',
+        description: 'You will be redirected to HubSpot to manage your subscription.',
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error('Error downgrading plan:', error);
+      toast({
+        title: 'Downgrade Failed',
+        description: 'Failed to downgrade plan. Please try again or contact support.',
+        variant: 'destructive',
+        duration: 7000,
       });
     } finally {
       setLoading(false);
@@ -110,305 +180,331 @@ const PlanBillingTab = () => {
   };
 
   const handleManageSubscription = () => {
-    setShowManageSubscription(true);
+    const hubspotUrl = user?.hubspotPortalId
+      ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
+      : 'https://app.hubspot.com/ecosystem/marketplace/apps';
+    
+    window.open(hubspotUrl, '_blank');
   };
 
   const handleCancelSubscription = async () => {
     try {
-      // This would integrate with HubSpot marketplace for actual cancellation
+      setLoading(true);
+      
+      // For HubSpot marketplace, redirect to HubSpot billing
+      const hubspotUrl = user?.hubspotPortalId
+        ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
+        : 'https://app.hubspot.com/ecosystem/marketplace/apps';
+      
+      window.open(hubspotUrl, '_blank');
+      
       toast({
-        title: 'Subscription Cancelled',
-        description: 'Your subscription will be cancelled at the end of the current billing period.',
+        title: 'Redirecting to HubSpot',
+        description: 'You will be redirected to HubSpot to manage your subscription.',
+        duration: 5000,
       });
-    } catch (e: any) {
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
       toast({
-        title: 'Cancellation Failed',
-        description: e.message || 'Failed to cancel subscription',
+        title: 'Cancel Failed',
+        description: 'Failed to cancel subscription. Please try again or contact support.',
         variant: 'destructive',
+        duration: 7000,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleReactivateSubscription = async () => {
     try {
-      // This would integrate with HubSpot marketplace for reactivation
+      setLoading(true);
+      
+      // For HubSpot marketplace, redirect to HubSpot billing
+      const hubspotUrl = user?.hubspotPortalId
+        ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
+        : 'https://app.hubspot.com/ecosystem/marketplace/apps';
+      
+      window.open(hubspotUrl, '_blank');
+      
       toast({
-        title: 'Subscription Reactivated',
-        description: 'Your subscription has been reactivated successfully.',
+        title: 'Redirecting to HubSpot',
+        description: 'You will be redirected to HubSpot to reactivate your subscription.',
+        duration: 5000,
       });
-    } catch (e: any) {
+    } catch (error) {
+      console.error('Error reactivating subscription:', error);
       toast({
         title: 'Reactivation Failed',
-        description: e.message || 'Failed to reactivate subscription',
+        description: 'Failed to reactivate subscription. Please try again or contact support.',
         variant: 'destructive',
+        duration: 7000,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      month: 'long',
+      day: 'numeric',
     });
   };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
+
+  const getCurrentPlan = () => {
+    return plans.find(p => p.id === planData.planId) || plans[1]; // Default to Professional
+  };
+
+  const currentPlan = getCurrentPlan();
 
   return (
     <div className="space-y-6">
       {/* Trial Banner */}
       {showTrialBanner && (
-        <div className="bg-blue-100 border border-blue-300 text-blue-900 rounded-lg px-6 py-4 flex items-center justify-between">
-          <div>
-            <span className="font-semibold">You are currently on a 21-day Professional Plan trial!</span>
-            {typeof planData.remainingTrialDays === 'number' && (
-              <span className="ml-2">{planData.remainingTrialDays} days remaining.</span>
-            )}
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-blue-800">
+              Professional Trial Active
+            </h3>
+            <p className="text-sm text-blue-700 mt-1">
+              You're currently on a 21-day free trial of the Professional plan. 
+              {planData.remainingTrialDays !== undefined && (
+                <span className="font-medium"> {planData.remainingTrialDays} days remaining.</span>
+              )}
+            </p>
           </div>
-        </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleUpgrade('professional')}
+            className="border-blue-300 text-blue-700 hover:bg-blue-100"
+          >
+            Upgrade Now
+          </Button>
+        </Alert>
       )}
+
       {/* Trial Expired Banner */}
       {showTrialExpiredBanner && (
-        <div className="bg-yellow-100 border border-yellow-300 text-yellow-900 rounded-lg px-6 py-4 flex items-center justify-between">
-          <div>
-            <span className="font-semibold">Your 21-day Professional trial has ended.</span>
-            <span className="ml-2">Upgrade to Professional ($59/month) or Enterprise ($199/month) to continue using WorkflowGuard!</span>
+        <Alert className="border-red-200 bg-red-50">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-red-800">
+              Trial Expired
+            </h3>
+            <p className="text-sm text-red-700 mt-1">
+              Your 21-day trial has expired. Upgrade to continue using WorkflowGuard.
+            </p>
           </div>
-        </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleUpgrade('starter')}
+            className="border-red-300 text-red-700 hover:bg-red-100"
+          >
+            Choose Plan
+          </Button>
+        </Alert>
       )}
-      {/* Subscription Overview */}
+
+      {/* Current Plan Card */}
       <Card>
-        <CardHeader className="p-6 pb-0 flex flex-col items-start">
-          <div className="w-full flex items-center justify-between mb-2">
-            <CardTitle className="text-xl font-semibold">Your Subscription Overview</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6 pt-0">
-          <div className="flex items-center gap-3 mb-1">
-            <span className="text-2xl font-bold text-gray-900">
-              {planData.planId.charAt(0).toUpperCase() + planData.planId.slice(1)} Plan
-            </span>
-            {showTrialBanner && (
-            <Badge
-              variant="secondary"
-              className="bg-blue-100 text-blue-800 text-base px-3 py-1 rounded-full font-semibold"
-            >
-              Trial
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Current Plan</span>
+            <Badge variant={planData.isTrialActive ? "secondary" : "default"}>
+              {planData.isTrialActive ? "Trial" : "Active"}
             </Badge>
-            )}
-            {showTrialExpiredBanner && (
-              <Badge
-                variant="secondary"
-                className="bg-yellow-100 text-yellow-800 text-base px-3 py-1 rounded-full font-semibold"
-              >
-                Trial Ended
-              </Badge>
-            )}
-          </div>
-          <div className="text-gray-600 text-base mb-6">
-            {(() => {
-              const currentPlan = plans.find(p => p.id === planData.planId);
-              return currentPlan && currentPlan.price ? `$${currentPlan.price}/month` : '';
-            })()}
-          </div>
-
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-base text-gray-700 font-medium">Workflows Monitored</span>
-              <span className="text-base font-semibold text-gray-900"></span>
-            </div>
-            <Progress value={0} className="h-2 w-full my-3" />
-          </div>
-
-          <div className="flex items-center justify-between mb-6">
-            <span className="text-base text-gray-700 font-medium">Version History</span>
-            <span className="text-base font-semibold text-gray-900"></span>
-          </div>
-
-          <hr className="my-4 border-gray-200" />
-
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="flex items-center justify-between">
-            <span className="text-base text-gray-500">Next billing on:</span>
-            <span className="text-base font-semibold text-gray-900">N/A</span>
+            <div>
+              <h3 className="text-xl font-semibold">{currentPlan.name}</h3>
+              <p className="text-gray-600">{currentPlan.description}</p>
+              <p className="text-2xl font-bold text-blue-600 mt-2">
+                ${currentPlan.price}/month
+              </p>
+            </div>
+            <div className="text-right">
+              <Button
+                variant="outline"
+                onClick={handleManageSubscription}
+                className="mb-2"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Manage Subscription
+              </Button>
+              <div className="text-sm text-gray-500">
+                Billed monthly via HubSpot
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
-      
-      {/* Plan Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map((p) => (
-          <Card key={p.id} className={`h-full flex flex-col ${planData.planId === p.id ? 'border-blue-500 border-2' : ''}`}> 
-            <CardHeader>
-              <CardTitle className="text-xl">{p.name}</CardTitle>
-              <div className="text-3xl font-bold">
-                ${p.price}<span className="text-base font-normal">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col flex-grow justify-between space-y-3">
-              <div className="space-y-2 mb-8">
-                {p.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-700">{feature}</span>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Plan-specific limits */}
-              <div className="space-y-2 mb-6">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Workflows:</span>
-                  <span className="font-medium">
-                    {p.id === 'enterprise' ? 'Unlimited' : '500'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">History:</span>
-                  <span className="font-medium">
-                    {p.id === 'enterprise' ? 'Unlimited' : '90 days'}
-                  </span>
-                </div>
-              </div>
 
-              {/* Action Button */}
-                {planData.planId === p.id ? (
-                <Button 
-                  variant="outline" 
-                  className="w-full" 
-                  disabled
-                >
-                    Current Plan
-                  </Button>
-                ) : (
-                <Button 
-                  onClick={() => handleUpgrade(p.id)}
-                  className={`w-full ${
-                    p.id === 'professional' || p.id === 'enterprise'
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                      : 'bg-gray-500 hover:bg-gray-600 text-white'
-                  }`}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                  )}
-                  {p.id === 'professional' || p.id === 'enterprise' 
-                    ? 'Upgrade via HubSpot' 
-                    : 'Upgrade Plan'
-                  }
-                  </Button>
+      {/* Plan Comparison */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Available Plans</h2>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <HelpCircle className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>All plans include core workflow protection features</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            const isCurrentPlan = plan.id === planData.planId;
+            const isUpgrade = plan.price > currentPlan.price;
+            const isDowngrade = plan.price < currentPlan.price;
+
+            return (
+              <Card key={plan.id} className={`relative ${plan.popular ? 'ring-2 ring-blue-500' : ''}`}>
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-blue-500 text-white">Most Popular</Badge>
+                  </div>
                 )}
-            </CardContent>
-          </Card>
-        ))}
+                {plan.recommended && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-green-500 text-white">Recommended</Badge>
+                  </div>
+                )}
+                
+                <CardHeader>
+                  <CardTitle className="text-center">{plan.name}</CardTitle>
+                  <div className="text-center">
+                    <span className="text-3xl font-bold">${plan.price}</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+                  <p className="text-sm text-gray-600 text-center">{plan.description}</p>
+                </CardHeader>
+                
+                <CardContent>
+                  <ul className="space-y-2 mb-6">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-center text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  {isCurrentPlan ? (
+                    <Button disabled className="w-full" variant="outline">
+                      Current Plan
+                    </Button>
+                  ) : isUpgrade ? (
+                    <Button 
+                      onClick={() => handleUpgrade(plan.id)}
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Upgrade to {plan.name}
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={() => handleDowngrade(plan.id)}
+                      variant="outline"
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Downgrade to {plan.name}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Manage Subscription Section */}
+      {/* Billing Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl font-semibold flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Manage Subscription
-          </CardTitle>
+          <CardTitle>Billing Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Subscription Status */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <CreditCard className="w-5 h-5 text-gray-600" />
-              <div>
-                <p className="text-sm text-gray-600">Payment Method</p>
-                <p className="font-medium">HubSpot Marketplace</p>
-              </div>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Billing Provider</span>
+              <span className="font-medium">HubSpot Marketplace</span>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <Calendar className="w-5 h-5 text-gray-600" />
-              <div>
-                <p className="text-sm text-gray-600">Billing Cycle</p>
-                <p className="font-medium">Monthly</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Next Billing Date</span>
+              <span className="font-medium">
+                {planData.trialEndDate ? formatDate(planData.trialEndDate) : 'Monthly'}
+              </span>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <FileText className="w-5 h-5 text-gray-600" />
-              <div>
-                <p className="text-sm text-gray-600">Invoices</p>
-                <p className="font-medium">Available in HubSpot</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Payment Method</span>
+              <span className="font-medium">Managed by HubSpot</span>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-3">
-            <Button 
+          
+          <div className="mt-6 flex space-x-3">
+            <Button
+              variant="outline"
               onClick={handleManageSubscription}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="flex-1"
             >
-              <Settings className="w-4 h-4 mr-2" />
-              Manage in HubSpot
+              <CreditCard className="w-4 h-4 mr-2" />
+              Manage Billing
             </Button>
-            <Button 
+            <Button
               variant="outline"
-              onClick={() => window.open('https://app.hubspot.com/ecosystem/marketplace/apps', '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              View Billing History
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => window.open('/help', '_blank')}
+              onClick={() => window.open('https://workflowguard.com/support', '_blank')}
+              className="flex-1"
             >
               <HelpCircle className="w-4 h-4 mr-2" />
-              Billing Support
+              Get Help
             </Button>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Important Notes */}
-          <Alert>
-            <Info className="h-4 w-4" />
+      {/* Usage Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Usage</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
             <div>
-              <h4 className="font-medium">Important Information</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                Your subscription is managed through the HubSpot Marketplace. To make changes to your billing, 
-                payment method, or view invoices, please visit your HubSpot account settings.
-              </p>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Workflows</span>
+                <span>0 / {currentPlan.id === 'enterprise' ? '∞' : currentPlan.id === 'starter' ? '50' : '500'}</span>
+              </div>
+              <Progress value={0} className="h-2" />
             </div>
-          </Alert>
-
-          {/* Trial Information */}
-          {showTrialBanner && (
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <div>
-                <h4 className="font-medium text-blue-900">Trial Period Active</h4>
-                <p className="text-sm text-blue-700 mt-1">
-                  You're currently on a free trial. No charges will be made until your trial ends. 
-                  You can upgrade or cancel at any time during the trial period.
-                </p>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>History Days</span>
+                <span>{currentPlan.id === 'enterprise' ? '∞' : currentPlan.id === 'starter' ? '30' : '90'} days</span>
               </div>
-            </Alert>
-          )}
-
-          {/* Cancellation Warning */}
-          {!showTrialBanner && (
-            <Alert className="border-yellow-200 bg-yellow-50">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <div>
-                <h4 className="font-medium text-yellow-900">Cancellation Policy</h4>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Cancelling your subscription will stop billing at the end of your current period. 
-                  You'll continue to have access to all features until then.
-                </p>
-              </div>
-            </Alert>
-          )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

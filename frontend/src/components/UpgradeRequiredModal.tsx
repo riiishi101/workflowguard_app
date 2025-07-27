@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Lock, Check, ExternalLink } from 'lucide-react';
+import { X, Lock, Check, ExternalLink, Star, Zap } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 interface PremiumModalProps {
@@ -26,7 +26,7 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
     }
   }
 
-  const handleUpgradeViaHubSpot = () => {
+  const handleUpgradeViaHubSpot = (planId: string) => {
     const hubspotUrl = user?.hubspotPortalId
       ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
       : 'https://app.hubspot.com/ecosystem/marketplace/apps';
@@ -35,9 +35,56 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
     onClose();
   };
 
+  const plans = [
+    {
+      id: 'starter',
+      name: 'Starter',
+      price: 29,
+      description: 'Perfect for small teams',
+      features: [
+        '50 Workflows',
+        '30 Days History',
+        'Basic Monitoring',
+        'Email Support'
+      ],
+      popular: false,
+      recommended: false,
+    },
+    {
+      id: 'professional',
+      name: 'Professional',
+      price: 59,
+      description: 'For growing businesses',
+      features: [
+        '500 Workflows',
+        '90 Days History',
+        'Advanced Monitoring',
+        'Priority Support',
+        'Custom Notifications'
+      ],
+      popular: true,
+      recommended: true,
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 199,
+      description: 'Enterprise solution',
+      features: [
+        'Unlimited Workflows',
+        'Unlimited History',
+        '24/7 Support',
+        'API Access',
+        'User Permissions'
+      ],
+      popular: false,
+      recommended: false,
+    },
+  ];
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" data-testid="upgrade-modal">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto">
         {/* Close button */}
         <button 
           onClick={onClose}
@@ -55,7 +102,7 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
 
         {/* Title */}
         <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">
-          Unlock Premium Features
+          Choose Your Plan
         </h2>
 
         {/* Subtitle */}
@@ -63,58 +110,87 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
           {displayMessage}
         </p>
 
-        {/* Features list */}
-        <div className="space-y-4 mb-8">
-          <div className="flex items-center space-x-3">
-            <Check size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-gray-700">500 workflows monitored</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Check size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-gray-700">90 days of version history</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Check size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-gray-700">Advanced workflow monitoring</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Check size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-gray-700">Custom notification preferences</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Check size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-gray-700">Priority support and analytics</span>
+        {/* Plan Options */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {plans.map((plan) => (
+            <div 
+              key={plan.id}
+              className={`border rounded-xl p-6 relative ${
+                plan.popular 
+                  ? 'border-blue-500 ring-2 ring-blue-500' 
+                  : 'border-gray-200'
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+              {plan.recommended && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-green-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                    Recommended
+                  </span>
+                </div>
+              )}
+
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{plan.name}</h3>
+                <div className="text-3xl font-bold text-blue-600 mb-1">${plan.price}</div>
+                <div className="text-sm text-gray-600 mb-2">/month</div>
+                <p className="text-xs text-gray-500">{plan.description}</p>
+              </div>
+
+              <ul className="space-y-3 mb-6">
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-center space-x-3">
+                    <Check size={16} className="text-green-500 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={() => handleUpgradeViaHubSpot(plan.id)}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center ${
+                  plan.popular
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300'
+                }`}
+              >
+                <ExternalLink size={16} className="mr-2" />
+                Choose {plan.name}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Additional Info */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-center space-x-4 text-sm text-gray-600">
+            <div className="flex items-center space-x-2">
+              <Zap className="w-4 h-4 text-yellow-500" />
+              <span>No setup fees</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Check className="w-4 h-4 text-green-500" />
+              <span>Cancel anytime</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Star className="w-4 h-4 text-blue-500" />
+              <span>14-day money back</span>
+            </div>
           </div>
         </div>
 
-        {/* Pricing info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-900">$59/month</div>
-            <div className="text-sm text-blue-700">Professional Plan</div>
-          </div>
-        </div>
-
-        {/* Upgrade button */}
-        <button
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors mb-6 flex items-center justify-center"
-          onClick={handleUpgradeViaHubSpot}
-        >
-          <ExternalLink className="w-5 h-5 mr-2" />
-          Upgrade via HubSpot
-        </button>
-
-        {/* Bottom links */}
-        <div className="flex justify-between items-center text-sm">
-          <button className="text-blue-600 hover:text-blue-700 font-medium" onClick={onClose}>
-            View Plan Details
-          </button>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 font-medium"
-          >
-            Maybe Later
-          </button>
+        {/* Footer */}
+        <div className="text-center mt-6">
+          <p className="text-xs text-gray-500">
+            All plans include core workflow protection features. 
+            Billing is managed through HubSpot Marketplace.
+          </p>
         </div>
       </div>
     </div>

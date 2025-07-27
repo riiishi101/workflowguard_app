@@ -156,7 +156,7 @@ export class UserController {
     if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
 
     // Default to starter plan if no subscription exists
-          const planId = user.subscription?.planId || 'trial';
+    const planId = user.subscription?.planId || 'starter';
     const plan = await this.userService.getPlanById(planId);
     const workflowsMonitoredCount =
       await this.userService.getWorkflowCountByOwner(userId);
@@ -167,7 +167,7 @@ export class UserController {
       trialEndDate: user.subscription?.trialEndDate,
       nextBillingDate: user.subscription?.nextBillingDate,
       features: plan?.features || [],
-      maxWorkflows: plan?.maxWorkflows || 25,
+      maxWorkflows: plan?.maxWorkflows || 50,
       historyDays: plan?.historyDays || 30,
       workflowsMonitoredCount,
       hubspotPortalId: user?.hubspotPortalId || null,

@@ -27,8 +27,8 @@ export class WorkflowService {
     if (!user) throw new ForbiddenException('User not found');
     const planId = user.subscription?.planId || 'professional';
     const plan =
-      (await this.userService.getPlanById(planId)) ||
-      (await this.userService.getPlanById('professional'));
+              (await this.userService.getPlanById(planId)) ||
+        (await this.userService.getPlanById('starter'));
     const count = await this.prisma.workflow.count({ where: { ownerId } });
     let isOverage = false;
     if (plan?.maxWorkflows !== null && plan?.maxWorkflows !== undefined) {

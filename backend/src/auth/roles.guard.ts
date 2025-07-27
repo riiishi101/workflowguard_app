@@ -33,8 +33,8 @@ export class PlanFeatureGuard implements CanActivate {
     const user = request.user;
     const planId = user?.subscription?.planId || 'trial';
     const plan =
-      (await this.userService.getPlanById(planId)) ||
-      (await this.userService.getPlanById('trial'));
+              (await this.userService.getPlanById(planId)) ||
+        (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes(requiredFeature)) {
       throw new ForbiddenException(
         `Your plan does not include access to this feature: ${requiredFeature}`,

@@ -85,9 +85,24 @@ export class AuthService {
       });
     } else {
       // If user exists, update to admin role for development testing
+      // Also check if trial has expired and update plan accordingly
+      const now = new Date();
+      const isTrialExpired = user.trialEndDate && user.trialEndDate < now;
+      
+      const updateData: any = { 
+        role: 'admin', 
+        hubspotPortalId: portalId ? String(portalId) : null 
+      };
+      
+      // If trial has expired and user is still on trial plan, move them to starter
+      if (isTrialExpired && user.planId === 'trial') {
+        updateData.planId = 'starter';
+        updateData.isTrialActive = false;
+      }
+      
       user = await this.prisma.user.update({
         where: { id: user.id },
-        data: { role: 'admin', hubspotPortalId: portalId ? String(portalId) : null },
+        data: updateData,
       });
     }
     return user;

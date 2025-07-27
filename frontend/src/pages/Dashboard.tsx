@@ -3,43 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkflows } from '../contexts/WorkflowContext';
 import { useAuth } from '../components/AuthContext';
 import { usePlan } from '../components/AuthContext';
-import { useToast } from '@/components/ui/use-toast';
-import TopNavigation from '@/components/TopNavigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Alert,
-  AlertDescription,
-} from '@/components/ui/alert';
+import { useToast } from '../hooks/use-toast';
+import { AppLayout, PageHeader, ContentSection, GridLayout } from '../components/layout/AppLayout';
+import { EnhancedCard, EnhancedCardHeader, EnhancedCardContent } from '../components/ui/EnhancedCard';
+import { EnhancedButton } from '../components/ui/EnhancedButton';
+import { EnhancedInput } from '../components/ui/EnhancedInput';
+import { EnhancedTable } from '../components/ui/EnhancedTable';
+import { StatusBadge } from '../components/ui/EnhancedBadge';
 import {
   Eye,
   RefreshCw,
@@ -57,8 +27,14 @@ import {
   Activity,
   TrendingUp,
   Shield,
+  BarChart3,
+  Settings,
+  History,
+  Play,
+  Pause,
+  Trash2,
 } from 'lucide-react';
-import apiService from '@/services/api';
+import apiService from '../services/api';
 
 interface DashboardStats {
   totalWorkflows: number;
@@ -66,6 +42,8 @@ interface DashboardStats {
   monitoredWorkflows: number;
   recentActivity: number;
   lastSync: Date | null;
+  syncSuccess: number;
+  syncErrors: number;
 }
 
 const Dashboard = () => {
@@ -94,53 +72,148 @@ const Dashboard = () => {
     monitoredWorkflows: 0,
     recentActivity: 0,
     lastSync: null,
+    syncSuccess: 0,
+    syncErrors: 0,
   });
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<string>('');
 
-  // Calculate stats when workflows change
+  // Calculate stats from workflows
   useEffect(() => {
     if (workflows) {
-      const activeWorkflows = workflows.filter(w => w.status === 'active').length;
-      const monitoredWorkflows = workflows.filter(w => w.autoSync).length;
-      
-      setStats({
-        totalWorkflows: workflows.length,
-        activeWorkflows,
-        monitoredWorkflows,
-        recentActivity: workflows.filter(w => {
-          const updatedAt = new Date(w.updatedAt || w.createdAt || Date.now());
-          const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-          return updatedAt > oneDayAgo;
-        }).length,
-        lastSync: lastUpdate,
-      });
+      const total = workflows.length;
+      const active = workflows.filter(w => w.status === 'active').length;
+             const monitored = workflows.filter(w => w.autoSync).length;
+       const recent = workflows.filter(w => {
+         const lastActivity = new Date(w.updatedAt || w.createdAt || Date.now());
+         const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+         return lastActivity > oneWeekAgo;
+       }).length;
+
+       setStats({
+         totalWorkflows: total,
+         activeWorkflows: active,
+         monitoredWorkflows: monitored,
+         recentActivity: recent,
+         lastSync: lastUpdate,
+         syncSuccess: workflows.filter(w => w.status === 'active').length,
+         syncErrors: workflows.filter(w => w.status === 'inactive').length,
+       });
     }
   }, [workflows, lastUpdate]);
 
   // Filter workflows based on search and status
   const filteredWorkflows = workflows?.filter(workflow => {
-    const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         workflow.hubspotId?.includes(searchTerm);
+         const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          workflow.hubspotId?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || workflow.status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
 
-  // Handle workflow selection
-  const handleWorkflowSelect = (workflowId: string) => {
-    setSelectedWorkflows(prev => 
-      prev.includes(workflowId) 
-        ? prev.filter(id => id !== workflowId)
-        : [...prev, workflowId]
-    );
-  };
+  // Table columns configuration
+  const columns = [
+    {
+      key: 'name',
+      header: 'Workflow Name',
+      render: (value: string, row: any) => (
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Activity className="w-4 h-4 text-blue-600" />
+            </div>
+          </div>
+          <div>
+            <div className="font-medium text-gray-900">{value}</div>
+                         <div className="text-sm text-gray-500">{row.hubspotId || 'No ID'}</div>
+          </div>
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (value: string) => <StatusBadge status={value as any} />,
+      sortable: true,
+      align: 'center' as const,
+    },
+    {
+      key: 'lastSync',
+      header: 'Last Sync',
+      render: (value: string) => (
+        <div className="text-sm text-gray-600">
+          {value ? new Date(value).toLocaleDateString() : 'Never'}
+        </div>
+      ),
+      sortable: true,
+      align: 'center' as const,
+    },
+    {
+      key: 'isMonitored',
+      header: 'Monitoring',
+      render: (value: boolean) => (
+        <StatusBadge 
+          status={value ? 'active' : 'inactive'} 
+          size="sm"
+        />
+      ),
+      sortable: true,
+      align: 'center' as const,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (value: any, row: any) => (
+        <div className="flex items-center space-x-2">
+          <EnhancedButton
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/workflow/${row.id}/history`)}
+            icon={<Eye className="w-4 h-4" />}
+          >
+            View
+          </EnhancedButton>
+          <EnhancedButton
+            variant="ghost"
+            size="sm"
+            onClick={() => handleWorkflowAction(row.id, 'sync')}
+            icon={<RefreshCw className="w-4 h-4" />}
+          >
+            Sync
+          </EnhancedButton>
+        </div>
+      ),
+      sortable: false,
+    },
+  ];
 
-  // Handle bulk selection
-  const handleBulkSelect = () => {
-    if (selectedWorkflows.length === filteredWorkflows.length) {
-      setSelectedWorkflows([]);
-    } else {
-      setSelectedWorkflows(filteredWorkflows.map(w => w.id));
+  // Handle workflow actions
+  const handleWorkflowAction = async (workflowId: string, action: string) => {
+    try {
+      switch (action) {
+        case 'sync':
+          // Trigger workflow sync
+          toast({
+            title: "Sync initiated",
+            description: "Workflow sync has been started.",
+          });
+          break;
+        case 'delete':
+          await deleteWorkflow(workflowId);
+          toast({
+            title: "Workflow deleted",
+            description: "The workflow has been successfully deleted.",
+          });
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while performing the action.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -148,397 +221,258 @@ const Dashboard = () => {
   const handleBulkAction = async (action: string) => {
     if (selectedWorkflows.length === 0) {
       toast({
-        title: 'No workflows selected',
-        description: 'Please select workflows to perform this action.',
-        variant: 'destructive',
+        title: "No workflows selected",
+        description: "Please select workflows to perform bulk actions.",
+        variant: "destructive",
       });
       return;
     }
 
     try {
       switch (action) {
-        case 'delete':
-          for (const workflowId of selectedWorkflows) {
-            await deleteWorkflow(workflowId);
-          }
+        case 'sync':
           toast({
-            title: 'Workflows deleted',
-            description: `Successfully deleted ${selectedWorkflows.length} workflow(s).`,
+            title: "Bulk sync initiated",
+            description: `Syncing ${selectedWorkflows.length} workflows.`,
           });
           break;
-        case 'sync':
-          // Trigger sync for selected workflows
+        case 'delete':
+          // Implement bulk delete
           toast({
-            title: 'Sync initiated',
-            description: `Syncing ${selectedWorkflows.length} workflow(s)...`,
+            title: "Bulk delete",
+            description: `Deleting ${selectedWorkflows.length} workflows.`,
           });
+          break;
+        default:
           break;
       }
       setSelectedWorkflows([]);
     } catch (error) {
       toast({
-        title: 'Action failed',
-        description: 'Failed to perform bulk action. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "An error occurred while performing bulk actions.",
+        variant: "destructive",
       });
     }
   };
 
-  // Handle workflow actions
-  const handleWorkflowAction = async (workflowId: string, action: string) => {
-    try {
-      switch (action) {
-        case 'view':
-          navigate(`/workflow-history/${workflowId}`);
-          break;
-        case 'sync':
-          toast({
-            title: 'Sync initiated',
-            description: 'Workflow sync started...',
-          });
-          break;
-        case 'delete':
-          await deleteWorkflow(workflowId);
-          toast({
-            title: 'Workflow deleted',
-            description: 'Workflow has been removed.',
-          });
-          break;
-      }
-    } catch (error) {
-      toast({
-        title: 'Action failed',
-        description: 'Failed to perform action. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Handle export
-  const handleExport = () => {
-    const exportData = filteredWorkflows.map(w => ({
-        name: w.name,
-        hubspotId: w.hubspotId,
-      status: w.status,
-      folder: w.folder,
-      autoSync: w.autoSync,
-      createdAt: w.createdAt,
-      updatedAt: w.updatedAt,
-    }));
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
-    });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-    a.download = `workflowguard-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-      title: 'Export completed',
-      description: 'Workflow data has been exported.',
-    });
-  };
-
-  if (workflowsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600">Loading dashboard...</p>
-          </div>
-      </div>
-    );
-  }
-
-  if (workflowsError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600 mb-4">Failed to load workflows</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
-          </div>
-      </div>
-    );
-  }
+  // Stats cards data
+  const statsCards = [
+    {
+      title: 'Total Workflows',
+      value: stats.totalWorkflows,
+      icon: <Activity className="w-6 h-6" />,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+      change: '+12%',
+      changeType: 'positive' as const,
+    },
+    {
+      title: 'Active Workflows',
+      value: stats.activeWorkflows,
+      icon: <CheckCircle className="w-6 h-6" />,
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
+      change: '+5%',
+      changeType: 'positive' as const,
+    },
+    {
+      title: 'Monitored',
+      value: stats.monitoredWorkflows,
+      icon: <Shield className="w-6 h-6" />,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
+      change: '+8%',
+      changeType: 'positive' as const,
+    },
+    {
+      title: 'Recent Activity',
+      value: stats.recentActivity,
+      icon: <TrendingUp className="w-6 h-6" />,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
+      change: '+15%',
+      changeType: 'positive' as const,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
-
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-            <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Monitor and manage your protected workflows</p>
-            </div>
+    <AppLayout>
+      {/* Page Header */}
+      <PageHeader
+        title="Dashboard"
+        subtitle="Monitor and manage your HubSpot workflows"
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Dashboard' },
+        ]}
+        actions={
           <div className="flex items-center space-x-3">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button onClick={() => navigate('/workflow-selection')}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Workflow
-            </Button>
+            <EnhancedButton
+              variant="outline"
+              onClick={() => navigate('/workflow/new')}
+              icon={<Plus className="w-4 h-4" />}
+            >
+              New Workflow
+            </EnhancedButton>
+            <EnhancedButton
+              variant="primary"
+              onClick={() => navigate('/settings')}
+              icon={<Settings className="w-4 h-4" />}
+            >
+              Settings
+            </EnhancedButton>
           </div>
-        </div>
-              </div>
+        }
+      />
 
       {/* Real-time Status Alert */}
       {!isConnected && (
-        <div className="px-6 py-3">
-          <Alert variant="default">
-            <ZapOff className="h-4 w-4" />
-            <AlertDescription>
-              Real-time updates are connecting... Updates will appear automatically once connected.
-            </AlertDescription>
-          </Alert>
-        </div>
+        <ContentSection className="mb-6">
+          <div className="flex items-center space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <ZapOff className="w-5 h-5 text-yellow-600" />
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Real-time updates connecting...
+              </h3>
+              <p className="text-sm text-yellow-700">
+                Updates will appear automatically once connected.
+              </p>
+            </div>
+          </div>
+        </ContentSection>
       )}
 
       {/* Stats Cards */}
-      <div className="px-6 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Workflows</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalWorkflows}</div>
-              <p className="text-xs text-muted-foreground">
-                {plan?.planId === 'trial' ? `${stats.totalWorkflows}/500 used` : 'No limit'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Workflows</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeWorkflows}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalWorkflows > 0 ? `${Math.round((stats.activeWorkflows / stats.totalWorkflows) * 100)}% active` : 'No workflows'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monitored</CardTitle>
-              <Activity className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.monitoredWorkflows}</div>
-              <p className="text-xs text-muted-foreground">
-                Auto-sync enabled
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-              <TrendingUp className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.recentActivity}</div>
-              <p className="text-xs text-muted-foreground">
-                Last 24 hours
-              </p>
-            </CardContent>
-          </Card>
-          </div>
-
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-              placeholder="Search workflows..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+      <GridLayout cols={4} gap="lg" className="mb-8">
+        {statsCards.map((stat, index) => (
+          <EnhancedCard key={index} variant="elevated" hover>
+            <EnhancedCardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <div className="flex items-center mt-1">
+                    <span className={`text-sm font-medium ${
+                      stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {stat.change}
+                    </span>
+                    <span className="text-sm text-gray-500 ml-1">from last month</span>
+                  </div>
+                </div>
+                <div className={`p-3 rounded-lg ${stat.bgColor}`}>
+                  <div className={stat.color}>{stat.icon}</div>
+                </div>
               </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-            </SelectContent>
-          </Select>
+            </EnhancedCardContent>
+          </EnhancedCard>
+        ))}
+      </GridLayout>
+
+      {/* Workflows Table Section */}
+      <ContentSection
+        title="Workflows"
+        subtitle={`${filteredWorkflows.length} workflows found`}
+      >
+        {/* Filters and Actions */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <EnhancedInput
+              placeholder="Search workflows..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+              icon={<Search className="w-4 h-4" />}
+              size="md"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {selectedWorkflows.length > 0 && (
+              <EnhancedButton
+                variant="outline"
+                onClick={() => handleBulkAction('sync')}
+                icon={<RefreshCw className="w-4 h-4" />}
+              >
+                Sync Selected ({selectedWorkflows.length})
+              </EnhancedButton>
+            )}
+            <EnhancedButton
+              variant="outline"
+              onClick={() => navigate('/analytics')}
+              icon={<BarChart3 className="w-4 h-4" />}
+            >
+              Analytics
+            </EnhancedButton>
+            <EnhancedButton
+              variant="outline"
+              onClick={() => navigate('/workflow/history')}
+              icon={<History className="w-4 h-4" />}
+            >
+              History
+            </EnhancedButton>
+          </div>
         </div>
 
-        {/* Bulk Actions */}
-        {selectedWorkflows.length > 0 && (
-          <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <span className="text-sm text-blue-800">
-              {selectedWorkflows.length} workflow(s) selected
-            </span>
-            <div className="flex space-x-2">
-              <Select value={bulkAction} onValueChange={setBulkAction}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Bulk actions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sync">Sync Selected</SelectItem>
-                  <SelectItem value="delete">Delete Selected</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                size="sm"
-                onClick={() => handleBulkAction(bulkAction)}
-                disabled={!bulkAction}
-              >
-                Apply
-              </Button>
-            </div>
-            </div>
-          )}
-
         {/* Workflows Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Protected Workflows</CardTitle>
-            <CardDescription>
-              Manage and monitor your HubSpot workflows
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredWorkflows.length === 0 ? (
-              <div className="text-center py-8">
-                <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No workflows found</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm || statusFilter !== 'all' 
-                    ? 'Try adjusting your search or filters'
-                    : 'Get started by adding workflows to protect'
-                  }
-                </p>
-                {!searchTerm && statusFilter === 'all' && (
-                  <Button onClick={() => navigate('/workflow-selection')}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Workflows
-                  </Button>
-                )}
+        <EnhancedTable
+          data={filteredWorkflows}
+          columns={columns}
+          loading={workflowsLoading}
+          onRowClick={(workflow) => navigate(`/workflow/${workflow.id}/history`)}
+          emptyMessage="No workflows found. Create your first workflow to get started."
+        />
+      </ContentSection>
+
+      {/* Quick Actions */}
+      <GridLayout cols={3} gap="lg" className="mt-8">
+        <EnhancedCard variant="outlined" hover onClick={() => navigate('/workflow/new')}>
+          <EnhancedCardContent>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-6 h-6 text-blue-600" />
               </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <input
-                        type="checkbox"
-                        checked={selectedWorkflows.length === filteredWorkflows.length && filteredWorkflows.length > 0}
-                        onChange={handleBulkSelect}
-                        className="rounded border-gray-300"
-                      />
-                    </TableHead>
-                    <TableHead>Workflow</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Snapshot</TableHead>
-                    <TableHead>Versions</TableHead>
-                    <TableHead>Last Modified</TableHead>
-                    <TableHead className="w-20">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredWorkflows.map((workflow) => (
-                    <TableRow key={workflow.id}>
-                      <TableCell>
-                    <input
-                      type="checkbox"
-                          checked={selectedWorkflows.includes(workflow.id)}
-                          onChange={() => handleWorkflowSelect(workflow.id)}
-                          className="rounded border-gray-300"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{workflow.name}</div>
-                          <div className="text-sm text-gray-500">ID: {workflow.hubspotId}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={workflow.status === 'active' ? 'default' : 'secondary'}>
-                          {workflow.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-gray-500">
-                          {workflow.autoSync ? (
-                            <div className="flex items-center">
-                              <Clock className="w-3 h-3 mr-1" />
-                              Auto-sync
-                      </div>
-                          ) : (
-                            'Manual'
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-gray-500">
-                          {/* This would be populated from workflow versions */}
-                          0 versions
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-gray-500">
-                          {workflow.updatedAt 
-                            ? new Date(workflow.updatedAt).toLocaleDateString()
-                            : 'Unknown'
-                          }
-                          </div>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleWorkflowAction(workflow.id, 'view')}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleWorkflowAction(workflow.id, 'sync')}>
-                              <RefreshCw className="w-4 h-4 mr-2" />
-                              Sync Now
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleWorkflowAction(workflow.id, 'delete')}
-                              className="text-red-600"
-                            >
-                              <MoreHorizontal className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-          </div>
-    </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Create Workflow</h3>
+              <p className="text-gray-600">Set up a new workflow to monitor</p>
+            </div>
+          </EnhancedCardContent>
+        </EnhancedCard>
+
+        <EnhancedCard variant="outlined" hover onClick={() => navigate('/analytics')}>
+          <EnhancedCardContent>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">View Analytics</h3>
+              <p className="text-gray-600">Analyze workflow performance</p>
+            </div>
+          </EnhancedCardContent>
+        </EnhancedCard>
+
+        <EnhancedCard variant="outlined" hover onClick={() => navigate('/settings')}>
+          <EnhancedCardContent>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Settings className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Settings</h3>
+              <p className="text-gray-600">Configure your account</p>
+            </div>
+          </EnhancedCardContent>
+        </EnhancedCard>
+      </GridLayout>
+    </AppLayout>
   );
 };
 

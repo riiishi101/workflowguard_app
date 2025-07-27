@@ -1,163 +1,485 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TopNavigation from "@/components/TopNavigation";
-import PlanBillingTab from "@/components/settings/PlanBillingTab";
-import NotificationsTab from "@/components/settings/NotificationsTab";
-import UserPermissionsTab from "@/components/settings/UserPermissionsTab";
-import AuditLogTab from "@/components/settings/AuditLogTab";
-import ApiAccessTab from "@/components/settings/ApiAccessTab";
-import ProfileTab from "@/components/settings/ProfileTab";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/AuthContext';
+import { usePlan } from '../components/AuthContext';
+import { useToast } from '../hooks/use-toast';
+import { AppLayout, PageHeader, ContentSection, GridLayout } from '../components/layout/AppLayout';
+import { EnhancedCard, EnhancedCardHeader, EnhancedCardContent } from '../components/ui/EnhancedCard';
+import { EnhancedButton } from '../components/ui/EnhancedButton';
+import { EnhancedInput } from '../components/ui/EnhancedInput';
+import { StatusBadge } from '../components/ui/EnhancedBadge';
 import {
-  CreditCard,
+  User,
+  Shield,
   Bell,
+  CreditCard,
+  Settings as SettingsIcon,
+  Key,
+  Globe,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Save,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  Zap,
   Users,
-  FileText,
-  Code,
-  UserCircle,
-} from "lucide-react";
-import { useAuth, usePlan } from '../components/AuthContext';
-import { useToast } from '@/components/ui/use-toast';
+  Database,
+  Activity,
+} from 'lucide-react';
 
 const Settings = () => {
-
-  const { user, loading } = useAuth();
-  const { plan } = usePlan();
-  const [activeTab, setActiveTab] = useState("plan-billing");
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { plan, hasFeature } = usePlan();
   const { toast } = useToast();
-  
-  // Ensure plan always has a valid structure to prevent controlled/uncontrolled Tabs warning
-  const safePlan = plan && Array.isArray(plan.features)
-    ? plan
-    : {
-        name: 'Starter',
-        features: [],
-        status: 'active'
-      };
-  const safeSetActiveTab = (tab) => {
-    if (typeof tab === 'string' && tab) {
-      setActiveTab(tab);
-    } else {
-      setActiveTab('plan-billing');
+
+  // Local state
+  const [activeTab, setActiveTab] = useState('profile');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Form states
+  const [profileForm, setProfileForm] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    company: user?.company || '',
+    phone: user?.phone || '',
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    syncAlerts: true,
+    securityAlerts: true,
+    weeklyReports: false,
+    marketingEmails: false,
+  });
+
+  // Tab configuration
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
+    { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
+    { id: 'billing', label: 'Billing', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'integrations', label: 'Integrations', icon: <Globe className="w-4 h-4" /> },
+  ];
+
+  // Handle form submissions
+  const handleProfileUpdate = async () => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Debug log for user and plan
-  // console.log('Settings debug:', { user, plan: safePlan });
+  const handlePasswordChange = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your new passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = user?.hubspotPortalId
-    ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
-    : 'https://app.hubspot.com/ecosystem/marketplace/apps';
-
-  const showPortalWarning = !user?.hubspotPortalId;
-
-  if (loading) return null;
-
-  const tabs = [
-    { key: 'plan-billing', label: 'My Plan & Billing', always: true },
-    { key: 'profile', label: 'My Profile', always: true },
-    { key: 'notifications', label: 'Notifications', feature: 'custom_notifications', requiredPlan: 'Professional Plan' },
-    { key: 'user-permissions', label: 'User Permissions', feature: 'user_permissions', requiredPlan: 'Enterprise Plan' },
-    { key: 'audit-log', label: 'Audit Log', feature: 'audit_logs', requiredPlan: 'Enterprise Plan' },
-    { key: 'api-access', label: 'API Access', feature: 'api_access', requiredPlan: 'Enterprise Plan' },
-  ];
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab.key);
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully changed.",
+      });
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDisconnectHubSpot = async () => {
-    if (!window.confirm('Are you sure you want to disconnect your HubSpot account? This will disable all HubSpot features.')) return;
+  const handleNotificationUpdate = async () => {
+    setLoading(true);
     try {
-      await fetch('/api/users/me/disconnect-hubspot', { method: 'POST', credentials: 'include' });
-      toast({ title: 'Disconnected', description: 'Your HubSpot account has been disconnected.' });
-      window.location.reload();
-    } catch (e) {
-      toast({ title: 'Error', description: 'Failed to disconnect HubSpot account.', variant: 'destructive' });
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast({
+        title: "Settings updated",
+        description: "Your notification settings have been saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Render tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return (
+          <ContentSection title="Profile Information" subtitle="Update your personal information">
+            <div className="space-y-6">
+              <GridLayout cols={2} gap="lg">
+                <EnhancedInput
+                  label="First Name"
+                  value={profileForm.firstName}
+                  onChange={(value) => setProfileForm(prev => ({ ...prev, firstName: value }))}
+                  fullWidth
+                />
+                <EnhancedInput
+                  label="Last Name"
+                  value={profileForm.lastName}
+                  onChange={(value) => setProfileForm(prev => ({ ...prev, lastName: value }))}
+                  fullWidth
+                />
+              </GridLayout>
+              
+              <EnhancedInput
+                label="Email Address"
+                type="email"
+                value={profileForm.email}
+                onChange={(value) => setProfileForm(prev => ({ ...prev, email: value }))}
+                fullWidth
+              />
+              
+              <GridLayout cols={2} gap="lg">
+                <EnhancedInput
+                  label="Company"
+                  value={profileForm.company}
+                  onChange={(value) => setProfileForm(prev => ({ ...prev, company: value }))}
+                  fullWidth
+                />
+                <EnhancedInput
+                  label="Phone Number"
+                  type="tel"
+                  value={profileForm.phone}
+                  onChange={(value) => setProfileForm(prev => ({ ...prev, phone: value }))}
+                  fullWidth
+                />
+              </GridLayout>
+              
+              <div className="flex justify-end">
+                <EnhancedButton
+                  onClick={handleProfileUpdate}
+                  loading={loading}
+                  icon={<Save className="w-4 h-4" />}
+                >
+                  Save Changes
+                </EnhancedButton>
+              </div>
+            </div>
+          </ContentSection>
+        );
+
+      case 'security':
+        return (
+          <ContentSection title="Security Settings" subtitle="Manage your account security">
+            <div className="space-y-6">
+              <EnhancedCard variant="outlined">
+                <EnhancedCardHeader title="Change Password" />
+                <EnhancedCardContent>
+                  <div className="space-y-4">
+                    <EnhancedInput
+                      label="Current Password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={passwordForm.currentPassword}
+                      onChange={(value) => setPasswordForm(prev => ({ ...prev, currentPassword: value }))}
+                      icon={showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      iconPosition="right"
+                      fullWidth
+                    />
+                    <EnhancedInput
+                      label="New Password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={passwordForm.newPassword}
+                      onChange={(value) => setPasswordForm(prev => ({ ...prev, newPassword: value }))}
+                      fullWidth
+                    />
+                    <EnhancedInput
+                      label="Confirm New Password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={passwordForm.confirmPassword}
+                      onChange={(value) => setPasswordForm(prev => ({ ...prev, confirmPassword: value }))}
+                      fullWidth
+                    />
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="showPassword"
+                        checked={showPassword}
+                        onChange={(e) => setShowPassword(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor="showPassword" className="text-sm text-gray-600">
+                        Show password
+                      </label>
+                    </div>
+                    <div className="flex justify-end">
+                      <EnhancedButton
+                        onClick={handlePasswordChange}
+                        loading={loading}
+                        icon={<Lock className="w-4 h-4" />}
+                      >
+                        Update Password
+                      </EnhancedButton>
+                    </div>
+                  </div>
+                </EnhancedCardContent>
+              </EnhancedCard>
+
+              <EnhancedCard variant="outlined">
+                <EnhancedCardHeader title="Two-Factor Authentication" />
+                <EnhancedCardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">2FA Status</h3>
+                      <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                    </div>
+                    <StatusBadge status="inactive" />
+                  </div>
+                  <div className="mt-4">
+                    <EnhancedButton variant="outline" icon={<Shield className="w-4 h-4" />}>
+                      Enable 2FA
+                    </EnhancedButton>
+                  </div>
+                </EnhancedCardContent>
+              </EnhancedCard>
+            </div>
+          </ContentSection>
+        );
+
+      case 'notifications':
+        return (
+          <ContentSection title="Notification Preferences" subtitle="Choose how you want to be notified">
+            <div className="space-y-6">
+              <EnhancedCard variant="outlined">
+                <EnhancedCardHeader title="Email Notifications" />
+                <EnhancedCardContent>
+                  <div className="space-y-4">
+                    {Object.entries(notificationSettings).map(([key, value]) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">
+                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Receive notifications about {key.toLowerCase().replace(/([A-Z])/g, ' $1')}
+                          </p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={value}
+                          onChange={(e) => setNotificationSettings(prev => ({
+                            ...prev,
+                            [key]: e.target.checked
+                          }))}
+                          className="rounded border-gray-300"
+                        />
+                      </div>
+                    ))}
+                    <div className="flex justify-end pt-4">
+                      <EnhancedButton
+                        onClick={handleNotificationUpdate}
+                        loading={loading}
+                        icon={<Bell className="w-4 h-4" />}
+                      >
+                        Save Preferences
+                      </EnhancedButton>
+                    </div>
+                  </div>
+                </EnhancedCardContent>
+              </EnhancedCard>
+            </div>
+          </ContentSection>
+        );
+
+      case 'billing':
+        return (
+          <ContentSection title="Billing & Subscription" subtitle="Manage your subscription and billing">
+            <div className="space-y-6">
+              <EnhancedCard variant="outlined">
+                <EnhancedCardHeader title="Current Plan" />
+                <EnhancedCardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">{plan?.name || 'Trial'}</h3>
+                      <p className="text-sm text-gray-600">
+                        {plan?.description || 'Free trial plan'}
+                      </p>
+                    </div>
+                    <StatusBadge status="active" />
+                  </div>
+                  <div className="mt-4">
+                    <EnhancedButton variant="primary" onClick={() => navigate('/marketplace')}>
+                      Upgrade Plan
+                    </EnhancedButton>
+                  </div>
+                </EnhancedCardContent>
+              </EnhancedCard>
+
+              <EnhancedCard variant="outlined">
+                <EnhancedCardHeader title="Usage Statistics" />
+                <EnhancedCardContent>
+                  <GridLayout cols={3} gap="lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {plan?.maxWorkflows || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Workflows</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {plan?.maxUsers || 1}
+                      </div>
+                      <div className="text-sm text-gray-600">Users</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {plan?.maxStorage || '1GB'}
+                      </div>
+                      <div className="text-sm text-gray-600">Storage</div>
+                    </div>
+                  </GridLayout>
+                </EnhancedCardContent>
+              </EnhancedCard>
+            </div>
+          </ContentSection>
+        );
+
+      case 'integrations':
+        return (
+          <ContentSection title="Integrations" subtitle="Manage your connected services">
+            <div className="space-y-6">
+              <EnhancedCard variant="outlined">
+                <EnhancedCardHeader title="HubSpot Integration" />
+                <EnhancedCardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <Globe className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">HubSpot</h3>
+                        <p className="text-sm text-gray-600">Connected to your HubSpot account</p>
+                      </div>
+                    </div>
+                    <StatusBadge status="active" />
+                  </div>
+                  <div className="mt-4">
+                    <EnhancedButton variant="outline" icon={<RefreshCw className="w-4 h-4" />}>
+                      Reconnect
+                    </EnhancedButton>
+                  </div>
+                </EnhancedCardContent>
+              </EnhancedCard>
+            </div>
+          </ContentSection>
+        );
+
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <TopNavigation />
+    <AppLayout>
+      {/* Page Header */}
+      <PageHeader
+        title="Settings"
+        subtitle="Manage your account preferences and security"
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Settings' },
+        ]}
+        actions={
+          <div className="flex items-center space-x-3">
+            <EnhancedButton
+              variant="outline"
+              onClick={() => navigate('/dashboard')}
+              icon={<RefreshCw className="w-4 h-4" />}
+            >
+              Back to Dashboard
+            </EnhancedButton>
+            <EnhancedButton
+              variant="outline"
+              onClick={logout}
+              icon={<Lock className="w-4 h-4" />}
+            >
+              Logout
+            </EnhancedButton>
+          </div>
+        }
+      />
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-            App Settings
-          </h1>
-          <p className="text-gray-600 text-sm">
-            Manage app-level configurations, subscriptions, and user access for
-            WorkflowGuard.
-          </p>
+      {/* Settings Content */}
+      <div className="flex space-x-8">
+        {/* Sidebar Navigation */}
+        <div className="w-64 flex-shrink-0">
+          <EnhancedCard variant="outlined">
+            <EnhancedCardContent>
+              <nav className="space-y-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </EnhancedCardContent>
+          </EnhancedCard>
         </div>
 
-        {user && user.role === 'admin' && (
-          <div className="mb-8 flex items-center gap-4">
-            <h2 className="text-lg font-semibold mr-4">User Management (Admin Only)</h2>
-            <Button onClick={() => setActiveTab('user-permissions')}>Manage Users</Button>
-          </div>
-        )}
-
-        <Tabs value={activeTab} onValueChange={safeSetActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-gray-50 p-1 rounded-lg">
-            <TabsTrigger key="plan-billing" value="plan-billing" onClick={() => safeSetActiveTab('plan-billing')}>
-              My Plan & Billing
-            </TabsTrigger>
-            <TabsTrigger key="profile" value="profile" onClick={() => safeSetActiveTab('profile')}>
-              My Profile
-            </TabsTrigger>
-            {Array.isArray(safePlan.features) && safePlan.features.includes('custom_notifications') && (
-              <TabsTrigger key="notifications" value="notifications" onClick={() => safeSetActiveTab('notifications')}>
-                Notifications
-              </TabsTrigger>
-            )}
-            {user && user.role === 'admin' && (
-              <TabsTrigger key="user-permissions" value="user-permissions" onClick={() => safeSetActiveTab('user-permissions')}>
-                User Permissions
-              </TabsTrigger>
-            )}
-            {user && (user.role === 'admin' || user.role === 'restorer') && (
-              <TabsTrigger key="audit-log" value="audit-log" onClick={() => safeSetActiveTab('audit-log')}>
-                Audit Log
-              </TabsTrigger>
-            )}
-            {user && user.role === 'admin' && (
-              <TabsTrigger key="api-access" value="api-access" onClick={() => safeSetActiveTab('api-access')}>
-                API Access
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <div className="mt-8">
-            <TabsContent value="plan-billing">
-              <PlanBillingTab />
-            </TabsContent>
-            <TabsContent value="notifications">
-              <NotificationsTab setActiveTab={safeSetActiveTab} />
-            </TabsContent>
-            {user && user.role === 'admin' && (
-              <TabsContent value="user-permissions">
-                <UserPermissionsTab setActiveTab={safeSetActiveTab} />
-              </TabsContent>
-            )}
-            {user && (user.role === 'admin' || user.role === 'restorer') && (
-              <TabsContent value="audit-log">
-                <AuditLogTab />
-              </TabsContent>
-            )}
-            {user && user.role === 'admin' && (
-              <TabsContent value="api-access">
-                <ApiAccessTab setActiveTab={safeSetActiveTab} />
-              </TabsContent>
-            )}
-            <TabsContent value="profile">
-              <ProfileTab />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </main>
-    </div>
+        {/* Main Content */}
+        <div className="flex-1">
+          {renderTabContent()}
+        </div>
+      </div>
+    </AppLayout>
   );
 };
 
