@@ -262,15 +262,43 @@ const WorkflowHistoryDetail = () => {
   // Fetch workflow details
   useEffect(() => {
     if (!workflowId) return;
+    console.log('🔍 WorkflowHistoryDetail: Fetching workflow with ID:', workflowId);
     setWorkflowLoading(true);
     setWorkflowError("");
     
+    // First, try to get workflow from localStorage (Dashboard data)
+    const savedWorkflows = localStorage.getItem('selectedWorkflows');
+    if (savedWorkflows) {
+      try {
+        const workflows = JSON.parse(savedWorkflows);
+        const localWorkflow = workflows.find((w: any) => w.id === workflowId || w.hubspotId === workflowId);
+        if (localWorkflow) {
+          console.log('🔍 WorkflowHistoryDetail: Found workflow in localStorage:', localWorkflow);
+          setWorkflowData({
+            id: localWorkflow.id || localWorkflow.hubspotId,
+            name: localWorkflow.name,
+            hubspotId: localWorkflow.hubspotId,
+            isLive: localWorkflow.isLive || true,
+            lastModified: localWorkflow.lastModified || localWorkflow.updatedAt || new Date().toISOString(),
+            status: localWorkflow.status || 'active',
+            description: localWorkflow.description || 'Workflow from HubSpot'
+          });
+          setWorkflowLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.log('Failed to parse localStorage workflows:', e);
+      }
+    }
+    
+    // Fallback to API call
     apiService.getWorkflowById(workflowId)
       .then((data: any) => {
+        console.log('🔍 WorkflowHistoryDetail: Got workflow from API:', data);
         setWorkflowData(data as Workflow);
       })
       .catch((e) => {
-        console.log('Failed to load workflow details:', e.message);
+        console.log('Failed to load workflow details from API:', e.message);
         setWorkflowError(e.message || "Failed to load workflow details");
         // Use better fallback workflow data
         setWorkflowData({
@@ -461,26 +489,7 @@ const WorkflowHistoryDetail = () => {
       <TopNavigation />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="hover:text-gray-900"
-          >
-            Dashboard
-          </button>
-          <span>&gt;</span>
-          <button
-            onClick={() => navigate("/workflow-history")}
-            className="hover:text-gray-900"
-          >
-            Workflow History
-          </button>
-          <span>&gt;</span>
-          <span className="text-gray-900 font-medium">
-            {workflowLoading ? 'Loading...' : workflowData?.name || 'Unknown Workflow'}
-          </span>
-        </nav>
+
 
         {/* Sample Data Alert */}
         {useSampleData && (
