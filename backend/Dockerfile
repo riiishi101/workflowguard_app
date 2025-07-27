@@ -106,8 +106,13 @@ RUN npx prisma generate
 # Expose port
 EXPOSE 3000
 
-# Start in development mode
-CMD ["npm", "run", "start:dev"]
+# Set environment variables for production-like behavior
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=512"
+ENV PORT=3000
+
+# Start in production mode
+CMD ["npm", "run", "start:prod"]
 
 # ========================================
 # Labels for better maintainability
