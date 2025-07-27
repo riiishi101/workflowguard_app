@@ -59,15 +59,25 @@ interface Workflow {
 
 // Helper to validate workflow data
 function isValidWorkflow(obj: any): obj is Workflow {
-  return (
-    obj &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    typeof obj.hubspotId === 'string' &&
-    typeof obj.ownerId === 'string' &&
-    typeof obj.createdAt === 'string' &&
-    typeof obj.updatedAt === 'string'
-  );
+  // More lenient validation to match WorkflowSelection
+  if (!obj || typeof obj !== 'object') {
+    return false;
+  }
+  
+  // Check if name exists and is not empty
+  const hasValidName = typeof obj.name === 'string' && obj.name.trim() !== '';
+  
+  // Check if we have either id, hubspotId, or a fallback ID
+  const hasValidId = typeof obj.id === 'string' || typeof obj.hubspotId === 'string' || obj.id?.startsWith('fallback-');
+  
+  // Check if ownerId exists (but be more lenient for test workflows)
+  const hasOwnerId = typeof obj.ownerId === 'string' || obj.ownerId === "unknown-owner";
+  
+  // createdAt and updatedAt are optional for compatibility
+  const hasValidDates = (!obj.createdAt || typeof obj.createdAt === 'string') && 
+                       (!obj.updatedAt || typeof obj.updatedAt === 'string');
+  
+  return hasValidName && hasValidId && hasOwnerId && hasValidDates;
 }
 
 const PAGE_SIZE = 10;
@@ -138,6 +148,23 @@ const Dashboard = () => {
         valid: validWorkflows.length,
         invalid: Array.isArray(data) ? data.length - validWorkflows.length : 0
       });
+      
+      // Log details about invalid workflows if any
+      if (Array.isArray(data) && validWorkflows.length !== data.length) {
+        const invalidWorkflows = data.filter(w => !isValidWorkflow(w));
+        console.log('🚨 Dashboard: Invalid workflows found:', invalidWorkflows);
+        console.log('🔍 Dashboard: Validation details for invalid workflows:', invalidWorkflows.map(w => ({
+          name: w.name,
+          id: w.id,
+          hubspotId: w.hubspotId,
+          ownerId: w.ownerId,
+          createdAt: w.createdAt,
+          updatedAt: w.updatedAt,
+          hasName: typeof w.name === 'string' && w.name.trim() !== '',
+          hasId: typeof w.id === 'string' || typeof w.hubspotId === 'string',
+          hasOwnerId: typeof w.ownerId === 'string'
+        })));
+      }
       
       if (Array.isArray(data) && validWorkflows.length !== data.length) {
         toast({
