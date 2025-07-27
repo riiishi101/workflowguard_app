@@ -113,6 +113,7 @@ const Dashboard = () => {
       let data: any[] = [];
       try {
         data = await apiService.getWorkflows() as any[];
+        console.log('📊 Dashboard: Got workflows from API:', data.length);
       } catch (apiError) {
         console.log('API not available, checking localStorage for saved workflows');
         // Check localStorage for saved workflows from selection
@@ -120,6 +121,7 @@ const Dashboard = () => {
         if (savedWorkflows) {
           try {
             data = JSON.parse(savedWorkflows);
+            console.log('📊 Dashboard: Got workflows from localStorage:', data.length);
           } catch (parseError) {
             console.log('Failed to parse saved workflows');
           }
@@ -130,6 +132,12 @@ const Dashboard = () => {
       const validWorkflows = Array.isArray(data)
         ? data.filter(isValidWorkflow)
         : [];
+      
+      console.log('📊 Dashboard: Validation results:', {
+        total: Array.isArray(data) ? data.length : 0,
+        valid: validWorkflows.length,
+        invalid: Array.isArray(data) ? data.length - validWorkflows.length : 0
+      });
       
       if (Array.isArray(data) && validWorkflows.length !== data.length) {
         toast({
@@ -181,6 +189,9 @@ const Dashboard = () => {
   // Only fetch data if user is authenticated
   useEffect(() => {
     if (!user) return;
+    
+    // Clear any existing banner when component loads
+    setBanner(null);
     
     let isMounted = true;
     
