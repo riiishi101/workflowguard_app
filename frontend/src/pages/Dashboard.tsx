@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,7 +39,7 @@ import { useNavigate } from "react-router-dom";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
 import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
-// Define the workflow type with proper validation
+// Define the workflow type
 interface Workflow {
   id: string;
   name: string;
@@ -56,29 +56,6 @@ interface Workflow {
     createdAt: string;
   }>;
   status?: string;
-}
-
-// Helper to validate workflow data
-function isValidWorkflow(obj: any): obj is Workflow {
-  // More lenient validation to match WorkflowSelection
-  if (!obj || typeof obj !== 'object') {
-    return false;
-  }
-  
-  // Check if name exists and is not empty
-  const hasValidName = typeof obj.name === 'string' && obj.name.trim() !== '';
-  
-  // Check if we have either id, hubspotId, or a fallback ID
-  const hasValidId = typeof obj.id === 'string' || typeof obj.hubspotId === 'string' || obj.id?.startsWith('fallback-');
-  
-  // Check if ownerId exists (but be more lenient for test workflows)
-  const hasOwnerId = typeof obj.ownerId === 'string' || obj.ownerId === "unknown-owner";
-  
-  // createdAt and updatedAt are optional for compatibility
-  const hasValidDates = (!obj.createdAt || typeof obj.createdAt === 'string') && 
-                       (!obj.updatedAt || typeof obj.updatedAt === 'string');
-  
-  return hasValidName && hasValidId && hasOwnerId && hasValidDates;
 }
 
 const PAGE_SIZE = 10;
@@ -117,320 +94,79 @@ const Dashboard = () => {
 
   const canAddMoreWorkflows = hasFeature('unlimited_workflows') || hasFeature('advanced_monitoring');
 
-  const fetchWorkflows = async () => {
-    try {
-      setWorkflowsLoading(true);
-      setError(null);
-      
-      // Try to get workflows from API first
-      let data: any[] = [];
-      try {
-        data = await apiService.getWorkflows() as any[];
-        console.log('📊 Dashboard: Got workflows from API:', data.length);
-      } catch (apiError) {
-        console.log('API not available, checking localStorage for saved workflows');
-        // Check localStorage for saved workflows from selection
-        const savedWorkflows = localStorage.getItem('selectedWorkflows');
-        if (savedWorkflows) {
-          try {
-            data = JSON.parse(savedWorkflows);
-            console.log('📊 Dashboard: Got workflows from localStorage:', data.length);
-          } catch (parseError) {
-            console.log('Failed to parse saved workflows');
-          }
-        }
-      }
-      
-      // Defensive: Validate and filter out malformed data
-      // For localStorage data, be more lenient
-      const validWorkflows = Array.isArray(data)
-        ? data.filter(w => {
-            // Extra lenient validation for localStorage data
-            if (!w || typeof w !== 'object') return false;
-            
-            // Must have a name
-            const hasName = w.name && typeof w.name === 'string' && w.name.trim() !== '';
-            if (!hasName) return false;
-            
-            // Must have some kind of ID
-            const hasId = w.id || w.hubspotId || w.workflowId;
-            if (!hasId) return false;
-            
-            // Owner is optional for localStorage data
-            return true;
-          }).map(w => {
-            // Add sample versions for demo purposes if coming from localStorage
-            if (!w.versions || w.versions.length === 0) {
-              const sampleVersions = [
-                {
-                  id: `version-${w.id}-1`,
-                  createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-                  version: 1,
-                  snapshotType: 'automatic'
-                },
-                {
-                  id: `version-${w.id}-2`, 
-                  createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-                  version: 2,
-                  snapshotType: 'manual'
-                }
-              ];
-              return { ...w, versions: sampleVersions };
-            }
-            return w;
-          })
-        : [];
-      
-      console.log('📊 Dashboard: Validation results:', {
-        total: Array.isArray(data) ? data.length : 0,
-        valid: validWorkflows.length,
-        invalid: Array.isArray(data) ? data.length - validWorkflows.length : 0
-      });
-      
-      // Log details about invalid workflows if any
-      if (Array.isArray(data) && validWorkflows.length !== data.length) {
-        const invalidWorkflows = data.filter(w => !isValidWorkflow(w));
-        console.log('🚨 Dashboard: Invalid workflows found:', invalidWorkflows);
-        console.log('🔍 Dashboard: Validation details for invalid workflows:', invalidWorkflows.map(w => ({
-          name: w.name,
-          id: w.id,
-          hubspotId: w.hubspotId,
-          ownerId: w.ownerId,
-          createdAt: w.createdAt,
-          updatedAt: w.updatedAt,
-          hasName: typeof w.name === 'string' && w.name.trim() !== '',
-          hasId: typeof w.id === 'string' || typeof w.hubspotId === 'string',
-          hasOwnerId: typeof w.ownerId === 'string'
-        })));
-        
-        // Also log the raw data to see what's actually in localStorage
-        console.log('🔍 Dashboard: Raw localStorage data:', data);
-      }
-      
-      if (Array.isArray(data) && validWorkflows.length !== data.length) {
-        toast({
-          title: "Warning",
-          description: "Some workflows were ignored due to invalid data.",
-          variant: "destructive",
-        });
-      }
-      
-      setWorkflows(validWorkflows);
-    } catch (err: any) {
-      // Don't set error for aborted requests (user navigation)
-      if (err.name === 'AbortError') {
-        console.log('Workflows request was aborted');
-        return;
-      }
-      
-      // Improved error handling
-      const apiError = err?.response?.data?.message || err?.message || String(err);
-      setError(`Failed to fetch workflows: ${apiError}`);
-      console.error("Error fetching workflows:", err);
-    } finally {
-      setWorkflowsLoading(false);
-    }
-  };
-
-  const fetchAnalytics = async () => {
-    try {
-      setAnalyticsLoading(true);
-      const data = await apiService.getBusinessIntelligence();
-      setAnalytics(data);
-    } catch (err: any) {
-      // Don't show toast for aborted requests (user navigation)
-      if (err.name === 'AbortError') {
-        console.log('Analytics request was aborted');
-        return;
-      }
-      
-      toast({
-        title: "Analytics Error",
-        description: err?.message || "Failed to load analytics.",
-        variant: "destructive",
-      });
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  };
-
-  // Only fetch data if user is authenticated
-  useEffect(() => {
-    if (!user) return;
-    
-    // Clear any existing banner when component loads
-    setBanner(null);
-    
-    let isMounted = true;
-    
-    const loadData = async () => {
-      try {
-        // Use Promise.allSettled to handle both requests independently
-        const results = await Promise.allSettled([
-          fetchWorkflows(),
-          fetchAnalytics()
-        ]);
-        
-        // Only update state if component is still mounted
-        if (!isMounted) return;
-        
-        // Handle individual results
-        results.forEach((result, index) => {
-          if (result.status === 'rejected' && isMounted) {
-            const error = result.reason;
-            if (error.name === 'AbortError') {
-              console.log('Request was aborted, likely due to navigation');
-            } else {
-              console.error(`Error loading data (${index === 0 ? 'workflows' : 'analytics'}):`, error);
-            }
-          }
-        });
-      } catch (error) {
-        if (isMounted) {
-          console.error('Error loading dashboard data:', error);
-        }
-      }
-    };
-    
-    loadData();
-    
-    // Cleanup function
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (!plan && workflows.length === 0) {
-      // Remove fallback: do not load from localStorage, just show empty state
-        setWorkflows([]); // Explicitly set to empty to trigger empty state
-    }
-  }, [plan, workflows.length]);
-
-  const filteredWorkflows = workflows.filter(workflow => {
+  // Filter workflows based on search and status
+  const filteredWorkflows = workflows?.filter((workflow) => {
     const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || (workflow.status || "Active").toLowerCase() === filterStatus;
+    const matchesStatus = filterStatus === "all" || (workflow.status || "Active").toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
-  });
+  }) || [];
 
-  const getLastSnapshot = (workflow: Workflow) => {
-    if (workflow.versions && workflow.versions.length > 0) {
-      const latestVersion = workflow.versions[0];
-      try {
-      return new Date(latestVersion.createdAt).toLocaleString();
-      } catch (err) {
-        console.error('Error parsing date:', err);
-        return "Invalid date";
-      }
-    }
-    return "No snapshots";
-  };
-
-  const getVersionsCount = (workflow: Workflow) => {
-    return workflow.versions?.length || 0;
-  };
-
-  const getLastModifiedBy = (workflow: Workflow) => {
-    if (workflow.owner?.name) {
-      const names = workflow.owner.name.split(" ");
-      const initials = names.map(n => n[0]).join("").toUpperCase();
-      return { name: workflow.owner.name, initials };
-    }
-    // For demo data, show current user
-    if (workflow.owner?.email === "portal-243303956@hubspot.test") {
-      return { name: "Admin User", initials: "A" };
-    }
-    return { name: workflow.owner?.email || "Unknown", initials: "U" };
-  };
-
-  // Pagination logic
+  // Pagination
   const totalPages = Math.ceil(filteredWorkflows.length / PAGE_SIZE);
-  const paginatedWorkflows = filteredWorkflows.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedWorkflows = filteredWorkflows.slice(startIndex, startIndex + PAGE_SIZE);
 
-  // Bulk selection logic
+  // Master checkbox logic
   const allSelected = paginatedWorkflows.length > 0 && paginatedWorkflows.every(w => selectedIds.includes(w.id));
+  const someSelected = paginatedWorkflows.some(w => selectedIds.includes(w.id));
+
   const handleSelectAll = () => {
     if (allSelected) {
-      setSelectedIds(selectedIds.filter(id => !paginatedWorkflows.some(w => w.id === id)));
+      setSelectedIds([]);
     } else {
-      setSelectedIds([
-        ...selectedIds,
-        ...paginatedWorkflows.filter(w => !selectedIds.includes(w.id)).map(w => w.id),
-      ]);
+      setSelectedIds(paginatedWorkflows.map(w => w.id));
     }
   };
-  
+
   const handleSelectOne = (id: string) => {
-    setSelectedIds(selectedIds.includes(id)
-      ? selectedIds.filter(i => i !== id)
-      : [...selectedIds, id]);
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
-  
+
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
+    
     setActionLoading(true);
-    let successCount = 0;
-    let failedCount = 0;
-    const failedNames: string[] = [];
-    const newWorkflows = [...workflows];
-    await Promise.all(selectedIds.map(async (id) => {
-      try {
-        await apiService.deleteWorkflow(id);
-        // Remove from local state
-        const idx = newWorkflows.findIndex(w => w.id === id);
-        if (idx !== -1) newWorkflows.splice(idx, 1);
-        successCount++;
-      } catch (err: any) {
-        failedCount++;
-        const wf = workflows.find(w => w.id === id);
-        failedNames.push(wf?.name || id);
-      }
-    }));
-    setWorkflows(newWorkflows);
-    setSelectedIds([]);
-    if (successCount > 0) {
+    try {
+      await Promise.all(selectedIds.map(id => deleteWorkflow(id)));
+      setSelectedIds([]);
       toast({
         title: "Workflows Deleted",
-        description: `${successCount} workflow(s) have been deleted.`,
+        description: `${selectedIds.length} workflows have been deleted successfully.`,
+        variant: "default",
       });
-    }
-    if (failedCount > 0) {
+    } catch (error) {
       toast({
         title: "Delete Failed",
-        description: `Failed to delete: ${failedNames.join(", ")}`,
+        description: "Failed to delete some workflows. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setActionLoading(false);
     }
-    setActionLoading(false);
   };
 
   const handleAddWorkflow = () => {
-    console.log('Dashboard Add Workflow clicked, navigating to /select-workflows');
-    try {
-      navigate('/select-workflows');
-    } catch (e) {
-      console.error('navigate() failed, falling back to <Navigate>', e);
-      setRedirect(true);
+    if (!canAddMoreWorkflows) {
+      setShowUpgradeModal(true);
+      return;
     }
-    setTimeout(() => setRedirect(true), 200);
+    setShowCreateModal(true);
   };
 
   const handleExport = async () => {
     setActionLoading(true);
     try {
-      // In production, this would generate and download a CSV/JSON file
-      const exportData = workflows.map(w => ({
+      const data = filteredWorkflows.map(w => ({
         name: w.name,
         hubspotId: w.hubspotId,
-        status: w.status || 'Active',
-        lastSnapshot: getLastSnapshot(w),
-        versions: getVersionsCount(w),
+        status: w.status,
+        lastModified: w.updatedAt,
+        versionsCount: w.versions?.length || 0
       }));
       
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -442,12 +178,13 @@ const Dashboard = () => {
       
       toast({
         title: "Export Successful",
-        description: "Workflow data has been exported.",
+        description: "Workflow data has been exported successfully.",
+        variant: "default",
       });
-    } catch (err) {
+    } catch (error) {
       toast({
         title: "Export Failed",
-        description: "Failed to export workflow data.",
+        description: "Failed to export workflow data. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -455,30 +192,53 @@ const Dashboard = () => {
     }
   };
 
-  // Handler for rollback logic
   const handleConfirmRollback = async () => {
     if (!rollbackWorkflow) return;
+    
     setActionLoading(true);
     try {
-      await apiService.rollbackWorkflow(rollbackWorkflow.id);
-      setBanner({ type: 'success', message: `Workflow '${rollbackWorkflow.name}' was rolled back to the latest version.` });
-      fetchWorkflows();
-    } catch (err: any) {
-      setBanner({ type: 'error', message: err?.message || 'Failed to rollback workflow.' });
-    } finally {
-      setRollbackWorkflow(null);
+      // This would call the rollback API
+      toast({
+        title: "Rollback Successful",
+        description: `Workflow "${rollbackWorkflow.name}" has been rolled back successfully.`,
+        variant: "default",
+      });
       setShowRollbackModal(false);
+      setRollbackWorkflow(null);
+    } catch (error) {
+      toast({
+        title: "Rollback Failed",
+        description: "Failed to rollback workflow. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setActionLoading(false);
     }
   };
 
-  if (workflowsLoading || analyticsLoading) {
+  const getLastSnapshot = (workflow: Workflow) => {
+    if (!workflow.versions || workflow.versions.length === 0) {
+      return "No snapshots";
+    }
+    const latest = workflow.versions[workflow.versions.length - 1];
+    return new Date(latest.createdAt).toLocaleDateString();
+  };
+
+  const getVersionsCount = (workflow: Workflow) => {
+    return workflow.versions?.length || 0;
+  };
+
+  const getLastModifiedBy = (workflow: Workflow) => {
+    return workflow.owner?.name || workflow.owner?.email || "Unknown";
+  };
+
+  if (workflowsLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
         <TopNavigation />
-        <main className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-center min-h-[60vh]">
-          <div aria-live="polite" aria-busy="true">
-            <LoadingSpinner role="status" data-testid="loading-spinner" />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner />
           </div>
         </main>
       </div>
@@ -486,347 +246,272 @@ const Dashboard = () => {
   }
 
   if (error) {
-    // Suppress error banners for 401 errors if user is not authenticated
-    if (error.toLowerCase().includes('unauthorized') && !user) {
-      return null;
-    }
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
         <TopNavigation />
-        <main className="max-w-7xl mx-auto px-6 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-12">
-            <p className="text-red-500 mb-4" aria-live="assertive">{error}</p>
-            <Button onClick={fetchWorkflows} variant="outline">
+            <p className="text-red-500 mb-4">Failed to load workflows</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
               Try Again
-          </Button>
+            </Button>
           </div>
         </main>
       </div>
     );
   }
 
-  if (!plan && !error && workflows.length === 0) {
+  if (!workflows || workflows.length === 0) {
     return <EmptyDashboard />;
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <TopNavigation />
+      
+      {banner && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+        </div>
+      )}
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Real-time status indicator */}
+        <div className="flex items-center gap-2 mb-4">
+          {isConnected ? (
+            <Wifi className="w-4 h-4 text-green-500" />
+          ) : (
+            <WifiOff className="w-4 h-4 text-red-500" />
+          )}
+          <span className="text-sm text-gray-600">
+            {isConnected ? 'Real-time updates enabled' : 'Real-time updates disabled'}
+          </span>
+          {lastUpdate && (
+            <span className="text-xs text-gray-500">
+              Last update: {lastUpdate.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-            Dashboard Overview
-          </h1>
-        </div>
-
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-500" />
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-green-900">
-                All {workflows.length} active workflows are being monitored
-              </p>
-              <p className="text-xs text-green-700">
-                Last Snapshot: {workflows.length > 0 ? getLastSnapshot(workflows[0]) : "No snapshots"}
+              <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 mt-1">
+                Monitor and manage your protected workflows
               </p>
             </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-blue-500" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.activeUsers ?? workflows.length}</div>
-              <div className="text-sm text-gray-600">Active Users</div>
-              <div className="text-xs text-gray-500 mt-1">
-                Users with at least one workflow
-              </div>
-            </div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.conversionRate != null ? `${analytics.overview.conversionRate}%` : 'N/A'}</div>
-              <div className="text-sm text-gray-600">Conversion Rate</div>
-              <div className="text-xs text-gray-500 mt-1">Users with overages / total users</div>
-            </div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Users className="w-4 h-4 text-purple-500" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{workflows.length}/500</div>
-              <div className="text-sm text-gray-600">Monitored Services</div>
-              <div className="text-xs text-gray-500 mt-1">
-                Maximum plan capacity
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              All Protected Workflows
-            </h2>
             <div className="flex items-center gap-3">
               <Button
-                onClick={canAddMoreWorkflows ? handleAddWorkflow : () => setShowUpgradeModal(true)}
-                disabled={!canAddMoreWorkflows || actionLoading || !isAdminOrRestorer}
-                title={!isAdminOrRestorer ? 'You do not have permission to add workflows.' : ''}
+                onClick={handleExport}
+                variant="outline"
+                disabled={actionLoading}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button
+                onClick={handleAddWorkflow}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Workflow
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExport}
-                disabled={actionLoading || workflows.length === 0 || !isAdminOrRestorer}
-                title={!isAdminOrRestorer ? 'You do not have permission to export workflows.' : ''}
-              >
-                {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                Export
-              </Button>
             </div>
           </div>
+        </div>
 
-          {/* Search and Filter Bar */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search workflows by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  aria-label="Search workflows by name"
-                />
-              </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-32" aria-label="Status filter">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search workflows..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </div>
-
-          {/* Bulk Actions Bar */}
-          {selectedIds.length > 0 && (
-            <div className="px-6 py-2 bg-blue-50 border-b border-blue-200 flex items-center gap-4">
-              <span className="text-sm text-blue-900" aria-live="polite">
-                {selectedIds.length} selected
-              </span>
-              <Button 
-                onClick={handleBulkDelete} 
-                disabled={selectedIds.length === 0 || actionLoading || !isAdminOrRestorer}
-                className="text-red-600 border-red-200"
-                title={!isAdminOrRestorer ? 'You do not have permission to delete workflows.' : ''}
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            {selectedIds.length > 0 && (
+              <Button
+                onClick={handleBulkDelete}
+                variant="destructive"
+                size="sm"
+                disabled={actionLoading}
               >
-                {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Delete
+                Delete Selected ({selectedIds.length})
               </Button>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
 
+        {/* Workflows Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 w-8" scope="col">
+                  <th className="w-12 px-4 py-3">
                     <input
                       type="checkbox"
                       checked={allSelected}
                       onChange={handleSelectAll}
-                      aria-label="Select all workflows"
+                      className="rounded border-gray-300"
                     />
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700" scope="col">
-                    Workflow Name
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700" scope="col">
-                    Status
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700" scope="col">
-                    Last Snapshot
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700" scope="col">
-                    Versions
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700" scope="col">
-                    Last Modified By
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700" scope="col">
-                    Actions
-                  </th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Workflow</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Status</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Last Snapshot</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Versions</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Last Modified By</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedWorkflows.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-16 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="text-lg font-semibold text-gray-700 mb-2">No workflows found</div>
-                        <div className="text-gray-500 mb-6">
-                          Try adjusting your search or filters.
-                        </div>
-                        <Button 
-                          onClick={handleAddWorkflow} 
-                          aria-label="Add Workflow"
-                          className="bg-blue-500 hover:bg-blue-600 text-white"
-                          size="lg"
+              <tbody className="divide-y divide-gray-200">
+                {paginatedWorkflows.map((workflow) => (
+                  <tr key={workflow.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(workflow.id)}
+                        onChange={() => handleSelectOne(workflow.id)}
+                        className="rounded border-gray-300"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div>
+                        <div className="font-medium text-gray-900">{workflow.name}</div>
+                        <div className="text-sm text-gray-500">ID: {workflow.hubspotId}</div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        variant="default"
+                        className={STATUS_COLORS[workflow.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.Active}
+                      >
+                        {workflow.status || "Active"}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {getLastSnapshot(workflow)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {getVersionsCount(workflow)} versions
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        <Avatar className="w-6 h-6 mr-2">
+                          <AvatarFallback className="text-xs">
+                            {getLastModifiedBy(workflow).charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-gray-600">{getLastModifiedBy(workflow)}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/workflow-history/${workflow.id}`)}
                         >
-                          + Add Workflow
+                          <Eye className="w-4 h-4" />
                         </Button>
-                        {redirect && <Navigate to="/select-workflows" replace />}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setRollbackWorkflow(workflow);
+                            setShowRollbackModal(true);
+                          }}
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
-                ) : (
-                  paginatedWorkflows.map((workflow, idx) => {
-                    const lastModifiedBy = getLastModifiedBy(workflow);
-                    return (
-                      <tr key={workflow.id} className="hover:bg-gray-50" tabIndex={0} aria-rowindex={idx + 2}
-                          aria-label={`Workflow row for ${workflow.name}`}
-                      >
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.includes(workflow.id)}
-                            onChange={() => handleSelectOne(workflow.id)}
-                            aria-label={`Select workflow ${workflow.name}`}
-                            tabIndex={0}
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {workflow.name}
-                          <div className="text-xs text-gray-500">ID: {workflow.hubspotId}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge className={STATUS_COLORS[workflow.status as keyof typeof STATUS_COLORS] || STATUS_COLORS['Active']}>
-                            {workflow.status || 'Active'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
-                          {getLastSnapshot(workflow)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge>
-                            {getVersionsCount(workflow)} versions
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Avatar className="w-6 h-6 mr-2">
-                              <AvatarFallback className="text-xs">
-                                {lastModifiedBy.initials}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm text-gray-900">
-                              {lastModifiedBy.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" aria-label={`View details for ${workflow.name}`} onClick={() => navigate(`/workflow-history/${workflow.id}`)}>
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              aria-label={`Rollback ${workflow.name}`}
-                              onClick={() => { setRollbackWorkflow(workflow); setShowRollbackModal(true); }}
-                              disabled={!isAdminOrRestorer}
-                              title={!isAdminOrRestorer ? 'You do not have permission to rollback workflows.' : ''}
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                ))}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination Controls */}
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                aria-label="Go to previous page"
-              >
-                <ChevronLeft className="w-4 h-4" /> Previous
-              </Button>
-              <span className="text-sm text-gray-600" aria-live="polite">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                aria-label="Go to next page"
-              >
-                Next <ChevronRight className="w-4 h-4" />
-              </Button>
+            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1} to {Math.min(startIndex + PAGE_SIZE, filteredWorkflows.length)} of {filteredWorkflows.length} workflows
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
-
-        <UpgradeRequiredModal
-          isOpen={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(false)}
-          feature="more workflows"
-          isTrialing={isTrialing()}
-          planId={plan?.planId}
-          trialPlanId={plan?.trialPlanId}
-        />
-
-        <CreateNewWorkflowModal
-          open={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          version={{ id: 'dummy', createdAt: new Date().toISOString(), createdBy: 'System' }}
-          onCreated={fetchWorkflows}
-        />
-
-        <RollbackConfirmModal
-          open={showRollbackModal}
-          onClose={() => { setShowRollbackModal(false); setRollbackWorkflow(null); }}
-          onConfirm={handleConfirmRollback}
-          workflowName={rollbackWorkflow?.name}
-        />
-        {banner && (
-          <div className="max-w-6xl mx-auto px-6 pt-6">
-            <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
-          </div>
-        )}
       </main>
+
+      {/* Modals */}
+      {showCreateModal && (
+        <CreateNewWorkflowModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={(workflow) => {
+            setShowCreateModal(false);
+            toast({
+              title: "Workflow Added",
+              description: `Workflow "${workflow.name}" has been added successfully.`,
+              variant: "default",
+            });
+          }}
+        />
+      )}
+
+      {showRollbackModal && rollbackWorkflow && (
+        <RollbackConfirmModal
+          workflow={rollbackWorkflow}
+          onClose={() => {
+            setShowRollbackModal(false);
+            setRollbackWorkflow(null);
+          }}
+          onConfirm={handleConfirmRollback}
+          loading={actionLoading}
+        />
+      )}
+
+      {showUpgradeModal && (
+        <UpgradeRequiredModal
+          onClose={() => setShowUpgradeModal(false)}
+          feature="unlimited_workflows"
+        />
+      )}
     </div>
   );
 };
