@@ -1,50 +1,118 @@
-FROM node:20-alpine AS builder
+# ========================================
+# WorkflowGuard Backend - Production Dockerfile
+# ========================================
 
+# Use Node.js 20 Alpine for smaller image size and security
+FROM node:20-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Create app directory and set ownership
 WORKDIR /app
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
 
+# ========================================
+# Dependencies Stage
+# ========================================
+FROM base AS deps
+
+# Copy package files
 COPY package*.json ./
-COPY prisma ./prisma
-RUN npm install --legacy-peer-deps
+COPY prisma ./prisma/
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
 
+# ========================================
+# Build Stage
+# ========================================
+FROM base AS builder
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci
+
+# Copy source code
 COPY . .
 
 # Generate Prisma client
 RUN npx prisma generate
 
-# Diagnostic: list source files before build
-RUN ls -l /app
-RUN ls -l /app/src
-
-# Build the NestJS app
+# Build the application
 RUN npm run build
 
-# Diagnostic: list build output
-RUN ls -l /app/dist
+# ========================================
+# Production Stage
+# ========================================
+FROM base AS production
 
-# ---- Production image ----
-FROM node:20-alpine
+# Create necessary directories
+RUN mkdir -p /app/logs /app/uploads /app/temp && \
+    chown -R nestjs:nodejs /app
 
-WORKDIR /app
+# Switch to non-root user
+USER nestjs
 
-# Install curl for health checks in the production image
-RUN apk add --no-cache curl
+# Copy built application from builder stage
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
-COPY package*.json ./
-COPY prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/scripts ./scripts
+# Copy static files
+COPY --chown=nestjs:nodejs public ./public
 
-# Generate Prisma client (again, for production)
-RUN npx prisma generate
+# Create health check script
+RUN echo '#!/bin/sh\ncurl -f http://localhost:3000/health || exit 1' > /app/healthcheck.sh && \
+    chmod +x /app/healthcheck.sh
 
-COPY entrypoint.sh /app/entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
-
+# Expose port
 EXPOSE 3000
 
-CMD ["npm", "run", "start:prod"] 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD /app/healthcheck.sh
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "dist/main.js"]
+
+# ========================================
+# Development Stage (Optional)
+# ========================================
+FROM base AS development
+
+# Install development dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Expose port
+EXPOSE 3000
+
+# Start in development mode
+CMD ["npm", "run", "start:dev"]
+
+# ========================================
+# Labels for better maintainability
+# ========================================
+LABEL maintainer="WorkflowGuard Team"
+LABEL version="1.0.0"
+LABEL description="WorkflowGuard Backend API"
+LABEL org.opencontainers.image.source="https://github.com/your-org/workflowguard"
+LABEL org.opencontainers.image.licenses="MIT" 

@@ -217,8 +217,8 @@ const Dashboard = () => {
   // Handle export
   const handleExport = () => {
     const exportData = filteredWorkflows.map(w => ({
-      name: w.name,
-      hubspotId: w.hubspotId,
+        name: w.name,
+        hubspotId: w.hubspotId,
       status: w.status,
       folder: w.folder,
       autoSync: w.autoSync,
@@ -229,16 +229,16 @@ const Dashboard = () => {
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: 'application/json',
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
     a.download = `workflowguard-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
       title: 'Export completed',
       description: 'Workflow data has been exported.',
     });
@@ -250,7 +250,7 @@ const Dashboard = () => {
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-gray-600">Loading dashboard...</p>
-        </div>
+          </div>
       </div>
     );
   }
@@ -262,7 +262,7 @@ const Dashboard = () => {
           <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 mb-4">Failed to load workflows</p>
           <Button onClick={() => window.location.reload()}>Try Again</Button>
-        </div>
+          </div>
       </div>
     );
   }
@@ -270,14 +270,14 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopNavigation />
-      
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
+            <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-600">Monitor and manage your protected workflows</p>
-          </div>
+            </div>
           <div className="flex items-center space-x-3">
             <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
@@ -289,7 +289,7 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
-      </div>
+              </div>
 
       {/* Real-time Status Alert */}
       {!isConnected && (
@@ -357,19 +357,19 @@ const Dashboard = () => {
               </p>
             </CardContent>
           </Card>
-        </div>
+          </div>
 
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
               placeholder="Search workflows..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="All Status" />
@@ -399,7 +399,7 @@ const Dashboard = () => {
                   <SelectItem value="delete">Delete Selected</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
+              <Button 
                 size="sm"
                 onClick={() => handleBulkAction(bulkAction)}
                 disabled={!bulkAction}
@@ -407,8 +407,8 @@ const Dashboard = () => {
                 Apply
               </Button>
             </div>
-          </div>
-        )}
+            </div>
+          )}
 
         {/* Workflows Table */}
         <Card>
@@ -460,8 +460,8 @@ const Dashboard = () => {
                   {filteredWorkflows.map((workflow) => (
                     <TableRow key={workflow.id}>
                       <TableCell>
-                        <input
-                          type="checkbox"
+                    <input
+                      type="checkbox"
                           checked={selectedWorkflows.includes(workflow.id)}
                           onChange={() => handleWorkflowSelect(workflow.id)}
                           className="rounded border-gray-300"
@@ -484,7 +484,7 @@ const Dashboard = () => {
                             <div className="flex items-center">
                               <Clock className="w-3 h-3 mr-1" />
                               Auto-sync
-                            </div>
+                      </div>
                           ) : (
                             'Manual'
                           )}
@@ -502,7 +502,7 @@ const Dashboard = () => {
                             ? new Date(workflow.updatedAt).toLocaleDateString()
                             : 'Unknown'
                           }
-                        </div>
+                          </div>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -537,7 +537,7 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
+          </div>
     </div>
   );
 };

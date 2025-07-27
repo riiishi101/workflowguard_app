@@ -16,7 +16,20 @@ import { createLogger, format, transports } from 'winston';
 import { Request, Response, NextFunction } from 'express';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 
-// Winston logger setup
+// Initialize Sentry for error tracking
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    integrations: [
+      new Sentry.Integrations.Http({ tracing: true }),
+      new Sentry.Integrations.Express({ app: express() }),
+    ],
+  });
+}
+
+// Winston logger setup with production optimizations
 const logger = createLogger({
   level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
   format: format.combine(
@@ -26,60 +39,166 @@ const logger = createLogger({
     format.json(),
   ),
   transports: [
-    new transports.Console(),
+    new transports.Console({
+      format: format.combine(
+        format.colorize(),
+        format.simple()
+      )
+    }),
+    // Add file transport for production
+    ...(process.env.NODE_ENV === 'production' ? [
+      new transports.File({ 
+        filename: 'logs/error.log', 
+        level: 'error',
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      }),
+      new transports.File({ 
+        filename: 'logs/combined.log',
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      })
+    ] : [])
   ],
+  exitOnError: false,
 });
 
 // Exported for Vercel serverless handler
 export async function createNestServer() {
   const server = express();
+  
+  // Initialize Sentry request handler
+  if (process.env.SENTRY_DSN) {
+    server.use(Sentry.Handlers.requestHandler());
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule,
     new ExpressAdapter(server),
+    {
+      logger: ['error', 'warn', 'log'],
+      cors: true,
+    }
   );
 
-  // Configure WebSocket adapter
-  app.useWebSocketAdapter(new IoAdapter(app));
+  // Configure WebSocket adapter with production settings
+  const ioAdapter = new IoAdapter(app);
+  ioAdapter.createIOServer = (port, options) => {
+    const server = require('socket.io')(port, {
+      ...options,
+      cors: {
+        origin: process.env.CORS_ORIGIN?.split(',').filter(Boolean) || ['http://localhost:3000'],
+        credentials: true,
+        methods: ['GET', 'POST']
+      },
+      transports: ['websocket', 'polling'],
+      pingTimeout: 60000,
+      pingInterval: 25000,
+    });
+    return server;
+  };
+  app.useWebSocketAdapter(ioAdapter);
 
-  // Helmet for security headers
-  app.use(helmet());
+  // Enhanced Helmet configuration for production security
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "wss:", "ws:"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }));
 
-  // Swagger setup
-  const config = new DocumentBuilder()
-    .setTitle('WorkflowGuard API')
-    .setDescription('API documentation for WorkflowGuard')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('/api/docs', app, document);
+  // Swagger setup (only in development)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('WorkflowGuard API')
+      .setDescription('API documentation for WorkflowGuard')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addServer(process.env.API_URL || 'http://localhost:3000')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('/api/docs', app, document);
+  }
 
-  // Health check endpoint
+  // Enhanced health check endpoint
   server.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV,
+      version: process.env.npm_package_version || '1.0.0',
+      memory: process.memoryUsage(),
+    };
+    res.status(200).json(health);
   });
 
   // Serve static files from the 'public' directory
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.useStaticAssets(join(__dirname, '..', 'public'), {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
+  });
 
-  app.use(compression());
+  // Enhanced compression
+  app.use(compression({
+    level: 6,
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  }));
 
+  // Enhanced rate limiting
   const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many requests from this IP, please try again later.',
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Limit each IP to 100 requests per windowMs in production
+    message: {
+      error: 'Too many requests from this IP, please try again later.',
+      retryAfter: 15 * 60, // 15 minutes
+    },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => {
+      // Skip rate limiting for health checks and static assets
+      return req.path === '/health' || req.path.startsWith('/static/');
+    },
   });
   app.use(limiter);
 
-  // CORS configuration
-  const allowedOrigins = [
+  // Enhanced CORS configuration
+  const allowedOrigins = process.env.CORS_ORIGIN?.split(',').filter(Boolean) || [
     'https://www.workflowguard.pro',
+    'https://workflowguard.vercel.app',
     'http://localhost:3000',
   ];
+  
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        logger.warn(`CORS blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -87,34 +206,84 @@ export async function createNestServer() {
       'Authorization',
       'X-Requested-With',
       'Accept',
+      'X-API-Key',
     ],
+    exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
   });
 
   app.use(cookieParser());
 
+  // Enhanced validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    }),
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      disableErrorMessages: process.env.NODE_ENV === 'production',
+    })
   );
 
+  // Global exception filter
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  // Global prefix
   app.setGlobalPrefix('api');
+
+  // Trust proxy for production
+  if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
 
   await app.init();
 
+  // Sentry error handler (must be registered before any other error middleware)
+  if (process.env.SENTRY_DSN) {
+    server.use(Sentry.Handlers.errorHandler());
+  }
+
   // Root health route
   server.get('/', (req: Request, res: Response) => {
-    res.json({ message: 'WorkflowGuard API is running!' });
+    res.json({ 
+      message: 'WorkflowGuard API is running!',
+      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+    });
   });
 
-  // Catch-all for SPA
-  server.get('*', (req: Request, res: Response) => {
-    if (!req.originalUrl.startsWith('/api')) {
+  // Enhanced 404 handler
+  server.use('*', (req: Request, res: Response) => {
+    if (req.originalUrl.startsWith('/api')) {
+      res.status(404).json({
+        error: 'API endpoint not found',
+        path: req.originalUrl,
+        method: req.method,
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      // Serve SPA for non-API routes
       res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+    }
+  });
+
+  // Global error handler
+  server.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+    logger.error('Unhandled error:', error);
+    
+    if (process.env.NODE_ENV === 'production') {
+      res.status(500).json({
+        error: 'Internal server error',
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      res.status(500).json({
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
@@ -128,228 +297,23 @@ export default createNestServer;
 if (process.env.VERCEL !== '1') {
   async function bootstrap() {
     try {
-    console.log('🚀 Starting WorkflowGuard API...');
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://www.workflowguard.pro'}`);
-
-    // Check if DATABASE_URL is set
-    if (!process.env.DATABASE_URL) {
-      console.error('❌ DATABASE_URL environment variable is not set!');
-      process.exit(1);
-    }
-      console.log('🔌 Database URL configured: Yes');
-
-    // Fix production schema if needed
-    if (process.env.NODE_ENV === 'production') {
-      console.log('🔧 Running production schema fix...');
-      try {
-        const { PrismaClient } = require('@prisma/client');
-        const prisma = new PrismaClient();
-        
-        // Check if MonitoredWorkflow table exists and create it if needed
-        try {
-          await prisma.$executeRaw`
-            CREATE TABLE IF NOT EXISTS "MonitoredWorkflow" (
-              "id" TEXT NOT NULL,
-              "userId" TEXT NOT NULL,
-              "workflowId" TEXT NOT NULL,
-              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              PRIMARY KEY ("id")
-            );
-          `;
-          console.log('✅ MonitoredWorkflow table created/verified');
-        } catch (error) {
-          console.log('⚠️ MonitoredWorkflow table already exists or error:', error.message);
-        }
-
-        // Add missing columns to Workflow table if they don't exist
-        try {
-          await prisma.$executeRaw`
-            ALTER TABLE "Workflow" ADD COLUMN IF NOT EXISTS "autoSync" BOOLEAN DEFAULT true;
-          `;
-          console.log('✅ Added autoSync column to Workflow table');
-        } catch (error) {
-          console.log('⚠️ autoSync column already exists or error:', error.message);
-        }
-
-        try {
-          await prisma.$executeRaw`
-            ALTER TABLE "Workflow" ADD COLUMN IF NOT EXISTS "syncInterval" INTEGER DEFAULT 3600;
-          `;
-          console.log('✅ Added syncInterval column to Workflow table');
-        } catch (error) {
-          console.log('⚠️ syncInterval column already exists or error:', error.message);
-        }
-
-        try {
-          await prisma.$executeRaw`
-            ALTER TABLE "Workflow" ADD COLUMN IF NOT EXISTS "notificationsEnabled" BOOLEAN DEFAULT true;
-          `;
-          console.log('✅ Added notificationsEnabled column to Workflow table');
-        } catch (error) {
-          console.log('⚠️ notificationsEnabled column already exists or error:', error.message);
-        }
-
-        // Update WorkflowVersion table to rename versionNumber to version if needed
-        try {
-          const columns = await prisma.$queryRaw`
-            SELECT column_name FROM information_schema.columns 
-            WHERE table_name = 'WorkflowVersion' AND table_schema = 'public';
-          `;
-          
-          const columnNames = columns.map((col: any) => col.column_name);
-          const hasVersionNumber = columnNames.includes('versionNumber');
-          const hasVersion = columnNames.includes('version');
-          
-          if (hasVersionNumber && !hasVersion) {
-            await prisma.$executeRaw`
-              ALTER TABLE "WorkflowVersion" RENAME COLUMN "versionNumber" TO "version";
-            `;
-            console.log('✅ Renamed versionNumber to version in WorkflowVersion table');
-          } else if (hasVersion) {
-            console.log('✅ Version column already exists in WorkflowVersion table');
-          } else {
-            // Add version column if neither exists
-            await prisma.$executeRaw`
-              ALTER TABLE "WorkflowVersion" ADD COLUMN "version" INTEGER;
-            `;
-            console.log('✅ Added version column to WorkflowVersion table');
-          }
-        } catch (error) {
-          console.log('⚠️ WorkflowVersion table update error:', error.message);
-        }
-
-        // Add description column to WorkflowVersion if it doesn't exist
-        try {
-          await prisma.$executeRaw`
-            ALTER TABLE "WorkflowVersion" ADD COLUMN IF NOT EXISTS "description" TEXT;
-          `;
-          console.log('✅ Added description column to WorkflowVersion table');
-        } catch (error) {
-          console.log('⚠️ description column already exists or error:', error.message);
-        }
-
-        await prisma.$disconnect();
-        console.log('🎉 Production schema fix completed successfully!');
-      } catch (error) {
-        console.error('❌ Error fixing production schema:', error);
-        // Don't exit, continue with startup
-      }
-    }
-
-    if (process.env.SENTRY_DSN && process.env.NODE_ENV !== 'development') {
-      Sentry.init({
-        dsn: process.env.SENTRY_DSN,
-        tracesSampleRate: 0.1,
-        environment: process.env.NODE_ENV,
-      });
-    }
-
-      const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
-      // Configure WebSocket adapter for real-time features
-      app.useWebSocketAdapter(new IoAdapter(app));
-
-      // Swagger setup
-      const config = new DocumentBuilder()
-        .setTitle('WorkflowGuard API')
-        .setDescription('API documentation for WorkflowGuard')
-        .setVersion('1.0')
-        .addBearerAuth()
-        .build();
-      const document = SwaggerModule.createDocument(app, config);
-      SwaggerModule.setup('/api/docs', app, document);
-
-      // Serve static files from the 'public' directory
-      app.useStaticAssets(join(__dirname, '..', 'public'));
-
-      app.use(helmet({
-          contentSecurityPolicy: {
-            directives: {
-              defaultSrc: ["'self'"],
-              styleSrc: ["'self'", "'unsafe-inline'"],
-              scriptSrc: ["'self'"],
-              imgSrc: ["'self'", 'data:', 'https:'],
-            },
-          },
-      }));
-
-      app.use(compression());
-
-      const limiter = rateLimit({
-        windowMs: 15 * 60 * 1000,
-        max: 100,
-        message: 'Too many requests from this IP, please try again later.',
-        standardHeaders: true,
-        legacyHeaders: false,
-      });
-      app.use(limiter);
-
-      // CORS configuration
-      const allowedOrigins = [
-        'https://www.workflowguard.pro',
-        'http://localhost:3000',
-      ];
-      app.enableCors({
-        origin: allowedOrigins,
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: [
-          'Content-Type',
-          'Authorization',
-          'X-Requested-With',
-          'Accept',
-        ],
-      });
-
-      app.use(cookieParser());
-
-      app.useGlobalPipes(
-        new ValidationPipe({
-          whitelist: true,
-          forbidNonWhitelisted: true,
-          transform: true,
-        }),
-      );
-
-      app.useGlobalFilters(new AllExceptionsFilter());
-
-      app.setGlobalPrefix('api');
-
+      const server = await createNestServer();
       const port = process.env.PORT || 3000;
-      console.log(`🔌 Attempting to bind to port ${port}...`);
       
-      await app.listen(port, '0.0.0.0');
-
-      console.log(`✅ WorkflowGuard API running on port ${port}`);
-      console.log(`🌐 Server URL: http://0.0.0.0:${port}`);
-      console.log(`📡 API Base URL: http://0.0.0.0:${port}/api`);
-      console.log(`🔌 WebSocket server enabled for real-time features`);
-
-      // Keep the process alive
-      process.on('SIGTERM', () => {
-        console.log('SIGTERM received, shutting down gracefully');
-        app.close();
+      server.listen(port, () => {
+        logger.log(`🚀 WorkflowGuard API is running on port ${port}`);
+        logger.log(`📊 Health check available at http://localhost:${port}/health`);
+        if (process.env.NODE_ENV !== 'production') {
+          logger.log(`📚 API docs available at http://localhost:${port}/api/docs`);
+        }
       });
-
-      process.on('SIGINT', () => {
-        console.log('SIGINT received, shutting down gracefully');
-        app.close();
-      });
-
     } catch (error) {
-      console.error('❌ Failed to start WorkflowGuard API:', error);
-      if (error && error.stack) {
-        console.error('Error stack:', error.stack);
-      }
+      logger.error('Failed to start server:', error);
       process.exit(1);
     }
   }
 
-  bootstrap().catch((error) => {
-    console.error('❌ Bootstrap failed:', error);
-    process.exit(1);
-  });
+  bootstrap();
 }
 
 // Log unhandled errors
