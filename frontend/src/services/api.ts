@@ -965,6 +965,32 @@ class ApiService {
     });
   }
 
+  // HubSpot Marketplace Billing methods
+  async getHubSpotBillingStatus(): Promise<any> {
+    return this.request('/hubspot-billing/status');
+  }
+
+  async getHubSpotSubscriptionInfo(): Promise<any> {
+    return this.request('/hubspot-billing/subscription');
+  }
+
+  async upgradeViaHubSpot(planId: string): Promise<any> {
+    return this.request('/hubspot-billing/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ planId })
+    });
+  }
+
+  async cancelHubSpotSubscription(): Promise<any> {
+    return this.request('/hubspot-billing/cancel', {
+      method: 'POST'
+    });
+  }
+
+  async getHubSpotBillingHistory(): Promise<any> {
+    return this.request('/hubspot-billing/history');
+  }
+
 }
 
 export const apiService = new ApiService();

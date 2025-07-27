@@ -18,10 +18,14 @@ import { Public } from '../auth/public.decorator';
 import { Request, Response } from 'express';
 import * as crypto from 'crypto';
 import { ApiParam } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Logger } from '@nestjs/common';
 
 @Controller('hubspot-billing')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class HubSpotBillingController {
+  private readonly logger = new Logger(HubSpotBillingController.name);
+
   constructor(private readonly hubspotBillingService: HubSpotBillingService) {}
 
   @Post('process-overages')
@@ -187,6 +191,93 @@ export class HubSpotBillingController {
       return res
         .status(500)
         .json({ message: 'Failed to process webhook', error: error.message });
+    }
+  }
+
+  @Get('subscription')
+  @ApiOperation({ summary: 'Get HubSpot subscription information' })
+  @ApiResponse({ status: 200, description: 'Subscription information retrieved.' })
+  async getHubSpotSubscriptionInfo(@Req() req: Request) {
+    try {
+      const userId = (req as any).user?.id || (req as any).user?.sub;
+      if (!userId) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const subscriptionInfo = await this.hubspotBillingService.getSubscriptionInfo(userId);
+      return subscriptionInfo;
+    } catch (error) {
+      this.logger.error('Failed to get HubSpot subscription info:', error);
+      throw new HttpException(
+        `Failed to get subscription info: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('upgrade')
+  @ApiOperation({ summary: 'Initiate HubSpot marketplace upgrade' })
+  @ApiResponse({ status: 200, description: 'Upgrade initiated successfully.' })
+  async initiateUpgrade(
+    @Req() req: Request,
+    @Body() body: { planId: string }
+  ) {
+    try {
+      const userId = (req as any).user?.id || (req as any).user?.sub;
+      if (!userId) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const result = await this.hubspotBillingService.initiateUpgrade(userId, body.planId);
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to initiate upgrade:', error);
+      throw new HttpException(
+        `Failed to initiate upgrade: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('cancel')
+  @ApiOperation({ summary: 'Cancel HubSpot subscription' })
+  @ApiResponse({ status: 200, description: 'Subscription cancelled successfully.' })
+  async cancelSubscription(@Req() req: Request) {
+    try {
+      const userId = (req as any).user?.id || (req as any).user?.sub;
+      if (!userId) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const result = await this.hubspotBillingService.cancelSubscription(userId);
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to cancel subscription:', error);
+      throw new HttpException(
+        `Failed to cancel subscription: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('history')
+  @ApiOperation({ summary: 'Get HubSpot billing history' })
+  @ApiResponse({ status: 200, description: 'Billing history retrieved.' })
+  async getBillingHistory(@Req() req: Request) {
+    try {
+      const userId = (req as any).user?.id || (req as any).user?.sub;
+      if (!userId) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const history = await this.hubspotBillingService.getBillingHistory(userId);
+      return history;
+    } catch (error) {
+      this.logger.error('Failed to get billing history:', error);
+      throw new HttpException(
+        `Failed to get billing history: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

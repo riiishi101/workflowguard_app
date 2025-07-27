@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Download, HelpCircle, Info, CreditCard, Calendar, FileText, Settings, AlertTriangle, ExternalLink } from "lucide-react";
+import { CheckCircle, Download, HelpCircle, Info, CreditCard, Calendar, FileText, Settings, AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import apiService from '@/services/api';
@@ -78,8 +78,25 @@ const PlanBillingTab = () => {
   const handleUpgrade = async (planId: string) => {
     try {
       setLoading(true);
+      
+      // For HubSpot marketplace, redirect to HubSpot billing
+      if (planId === 'professional' || planId === 'enterprise') {
+        const hubspotUrl = user?.hubspotPortalId
+          ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
+          : 'https://app.hubspot.com/ecosystem/marketplace/apps';
+        
+        window.open(hubspotUrl, '_blank');
+        
+        toast({
+          title: 'Redirecting to HubSpot',
+          description: 'You will be redirected to HubSpot to complete your upgrade.',
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Fallback for direct upgrades (if needed)
       await apiService.upgradePlan(planId);
-      // Refetch plan status
       const res = await apiService.getMyPlan() as any;
       setPlan({
         planId: res.planId || 'professional',
@@ -247,32 +264,60 @@ const PlanBillingTab = () => {
             </CardHeader>
             <CardContent className="flex flex-col flex-grow justify-between space-y-3">
               <div className="space-y-2 mb-8">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>{p.workflows ? `Up to ${p.workflows} workflows/month` : 'Unlimited workflows'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>{p.history ? `${p.history} days history` : 'Unlimited history'}</span>
-                </div>
-                {p.features.map((f) => (
-                  <div key={f} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>{f}</span>
+                {p.features.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{feature}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-6 flex justify-center">
-                {planData.planId === p.id ? (
-                  <Button disabled className="w-full bg-gray-200 text-gray-600 cursor-not-allowed">
-                    Current Plan
-                  </Button>
-                ) : (
-                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleUpgrade(p.id)}>
-                    Select Plan
-                  </Button>
-                )}
+              
+              {/* Plan-specific limits */}
+              <div className="space-y-2 mb-6">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Workflows:</span>
+                  <span className="font-medium">
+                    {p.workflows === null ? 'Unlimited' : p.workflows}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">History:</span>
+                  <span className="font-medium">
+                    {p.history === null ? 'Unlimited' : `${p.history} days`}
+                  </span>
+                </div>
               </div>
+
+              {/* Action Button */}
+              {planData.planId === p.id ? (
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  disabled
+                >
+                  Current Plan
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => handleUpgrade(p.id)}
+                  className={`w-full ${
+                    p.id === 'professional' || p.id === 'enterprise'
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                      : 'bg-gray-500 hover:bg-gray-600 text-white'
+                  }`}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                  )}
+                  {p.id === 'professional' || p.id === 'enterprise' 
+                    ? 'Upgrade via HubSpot' 
+                    : 'Upgrade Plan'
+                  }
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}

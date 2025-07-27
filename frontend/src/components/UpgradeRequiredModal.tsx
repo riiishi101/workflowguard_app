@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Lock, Check } from 'lucide-react';
+import { X, Lock, Check, ExternalLink } from 'lucide-react';
+import { useAuth } from './AuthContext';
 
 interface PremiumModalProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ interface PremiumModalProps {
 }
 
 const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanId, message }: PremiumModalProps) => {
+  const { user } = useAuth();
+
   if (!isOpen) return null;
 
   let displayMessage = message;
@@ -22,6 +25,15 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
       displayMessage = `Upgrade your plan to unlock ${feature || 'this feature'}.`;
     }
   }
+
+  const handleUpgradeViaHubSpot = () => {
+    const hubspotUrl = user?.hubspotPortalId
+      ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
+      : 'https://app.hubspot.com/ecosystem/marketplace/apps';
+    
+    window.open(hubspotUrl, '_blank');
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" data-testid="upgrade-modal">
@@ -55,7 +67,7 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
         <div className="space-y-4 mb-8">
           <div className="flex items-center space-x-3">
             <Check size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-gray-700">Real-time alerts for system updates</span>
+            <span className="text-gray-700">Advanced workflow monitoring</span>
           </div>
           <div className="flex items-center space-x-3">
             <Check size={20} className="text-blue-600 flex-shrink-0" />
@@ -63,16 +75,17 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
           </div>
           <div className="flex items-center space-x-3">
             <Check size={20} className="text-blue-600 flex-shrink-0" />
-            <span className="text-gray-700">Priority notifications for critical events</span>
+            <span className="text-gray-700">Priority support and analytics</span>
           </div>
         </div>
 
         {/* Upgrade button */}
         <button
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors mb-6"
-          onClick={onClose}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors mb-6 flex items-center justify-center"
+          onClick={handleUpgradeViaHubSpot}
         >
-          Upgrade Now
+          <ExternalLink className="w-5 h-5 mr-2" />
+          Upgrade via HubSpot
         </button>
 
         {/* Bottom links */}
@@ -84,7 +97,7 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 font-medium"
           >
-            Back to Settings
+            Maybe Later
           </button>
         </div>
       </div>
