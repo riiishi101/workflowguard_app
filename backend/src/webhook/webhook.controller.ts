@@ -99,16 +99,26 @@ export class WebhookController {
     }
 
     try {
-      // Create or find user for this portal
-      const user = await this.userService.findOrCreateUser(body.portalId);
+      // Find existing user for this portal
+      let user = await this.userService.findByHubspotPortalId(body.portalId);
       
-      // Set up trial period if new user
-      if (user && !user.planId) {
-        await this.userService.updateUser(user.id, {
+      if (!user) {
+        // Create new user for this portal
+        user = await this.userService.create({
+          email: `portal-${body.portalId}@workflowguard.pro`,
+          role: 'user',
+        });
+      }
+      
+      // Set up trial period if needed
+      if (user && (!user.planId || !user.isTrialActive)) {
+        await this.userService.update(user.id, {
           planId: body.planId || 'professional',
           isTrialActive: true,
           trialStartDate: new Date(),
           trialEndDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 21 days
+          trialPlanId: 'professional',
+          hubspotPortalId: body.portalId,
         });
       }
 
