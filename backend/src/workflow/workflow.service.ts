@@ -2,6 +2,8 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Workflow, Prisma } from '@prisma/client';
@@ -262,6 +264,20 @@ export class WorkflowService {
     if (!latestVersion) {
       throw new NotFoundException('No version found to rollback to');
     }
+
+    // Get workflow and user for HubSpot API access
+    const workflow = await this.prisma.workflow.findUnique({
+      where: { id },
+    });
+    if (!workflow) {
+      throw new NotFoundException('Workflow not found');
+    }
+
+    const user = await this.userService.findOne(userId);
+    if (!user || !user.hubspotAccessToken) {
+      throw new ForbiddenException('No HubSpot access token available');
+    }
+
     // Update the workflow's data to match the latest version
     const oldWorkflow = await this.prisma.workflow.findUnique({
       where: { id },
@@ -284,10 +300,46 @@ export class WorkflowService {
         'No valid fields found in version data to restore',
       );
     }
+
+    try {
+      // Update HubSpot workflow with the version data
+      const response = await axios.put(
+        `https://api.hubapi.com/automation/v3/workflows/${workflow.hubspotId}`,
+        latestVersion.data,
+        {
+          headers: { 
+            Authorization: `Bearer ${user.hubspotAccessToken}`,
+            'Content-Type': 'application/json'
+          },
+        },
+      );
+
+      console.log(`[WorkflowService] Successfully updated HubSpot workflow ${workflow.hubspotId} with version data`);
+    } catch (hubspotError) {
+      console.error(`[WorkflowService] Failed to update HubSpot workflow:`, hubspotError);
+      throw new HttpException(
+        'Failed to update HubSpot workflow. Please check your HubSpot connection.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    // Update local database
     await this.prisma.workflow.update({
       where: { id },
       data: updateData,
     });
+
+    // Create a new version entry for the rollback action
+    await this.prisma.workflowVersion.create({
+      data: {
+        workflowId: id,
+        version: (latestVersion.version || 0) + 1,
+        snapshotType: 'rollback',
+        createdBy: userId,
+        data: latestVersion.data,
+      },
+    });
+
     // Audit log
     await this.auditLogService.create({
       userId,
