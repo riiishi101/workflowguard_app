@@ -356,21 +356,21 @@ export class WorkflowService {
           try {
             console.log(`[WorkflowService] Creating monitored workflow ${index + 1}/${workflowIds.length}: ${workflowId}`);
             return await this.prisma.monitoredWorkflow.create({
-              data: {
-                userId,
-                workflowId
-              },
-              include: {
-                workflow: {
-                  include: {
-                    owner: true,
-                    versions: {
-                      orderBy: { createdAt: 'desc' },
-                      take: 1
-                    }
+            data: {
+              userId,
+              workflowId
+            },
+            include: {
+              workflow: {
+                include: {
+                  owner: true,
+                  versions: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
                   }
                 }
               }
+            }
             });
           } catch (createError) {
             console.error(`[WorkflowService] Failed to create monitored workflow ${workflowId}:`, createError);
