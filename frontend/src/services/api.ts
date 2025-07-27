@@ -991,6 +991,19 @@ class ApiService {
     return this.request('/hubspot-billing/history');
   }
 
+  // Missing methods that are referenced in components
+  async disconnectHubSpot(): Promise<any> {
+    return this.request('/user/me/disconnect-hubspot', {
+      method: 'POST',
+    });
+  }
+
+  async resetUserPassword(userId: string): Promise<any> {
+    return this.request(`/user/${userId}/reset-password`, {
+      method: 'POST',
+    });
+  }
+
 }
 
 export const apiService = new ApiService();
