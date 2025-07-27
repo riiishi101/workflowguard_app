@@ -315,18 +315,159 @@ export class HubSpotBillingService {
     portalId: string,
     newPlanId: string,
   ): Promise<void> {
-    // Find all users with this portalId
-    const users = await this.prisma.user.findMany({
-      where: { hubspotPortalId: portalId },
-    });
-    for (const user of users) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { planId: newPlanId, isTrialActive: false } as any, // End trial if upgrading/downgrading
+    try {
+      await this.prisma.user.updateMany({
+        where: { hubspotPortalId: portalId },
+        data: { planId: newPlanId },
       });
-      this.logger.log(
-        `Updated user ${user.email} (${user.id}) to plan ${newPlanId} via HubSpot webhook.`,
-      );
+      this.logger.log(`Updated plan to ${newPlanId} for portal ${portalId}`);
+    } catch (error) {
+      this.logger.error(`Failed to update plan for portal ${portalId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscription information for a user
+   */
+  async getSubscriptionInfo(userId: string): Promise<any> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          subscription: true,
+        },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      return {
+        userId: user.id,
+        portalId: user.hubspotPortalId,
+        planId: user.planId,
+        isTrialActive: user.isTrialActive,
+        trialEndDate: user.trialEndDate,
+        trialPlanId: user.trialPlanId,
+        subscriptionStatus: user.subscription?.status || 'active',
+        nextBillingDate: user.subscription?.nextBillingDate,
+        createdAt: user.createdAt,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get subscription info for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initiate upgrade process via HubSpot marketplace
+   */
+  async initiateUpgrade(userId: string, planId: string): Promise<any> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (!user.hubspotPortalId) {
+        throw new Error('User not connected to HubSpot');
+      }
+
+      // For HubSpot marketplace, we redirect to HubSpot
+      // This method is mainly for logging and validation
+      this.logger.log(`Initiating upgrade to ${planId} for user ${userId} (portal: ${user.hubspotPortalId})`);
+
+      return {
+        success: true,
+        message: 'Upgrade initiated via HubSpot marketplace',
+        portalId: user.hubspotPortalId,
+        planId,
+        redirectUrl: `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to initiate upgrade for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel subscription via HubSpot marketplace
+   */
+  async cancelSubscription(userId: string): Promise<any> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (!user.hubspotPortalId) {
+        throw new Error('User not connected to HubSpot');
+      }
+
+      // For HubSpot marketplace, cancellation is handled by HubSpot
+      // This method is mainly for logging and validation
+      this.logger.log(`Initiating subscription cancellation for user ${userId} (portal: ${user.hubspotPortalId})`);
+
+      return {
+        success: true,
+        message: 'Cancellation initiated via HubSpot marketplace',
+        portalId: user.hubspotPortalId,
+        redirectUrl: `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to cancel subscription for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get billing history for a user
+   */
+  async getBillingHistory(userId: string): Promise<any> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          overages: {
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+          },
+        },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // For HubSpot marketplace, billing history is available in HubSpot
+      // This method provides local overage history
+      return {
+        userId: user.id,
+        portalId: user.hubspotPortalId,
+        overages: user.overages.map(overage => ({
+          id: overage.id,
+          type: overage.type,
+          amount: overage.amount,
+          periodStart: overage.periodStart,
+          periodEnd: overage.periodEnd,
+          totalAmount: overage.amount * this.UNIT_PRICE,
+          isBilled: overage.isBilled,
+          createdAt: overage.createdAt,
+        })),
+        hubspotBillingUrl: user.hubspotPortalId 
+          ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
+          : null,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get billing history for user ${userId}:`, error);
+      throw error;
     }
   }
 }
