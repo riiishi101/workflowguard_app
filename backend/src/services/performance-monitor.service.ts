@@ -190,7 +190,7 @@ export class PerformanceMonitorService {
     // Get workflow operations (in the last hour)
     const workflowOperations = await this.prisma.auditLog.count({
       where: {
-        createdAt: {
+        timestamp: {
           gte: oneHourAgo,
         },
         action: {
@@ -202,7 +202,7 @@ export class PerformanceMonitorService {
     // Get sync operations (in the last hour)
     const syncOperations = await this.prisma.auditLog.count({
       where: {
-        createdAt: {
+        timestamp: {
           gte: oneHourAgo,
         },
         action: {

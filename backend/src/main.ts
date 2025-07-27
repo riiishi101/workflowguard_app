@@ -23,8 +23,8 @@ if (process.env.SENTRY_DSN) {
     environment: process.env.NODE_ENV || 'development',
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-      new Sentry.Integrations.Express({ app: express() }),
+      new Sentry.HttpIntegration({ tracing: true }),
+      new Sentry.ExpressIntegration({ app: express() }),
     ],
   });
 }
@@ -69,7 +69,7 @@ export async function createNestServer() {
   
   // Initialize Sentry request handler
   if (process.env.SENTRY_DSN) {
-    server.use(Sentry.Handlers.requestHandler());
+    server.use(Sentry.requestHandler());
   }
 
   const app = await NestFactory.create<NestExpressApplication>(
@@ -241,7 +241,7 @@ export async function createNestServer() {
 
   // Sentry error handler (must be registered before any other error middleware)
   if (process.env.SENTRY_DSN) {
-    server.use(Sentry.Handlers.errorHandler());
+    server.use(Sentry.errorHandler());
   }
 
   // Root health route
@@ -301,10 +301,10 @@ if (process.env.VERCEL !== '1') {
       const port = process.env.PORT || 3000;
       
       server.listen(port, () => {
-        logger.log(`🚀 WorkflowGuard API is running on port ${port}`);
-        logger.log(`📊 Health check available at http://localhost:${port}/health`);
+        logger.info(`🚀 WorkflowGuard API is running on port ${port}`);
+        logger.info(`📊 Health check available at http://localhost:${port}/health`);
         if (process.env.NODE_ENV !== 'production') {
-          logger.log(`📚 API docs available at http://localhost:${port}/api/docs`);
+          logger.info(`📚 API docs available at http://localhost:${port}/api/docs`);
         }
       });
     } catch (error) {
