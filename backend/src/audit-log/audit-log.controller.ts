@@ -52,10 +52,10 @@ export class AuditLogController {
   ) {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
-    const planId = user?.subscription?.planId || 'starter';
+    const planId = user?.subscription?.planId || 'trial';
     const plan =
       (await this.userService.getPlanById(planId)) ||
-      (await this.userService.getPlanById('starter'));
+      (await this.userService.getPlanById('trial'));
     if (!plan?.features?.includes('audit_logs')) {
       throw new HttpException(
         'Audit log access is not available on your plan.',
@@ -86,10 +86,10 @@ export class AuditLogController {
   async findOne(@Req() req: Request, @Param('id') id: string) {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
-    const planId = user?.subscription?.planId || 'starter';
+    const planId = user?.subscription?.planId || 'trial';
     const plan =
       (await this.userService.getPlanById(planId)) ||
-      (await this.userService.getPlanById('starter'));
+      (await this.userService.getPlanById('trial'));
     if (!plan?.features?.includes('audit_logs')) {
       throw new HttpException(
         'Audit log access is not available on your plan.',
@@ -109,10 +109,10 @@ export class AuditLogController {
   async findByUser(@Req() req: Request, @Param('userId') userId: string) {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
-    const planId = user?.subscription?.planId || 'starter';
+    const planId = user?.subscription?.planId || 'trial';
     const plan =
       (await this.userService.getPlanById(planId)) ||
-      (await this.userService.getPlanById('starter'));
+      (await this.userService.getPlanById('trial'));
     if (!plan?.features?.includes('audit_logs')) {
       throw new HttpException(
         'Audit log access is not available on your plan.',
@@ -133,10 +133,10 @@ export class AuditLogController {
   ) {
     const userIdFromJwt = (req.user as any)?.sub;
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
-    const planId = user?.subscription?.planId || 'starter';
+    const planId = user?.subscription?.planId || 'trial';
     const plan =
       (await this.userService.getPlanById(planId)) ||
-      (await this.userService.getPlanById('starter'));
+      (await this.userService.getPlanById('trial'));
     if (!plan?.features?.includes('audit_logs')) {
       throw new HttpException(
         'Audit log access is not available on your plan.',

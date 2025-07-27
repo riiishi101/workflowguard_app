@@ -311,7 +311,7 @@ export class AnalyticsService {
         const currentPlan = user.planId;
 
         // Recommend upgrade if user has frequent overages
-        if (currentPlan === 'starter' && avgOverages > 1) return true;
+        if (currentPlan === 'trial' && avgOverages > 1) return true;
         if (currentPlan === 'professional' && avgOverages > 3) return true;
 
         return false;
@@ -321,7 +321,7 @@ export class AnalyticsService {
         let recommendedPlan = 'professional';
         let reason = 'Frequent overages detected';
 
-        if (currentPlan === 'starter') {
+        if (currentPlan === 'trial') {
           recommendedPlan = 'professional';
           reason = 'High overage frequency - upgrade recommended';
         } else if (currentPlan === 'professional') {

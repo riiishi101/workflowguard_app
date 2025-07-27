@@ -114,8 +114,8 @@ export class WorkflowVersionService {
   ): Promise<WorkflowVersion[]> {
     const user = await this.userService.findOneWithSubscription(userId);
     const planId =
-      (user?.subscription?.planId as keyof typeof PLAN_CONFIG) || 'starter';
-    const plan = PLAN_CONFIG[planId] || PLAN_CONFIG['starter'];
+      (user?.subscription?.planId as keyof typeof PLAN_CONFIG) || 'trial';
+    const plan = PLAN_CONFIG[planId] || PLAN_CONFIG['trial'];
     const where: any = { workflowId };
     if (plan.historyDays !== null) {
       const cutoff = new Date(

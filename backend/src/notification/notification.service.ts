@@ -281,7 +281,7 @@ export class NotificationService {
       const emailSuccess = await this.emailService.sendWelcomeEmail({
         userEmail: user.email,
         userName: user.name || user.email,
-        planId: user.subscription?.planId || 'starter',
+        planId: user.subscription?.planId || 'trial',
         workflowLimit: planData.workflowLimit || 10,
         features: planData.features || [
           'Basic workflow protection',
@@ -468,7 +468,7 @@ export class NotificationService {
     if (!currentPlan) return undefined;
 
     switch (currentPlan) {
-      case 'starter':
+      case 'trial':
         return 'professional';
       case 'professional':
         return 'enterprise';

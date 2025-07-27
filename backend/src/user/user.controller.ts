@@ -156,7 +156,7 @@ export class UserController {
     if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
 
     // Default to starter plan if no subscription exists
-    const planId = user.subscription?.planId || 'starter';
+          const planId = user.subscription?.planId || 'trial';
     const plan = await this.userService.getPlanById(planId);
     const workflowsMonitoredCount =
       await this.userService.getWorkflowCountByOwner(userId);
