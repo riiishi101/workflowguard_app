@@ -21,7 +21,7 @@ import {
   FileText,
   RotateCcw,
   Eye,
-  Compare,
+  GitCompare,
   MoreHorizontal,
   CheckCircle,
   AlertCircle,
@@ -398,7 +398,7 @@ const WorkflowHistory = () => {
                 <EnhancedButton
                   variant="outline"
                   onClick={() => handleBulkAction('compare')}
-                  icon={<Compare className="w-4 h-4" />}
+                  icon={<GitCompare className="w-4 h-4" />}
                   disabled={selectedVersions.length !== 2}
                 >
                   Compare ({selectedVersions.length})
@@ -450,7 +450,7 @@ const WorkflowHistory = () => {
           <EnhancedCardContent>
             <div className="text-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Compare className="w-6 h-6 text-green-600" />
+                <GitCompare className="w-6 h-6 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Compare Versions</h3>
               <p className="text-gray-600">Compare different versions</p>
