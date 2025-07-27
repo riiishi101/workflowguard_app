@@ -71,23 +71,46 @@ export const WorkflowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // WebSocket connection
+  // WebSocket connection with fallback
   useEffect(() => {
     if (!user) return;
 
-    const newSocket = io('/realtime', {
+    // Try WebSocket connection first
+    const baseURL = import.meta.env.VITE_API_URL || window.location.origin;
+    
+    console.log('Attempting WebSocket connection to:', baseURL);
+
+    const newSocket = io(`${baseURL}/realtime`, {
       auth: {
         token: localStorage.getItem('authToken') || user.id
-      }
+      },
+      transports: ['websocket', 'polling'],
+      timeout: 5000, // Shorter timeout
     });
+
+    // Set a timeout to mark as disconnected if connection takes too long
+    const connectionTimeout = setTimeout(() => {
+      if (!isConnected) {
+        console.log('WebSocket connection timeout - falling back to polling');
+        setIsConnected(false);
+      }
+    }, 3000);
 
     newSocket.on('connect', () => {
       console.log('WebSocket connected for workflows');
+      clearTimeout(connectionTimeout);
       setIsConnected(true);
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
+    newSocket.on('disconnect', (reason) => {
+      console.log('WebSocket disconnected:', reason);
+      clearTimeout(connectionTimeout);
+      setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error);
+      clearTimeout(connectionTimeout);
       setIsConnected(false);
     });
 

@@ -291,10 +291,10 @@ const Dashboard = () => {
       {/* Real-time Status Alert */}
       {!isConnected && (
         <div className="px-6 py-3">
-          <Alert variant="destructive">
+          <Alert variant="default">
             <ZapOff className="h-4 w-4" />
             <AlertDescription>
-              Real-time updates are currently disabled. Some features may not work as expected.
+              Real-time updates are connecting... Updates will appear automatically once connected.
             </AlertDescription>
           </Alert>
         </div>
