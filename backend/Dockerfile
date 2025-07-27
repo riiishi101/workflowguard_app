@@ -94,6 +94,7 @@ FROM base AS development
 
 # Install development dependencies
 COPY package*.json ./
+COPY prisma ./prisma/
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy source code
