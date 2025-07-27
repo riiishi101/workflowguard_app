@@ -138,9 +138,17 @@ const WorkflowSelection = () => {
           });
         } else {
           console.log('✅ All workflows passed validation');
+          console.log('📊 Final counts:', {
+            total: Array.isArray(workflowsData) ? workflowsData.length : 0,
+            valid: validWorkflows.length,
+            invalid: invalidWorkflows.length
+          });
         }
         
-        if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
+        // Clear any existing banner if all workflows are valid
+        if (invalidWorkflows.length === 0) {
+          setBanner(null);
+        } else if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
           setBanner({ type: 'error', message: `Some workflows were ignored due to invalid data. (${invalidWorkflows.length} invalid, ${validWorkflows.length} valid)` });
         }
         setWorkflows(validWorkflows);
