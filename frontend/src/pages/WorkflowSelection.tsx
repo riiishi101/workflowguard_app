@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import TopNavigation from "@/components/TopNavigation";
-import { Search, Info, Loader2 } from "lucide-react";
-import apiService from "@/services/api";
-import { useRequireAuth } from '../components/AuthContext';
+import { Search, Info, Loader2, Wifi, WifiOff } from "lucide-react";
+import { useWorkflows } from '@/contexts/WorkflowContext';
 import { useToast } from "@/hooks/use-toast";
 import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
-import { useAuth } from '@/components/AuthContext';
 
 // Define the workflow type
 interface Workflow {
@@ -31,155 +29,36 @@ interface Workflow {
   status?: string;
 }
 
-// Helper to validate workflow data
-function isValidWorkflow(obj: any): obj is Workflow {
-  // Basic object check
-  if (!obj || typeof obj !== 'object') {
-    return false;
-  }
-  
-  // Check if name exists and is not empty
-  const hasValidName = typeof obj.name === 'string' && obj.name.trim() !== '';
-  
-  // Check if we have either id, hubspotId, or a fallback ID
-  const hasValidId = typeof obj.id === 'string' || typeof obj.hubspotId === 'string' || obj.id?.startsWith('fallback-');
-  
-  // Check if ownerId exists (but be more lenient for test workflows)
-  const hasOwnerId = typeof obj.ownerId === 'string' || obj.ownerId === "unknown-owner";
-  
-  // Log validation details for debugging
-  if (!hasValidName) console.log('❌ Missing name:', obj);
-  if (!hasValidId) console.log('❌ Missing ID:', obj.name, obj);
-  if (!hasOwnerId) console.log('❌ Missing owner:', obj.name, obj);
-  
-  return hasValidName && hasValidId && hasOwnerId;
-}
-
 const MAX_SELECTION = 500;
 
 const WorkflowSelection = () => {
-  useRequireAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { 
+    workflows, 
+    workflowsLoading: loading, 
+    workflowsError: error, 
+    selectWorkflows,
+    isConnected,
+    lastUpdate
+  } = useWorkflows();
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState(false);
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  useEffect(() => {
-    const fetchWorkflows = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Fetch live workflows from HubSpot for the connected user
-        const workflowsData = await apiService.getWorkflows();
-        console.log('📊 Raw workflows data from API:', workflowsData);
-        console.log('🔍 Looking for test workflows...');
-        if (Array.isArray(workflowsData)) {
-          const testWorkflows = workflowsData.filter(w => 
-            w.name && (w.name.toLowerCase().includes('test') || w.name.toLowerCase().includes('wg test'))
-          );
-          console.log('🧪 Test workflows found:', testWorkflows);
-        }
-        // Use backend structure directly; fallback for legacy/edge cases
-        const normalized = Array.isArray(workflowsData)
-          ? workflowsData.map((w: any, index: number) => {
-              // Log raw workflow data for debugging
-              console.log(`🔍 Processing workflow ${index}:`, w);
-              
-              // Ensure we have a valid ID - prefer hubspotId over id
-              const workflowId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : `fallback-${index}`);
-              const hubspotId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : `fallback-${index}`);
-              
-              // Better owner detection for HubSpot workflows
-              const ownerId = w.ownerId || w.createdBy || w.userId || user?.id || "unknown-owner";
-              
-              return {
-                ...w,
-                id: workflowId,
-                hubspotId: hubspotId,
-                name: w.name && w.name.trim() !== '' ? w.name : `Unnamed Workflow ${index + 1}`,
-                ownerId: ownerId,
-                status: w.status || w.enabled === false ? 'inactive' : 'active',
-                folder: w.folder || w.folderId || undefined,
-                createdAt: w.createdAt || w.insertedAt || undefined,
-                updatedAt: w.updatedAt || undefined,
-              };
-            })
-          : [];
-        const validWorkflows = normalized.filter(isValidWorkflow);
-        const invalidWorkflows = normalized.filter(w => !isValidWorkflow(w));
-        
-        // Log invalid workflows for debugging
-        if (invalidWorkflows.length > 0) {
-          console.log('🚨 INVALID WORKFLOWS DETECTED 🚨');
-          console.log('Invalid workflows found:', invalidWorkflows);
-          console.log('Validation issues:', invalidWorkflows.map(w => ({
-            name: w.name,
-            id: w.id,
-            hubspotId: w.hubspotId,
-            ownerId: w.ownerId,
-            hasName: typeof w.name === 'string' && w.name.trim() !== '',
-            hasId: typeof w.id === 'string' || typeof w.hubspotId === 'string',
-            hasOwnerId: typeof w.ownerId === 'string'
-          })));
-          
-          // Also show in a toast for visibility
-          toast({
-            title: "Validation Issues Found",
-            description: `Found ${invalidWorkflows.length} workflows with validation issues. Check console for details.`,
-            variant: "destructive",
-          });
-        } else {
-          console.log('✅ All workflows passed validation');
-          console.log('📊 Final counts:', {
-            total: Array.isArray(workflowsData) ? workflowsData.length : 0,
-            valid: validWorkflows.length,
-            invalid: invalidWorkflows.length
-          });
-        }
-        
-        // Clear any existing banner if all workflows are valid
-        if (invalidWorkflows.length === 0) {
-          setBanner(null);
-        } else if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
-          setBanner({ type: 'error', message: `Some workflows were ignored due to invalid data. (${invalidWorkflows.length} invalid, ${validWorkflows.length} valid)` });
-        }
-        setWorkflows(validWorkflows);
-      } catch (err: any) {
-        // Improved error handling - don't block the UI if workflows fail to load
-        const apiError = err?.response?.data?.message || err?.message || String(err);
-        setError("Failed to fetch workflows");
-        setWorkflows([]);
-        // Show a warning toast instead of blocking the UI
-        toast({
-          title: "Workflows Unavailable",
-          description: "Unable to load workflows from HubSpot. You can still proceed and select workflows later from the dashboard.",
-          variant: "default",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchWorkflows();
-  }, [toast, user]);
-
   // Filtering logic
-  const filteredWorkflows = workflows.filter((workflow) => {
+  const filteredWorkflows = workflows?.filter((workflow) => {
     const matchesName = workflow.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || (workflow.status || "active").toLowerCase() === statusFilter;
     const matchesFolder = folderFilter === "all" || workflow.folder === folderFilter;
     return matchesName && matchesStatus && matchesFolder;
-  });
+  }) || [];
 
   // Unique folders for filter dropdown
-  const uniqueFolders = Array.from(new Set(workflows.map(w => w.folder).filter(Boolean)));
+  const uniqueFolders = Array.from(new Set(workflows?.map(w => w.folder).filter(Boolean) || []));
 
   // Master checkbox logic
   const allSelected = filteredWorkflows.length > 0 && filteredWorkflows.every(w => selectedWorkflows.includes(w.id));
@@ -220,17 +99,7 @@ const WorkflowSelection = () => {
   const handleStartProtecting = async () => {
     setActionLoading(true);
     try {
-      // Save selected workflows to localStorage for dashboard access
-      const selectedWorkflowData = workflows.filter(w => selectedWorkflows.includes(w.id || w.hubspotId));
-      localStorage.setItem('selectedWorkflows', JSON.stringify(selectedWorkflowData));
-      
-      // Try to save to backend if available
-      try {
-        await apiService.setMonitoredWorkflows(selectedWorkflows);
-      } catch (backendError) {
-        console.log('Backend not available, using localStorage fallback');
-      }
-      
+      await selectWorkflows(selectedWorkflows);
       setBanner({ type: 'success', message: `${selectedWorkflows.length} workflows are now being monitored.` });
       navigate("/dashboard");
     } catch (err) {
@@ -306,6 +175,23 @@ const WorkflowSelection = () => {
           </p>
         </div>
 
+        {/* Real-time status indicator */}
+        <div className="flex items-center gap-2 mb-4">
+          {isConnected ? (
+            <Wifi className="w-4 h-4 text-green-500" />
+          ) : (
+            <WifiOff className="w-4 h-4 text-red-500" />
+          )}
+          <span className="text-sm text-gray-600">
+            {isConnected ? 'Real-time updates enabled' : 'Real-time updates disabled'}
+          </span>
+          {lastUpdate && (
+            <span className="text-xs text-gray-500">
+              Last update: {lastUpdate.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-3">
             <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
@@ -366,7 +252,7 @@ const WorkflowSelection = () => {
             )}
             {filteredWorkflows.length === 0 ? (
               <div className="text-center py-12">
-                {workflows.length === 0 ? (
+                {workflows?.length === 0 ? (
                   <>
                     <p className="text-gray-500 mb-4">No workflows are currently available from your HubSpot account.</p>
                     <p className="text-gray-400 text-sm mb-6">This might be due to a temporary connection issue or because your HubSpot account doesn't have any workflows yet.</p>
@@ -445,7 +331,7 @@ const WorkflowSelection = () => {
 
           <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
             <p className="text-sm text-gray-600" aria-live="polite">
-              Selected {selectedWorkflows.length} of {workflows.length} workflows. You have {MAX_SELECTION - selectedWorkflows.length} workflows remaining in your trial.
+              Selected {selectedWorkflows.length} of {workflows?.length || 0} workflows. You have {MAX_SELECTION - selectedWorkflows.length} workflows remaining in your trial.
             </p>
             <div className="flex items-center gap-3">
               <Button variant="outline" size="sm" onClick={handleSkip} disabled={actionLoading} aria-label="Skip workflow selection and go to dashboard">
@@ -468,4 +354,4 @@ const WorkflowSelection = () => {
   );
 };
 
-export default WorkflowSelection;
+export default WorkflowSelection; 

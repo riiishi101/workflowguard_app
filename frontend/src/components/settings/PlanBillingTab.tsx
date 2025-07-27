@@ -289,15 +289,15 @@ const PlanBillingTab = () => {
               </div>
 
               {/* Action Button */}
-              {planData.planId === p.id ? (
+                {planData.planId === p.id ? (
                 <Button 
                   variant="outline" 
                   className="w-full" 
                   disabled
                 >
-                  Current Plan
-                </Button>
-              ) : (
+                    Current Plan
+                  </Button>
+                ) : (
                 <Button 
                   onClick={() => handleUpgrade(p.id)}
                   className={`w-full ${
@@ -316,8 +316,8 @@ const PlanBillingTab = () => {
                     ? 'Upgrade via HubSpot' 
                     : 'Upgrade Plan'
                   }
-                </Button>
-              )}
+                  </Button>
+                )}
             </CardContent>
           </Card>
         ))}

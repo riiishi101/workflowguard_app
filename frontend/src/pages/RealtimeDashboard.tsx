@@ -202,7 +202,7 @@ export default function RealTimeDashboard() {
 
   const handleTestConnection = async () => {
     try {
-      setLoading(true);
+    setLoading(true);
       const result = await apiService.getRealtimeConnectionStatus();
       setTestResult(result);
       toast({ title: 'Connection Test', description: 'Connection test completed successfully' });

@@ -317,9 +317,9 @@ export class HubSpotBillingService {
   ): Promise<void> {
     try {
       await this.prisma.user.updateMany({
-        where: { hubspotPortalId: portalId },
+      where: { hubspotPortalId: portalId },
         data: { planId: newPlanId },
-      });
+    });
       this.logger.log(`Updated plan to ${newPlanId} for portal ${portalId}`);
     } catch (error) {
       this.logger.error(`Failed to update plan for portal ${portalId}:`, error);

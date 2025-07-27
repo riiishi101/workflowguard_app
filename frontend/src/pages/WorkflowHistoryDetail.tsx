@@ -606,9 +606,9 @@ const WorkflowHistoryDetail = () => {
               {workflowLoading ? (
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                  <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-gray-900">
                     Loading workflow...
-                  </h1>
+            </h1>
                 </div>
               ) : workflowError ? (
                 <div className="flex items-center gap-3">
@@ -747,19 +747,19 @@ const WorkflowHistoryDetail = () => {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
                   {workflowLoading ? 'Loading...' : workflowData?.name || 'Unknown Workflow'}
-                </h2>
+              </h2>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={`${workflowData?.isLive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-opacity-80`}>
                     <CheckCircle className="w-3 h-3 mr-1" />
                     {workflowData?.isLive ? 'Active' : 'Inactive'}
-                  </Badge>
+              </Badge>
                   <span className="text-sm text-gray-600">•</span>
                   <span className="text-sm text-gray-600 flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     Last modified: {workflowData?.lastModified ? format(new Date(workflowData.lastModified), 'PPpp') : 'Unknown'}
-                  </span>
-                </div>
-              </div>
+              </span>
+            </div>
+          </div>
             </div>
           </div>
           <div className="text-right">
@@ -897,7 +897,7 @@ const WorkflowHistoryDetail = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="font-mono text-sm">
-                          {version.version}
+                      {version.version}
                         </Badge>
                         {version.versionNumber === 1 && (
                           <Badge className="bg-blue-100 text-blue-800 text-xs">
@@ -1049,13 +1049,13 @@ const WorkflowHistoryDetail = () => {
           <div className="flex items-center gap-3 mb-6">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search audit logs..."
-                value={auditSearchTerm}
-                onChange={e => setAuditSearchTerm(e.target.value)}
+            <Input
+              placeholder="Search audit logs..."
+              value={auditSearchTerm}
+              onChange={e => setAuditSearchTerm(e.target.value)}
                 className="pl-10"
-                aria-label="Search audit logs"
-              />
+              aria-label="Search audit logs"
+            />
             </div>
             <Select value={auditActionFilter} onValueChange={setAuditActionFilter}>
               <SelectTrigger className="w-40">

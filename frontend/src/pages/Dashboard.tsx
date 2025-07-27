@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +12,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import TopNavigation from "@/components/TopNavigation";
-import apiService from "@/services/api";
 import {
   Search,
   Plus,
@@ -25,18 +24,20 @@ import {
   Eye,
   RotateCcw,
   Loader2,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import EmptyDashboard from '../components/EmptyDashboard';
-import { useRequireAuth, usePlan } from '../components/AuthContext';
+import { usePlan } from '../components/AuthContext';
+import { useWorkflows } from '@/contexts/WorkflowContext';
 import RoleGuard from '../components/RoleGuard';
 import UpgradeRequiredModal from '@/components/UpgradeRequiredModal';
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import CreateNewWorkflowModal from "@/components/CreateNewWorkflowModal";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
 import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
-import { useAuth } from '@/components/AuthContext';
 
 // Define the workflow type with proper validation
 interface Workflow {
@@ -89,21 +90,23 @@ const STATUS_COLORS = {
 } as const;
 
 const Dashboard = () => {
-  useRequireAuth();
   const { plan, hasFeature, isTrialing } = usePlan();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isAdminOrRestorer = user && (user.role === 'admin' || user.role === 'restorer');
-  const [redirect, setRedirect] = useState(false);
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    workflows, 
+    workflowsLoading, 
+    workflowsError: error,
+    isConnected,
+    lastUpdate,
+    deleteWorkflow,
+    addWorkflow
+  } = useWorkflows();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [workflowsLoading, setWorkflowsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showRollbackModal, setShowRollbackModal] = useState(false);

@@ -1,6 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, PlanProvider, useAuth, usePlan } from './components/AuthContext';
+import { QueryProvider } from './providers/QueryProvider';
+import { WorkflowProvider } from './contexts/WorkflowContext';
+import { ProtectedRoute, AuthRequired, HubSpotRequired } from './components/ProtectedRoute';
+import { WorkflowRoute, WorkflowHistoryRoute } from './components/WorkflowRoute';
 import { Toaster } from './components/ui/toaster';
 import { useToast } from './components/ui/use-toast';
 import TopNavigation from './components/TopNavigation';
@@ -158,22 +162,64 @@ const AppRoutes = () => {
       <ModalsManager />
       {isTrialExpired && !isOnPlanBilling && <LockoutOverlay />}
       <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/workflow-history" element={<WorkflowHistory />} />
-        <Route path="/workflow-history/:id" element={<WorkflowHistoryDetail />} />
-        <Route path="/select-workflows" element={<WorkflowSelection />} />
-        <Route path="/compare-versions" element={<CompareVersions />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/analytics" element={<AnalyticsDashboard />} />
-        <Route path="/overage" element={<OverageDashboard />} />
-        <Route path="/realtime" element={<RealtimeDashboard />} />
+        <Route path="/dashboard" element={
+          <AuthRequired>
+            <Dashboard />
+          </AuthRequired>
+        } />
+        <Route path="/workflow-history" element={
+          <HubSpotRequired>
+            <WorkflowHistory />
+          </HubSpotRequired>
+        } />
+        <Route path="/workflow-history/:workflowId" element={
+          <HubSpotRequired>
+            <WorkflowHistoryRoute>
+              <WorkflowHistory />
+            </WorkflowHistoryRoute>
+          </HubSpotRequired>
+        } />
+        <Route path="/select-workflows" element={
+          <HubSpotRequired>
+            <WorkflowSelection />
+          </HubSpotRequired>
+        } />
+        <Route path="/compare-versions" element={
+          <HubSpotRequired>
+            <CompareVersions />
+          </HubSpotRequired>
+        } />
+        <Route path="/settings" element={
+          <AuthRequired>
+            <Settings />
+          </AuthRequired>
+        } />
+        <Route path="/analytics" element={
+          <AuthRequired>
+            <AnalyticsDashboard />
+          </AuthRequired>
+        } />
+        <Route path="/overage" element={
+          <AuthRequired>
+            <OverageDashboard />
+          </AuthRequired>
+        } />
+        <Route path="/realtime" element={
+          <AuthRequired>
+            <RealtimeDashboard />
+          </AuthRequired>
+        } />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/help" element={<HelpSupport />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/logged-out" element={<LoggedOut />} />
         <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={
+          <AuthRequired>
+            <Dashboard />
+          </AuthRequired>
+        } />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
@@ -183,16 +229,20 @@ const AppRoutes = () => {
 function App() {
   return (
     <Router>
-    <AuthProvider>
-      <PlanProvider>
-          <ErrorBoundary>
-          <AppRoutes />
-            <Toaster />
-            <PerformanceMonitor />
-            <Footer />
-          </ErrorBoundary>
-      </PlanProvider>
-    </AuthProvider>
+      <ErrorBoundary>
+        <QueryProvider>
+          <AuthProvider>
+            <PlanProvider>
+              <WorkflowProvider>
+                <AppRoutes />
+                <Toaster />
+                <PerformanceMonitor />
+                <Footer />
+              </WorkflowProvider>
+            </PlanProvider>
+          </AuthProvider>
+        </QueryProvider>
+      </ErrorBoundary>
     </Router>
   );
 }
