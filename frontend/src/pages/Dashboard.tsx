@@ -4,6 +4,7 @@ import { useWorkflows } from '../contexts/WorkflowContext';
 import { useAuth } from '../components/AuthContext';
 import { usePlan } from '../components/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import TopNavigation from '@/components/TopNavigation';
 import {
   Card,
   CardContent,
@@ -268,6 +269,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <TopNavigation />
+      
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
