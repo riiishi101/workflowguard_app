@@ -24,7 +24,7 @@ import {
   Loader2,
 } from "lucide-react";
 import EmptyWorkflowHistory from '../components/EmptyWorkflowHistory';
-import { useRequireAuth, usePlan } from '../components/AuthContext';
+import { usePlan } from '../components/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import React from 'react';
 import apiService from '@/services/api';
@@ -55,7 +55,6 @@ interface WorkflowVersion {
 }
 
 const WorkflowHistory = () => {
-  useRequireAuth();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { workflowId } = useParams();

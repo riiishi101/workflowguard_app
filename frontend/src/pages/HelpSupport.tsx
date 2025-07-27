@@ -25,10 +25,9 @@ import {
   Map,
   ExternalLink,
 } from "lucide-react";
-import { useRequireAuth } from '../components/AuthContext';
+
 
 const HelpSupport = () => {
-  useRequireAuth();
   const [openQuestion, setOpenQuestion] = useState<string | null>(null);
 
   const commonQuestions = [

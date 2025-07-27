@@ -20,14 +20,13 @@ import {
   Calendar,
   RotateCcw,
 } from "lucide-react";
-import { useRequireAuth } from '../components/AuthContext';
+
 import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '../components/AuthContext';
 import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 const CompareVersions = () => {
-  useRequireAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [versionA, setVersionA] = useState(searchParams.get("versionA") || "");

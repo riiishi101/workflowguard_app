@@ -16,11 +16,11 @@ import {
   Code,
   UserCircle,
 } from "lucide-react";
-import { useRequireAuth, useAuth, usePlan } from '../components/AuthContext';
+import { useAuth, usePlan } from '../components/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
 const Settings = () => {
-  useRequireAuth();
+
   const { user, loading } = useAuth();
   const { plan } = usePlan();
   const [activeTab, setActiveTab] = useState("plan-billing");

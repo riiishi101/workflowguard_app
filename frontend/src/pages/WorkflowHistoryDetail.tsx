@@ -40,7 +40,7 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
-import { useRequireAuth, useAuth } from '../components/AuthContext';
+import { useAuth } from '../components/AuthContext';
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
 import ViewDetailsModal from "@/components/ViewDetailsModal";
 import apiService from "@/services/api";
@@ -263,7 +263,7 @@ const SAMPLE_VERSIONS: WorkflowVersion[] = [];
 const SAMPLE_AUDIT_LOGS: AuditLog[] = [];
 
 const WorkflowHistoryDetail = () => {
-  useRequireAuth();
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const { workflowId } = useParams();
