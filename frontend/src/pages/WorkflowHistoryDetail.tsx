@@ -343,34 +343,29 @@ const WorkflowHistoryDetail = () => {
     setLoading(true);
     setError("");
     
-    // For demo purposes, always use sample data
-    console.log('🔍 WorkflowHistoryDetail: Loading sample versions for workflowId:', workflowId);
-    setVersions(SAMPLE_VERSIONS);
-    setUseSampleData(true);
-    setLoading(false);
+    // Try to load real data first, fallback to sample data
+    console.log('🔍 WorkflowHistoryDetail: Loading versions for workflowId:', workflowId);
     
-    // Commented out API call for demo mode
-    /*
     apiService.getWorkflowVersions(workflowId)
       .then((data) => {
         const realData = Array.isArray(data) ? data : [];
         if (realData.length > 0) {
+          console.log('🔍 WorkflowHistoryDetail: Got real versions:', realData.length);
           setVersions(realData);
           setUseSampleData(false);
         } else {
-          // Use sample data if no real data available
+          console.log('🔍 WorkflowHistoryDetail: No real versions, using sample data');
           setVersions(SAMPLE_VERSIONS);
           setUseSampleData(true);
         }
       })
       .catch((e) => {
-        console.log('Using sample data due to API error:', e.message);
+        console.log('🔍 WorkflowHistoryDetail: API error, using sample data:', e.message);
         setVersions(SAMPLE_VERSIONS);
         setUseSampleData(true);
         setError(""); // Don't show error when using sample data
       })
       .finally(() => setLoading(false));
-    */
   }, [workflowId]);
 
   // Reset to page 1 when filters/search change
@@ -405,30 +400,26 @@ const WorkflowHistoryDetail = () => {
     setAuditLoading(true);
     setAuditError("");
     
-    // For demo purposes, always use sample audit logs
-    console.log('🔍 WorkflowHistoryDetail: Loading sample audit logs for workflowId:', workflowId);
-    setAuditLogs(SAMPLE_AUDIT_LOGS);
-    setAuditLoading(false);
+    // Try to load real audit logs first, fallback to sample data
+    console.log('🔍 WorkflowHistoryDetail: Loading audit logs for workflowId:', workflowId);
     
-    // Commented out API call for demo mode
-    /*
     apiService.getAuditLogs(undefined, 'workflow', workflowId)
       .then((logs) => {
         const realLogs = Array.isArray(logs) ? logs : [];
         if (realLogs.length > 0) {
+          console.log('🔍 WorkflowHistoryDetail: Got real audit logs:', realLogs.length);
           setAuditLogs(realLogs);
         } else {
-          // Use sample audit logs if no real data
+          console.log('🔍 WorkflowHistoryDetail: No real audit logs, using sample data');
           setAuditLogs(SAMPLE_AUDIT_LOGS);
         }
       })
       .catch((e) => {
-        console.log('Using sample audit data due to API error:', e.message);
+        console.log('🔍 WorkflowHistoryDetail: API error, using sample audit logs:', e.message);
         setAuditLogs(SAMPLE_AUDIT_LOGS);
         setAuditError(""); // Don't show error when using sample data
       })
       .finally(() => setAuditLoading(false));
-    */
   }, [workflowId]);
 
   // Reset audit log page when filters change
@@ -603,10 +594,39 @@ const WorkflowHistoryDetail = () => {
                     await new Promise(resolve => setTimeout(resolve, 1500));
                     
                     try {
-                      // For demo mode, simulate successful snapshot
-                      console.log('🔍 Demo: Simulating snapshot from HubSpot for workflowId:', workflowId);
+                                          // Try real API call first, fallback to demo simulation
+                    try {
+                      await apiService.syncWorkflowFromHubSpot(workflowId);
+                      toast({ title: 'Snapshot Created', description: 'A new version was created from HubSpot.' });
                       
-                      // Create a new sample version
+                      // Refresh version list from API
+                      const data = await apiService.getWorkflowVersions(workflowId);
+                      const realData = Array.isArray(data) ? data : [];
+                      if (realData.length > 0) {
+                        setVersions(realData);
+                        setUseSampleData(false);
+                      } else {
+                        // If no real data, create demo version
+                        console.log('🔍 Demo: Creating demo version after API call');
+                        const newVersion: WorkflowVersion = {
+                          id: `demo-${Date.now()}`,
+                          versionNumber: versions.length + 1,
+                          version: `v${versions.length + 1}.0`,
+                          dateTime: format(new Date(), 'PPpp'),
+                          createdAt: new Date().toISOString(),
+                          modifiedBy: {
+                            name: user?.name || 'Current User',
+                            email: user?.email || 'user@example.com',
+                            initials: (user?.name || 'CU').split(' ').map(n => n[0]).join('').toUpperCase()
+                          },
+                          changeSummary: 'Snapshot taken from HubSpot - Demo mode'
+                        };
+                        setVersions([newVersion, ...versions]);
+                      }
+                    } catch (apiError) {
+                      console.log('🔍 Demo: API failed, using demo simulation:', apiError);
+                      
+                      // Fallback to demo simulation
                       const newVersion: WorkflowVersion = {
                         id: `demo-${Date.now()}`,
                         versionNumber: versions.length + 1,
@@ -621,14 +641,12 @@ const WorkflowHistoryDetail = () => {
                         changeSummary: 'Snapshot taken from HubSpot - Demo mode'
                       };
                       
-                      // Add new version to the beginning of the list
-                      const updatedVersions = [newVersion, ...versions];
-                      setVersions(updatedVersions);
-                      
+                      setVersions([newVersion, ...versions]);
                       toast({ 
                         title: 'Snapshot Created', 
                         description: 'A new version was created from HubSpot (Demo Mode).' 
                       });
+                    }
                       
                     } catch (e: any) {
                       console.error('Demo snapshot error:', e);
