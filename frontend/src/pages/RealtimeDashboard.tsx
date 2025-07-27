@@ -279,7 +279,7 @@ export default function RealTimeDashboard() {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Test Connection
               </Button>
-              {testResult && <span className="ml-2 text-xs text-gray-500">{testResult}</span>}
+              {testResult && <span className="ml-2 text-xs text-gray-500">Connection: {testResult.isConnected ? 'Connected' : 'Disconnected'} ({testResult.connectedUsersCount} users)</span>}
             </div>
           </div>
 
