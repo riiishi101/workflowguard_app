@@ -142,7 +142,16 @@ export default defineConfig(({ command, mode }) => {
             ],
             'settings-features': [
               './src/pages/Settings.tsx',
-              './src/components/settings/'
+              './src/components/settings/AddWebhookModal.tsx',
+              './src/components/settings/ApiAccessTab.tsx',
+              './src/components/settings/AuditLogTab.tsx',
+              './src/components/settings/BillingTab.tsx',
+              './src/components/settings/NotificationsTab.tsx',
+              './src/components/settings/PlanBillingTab.tsx',
+              './src/components/settings/ProfileTab.tsx',
+              './src/components/settings/SsoConfiguration.tsx',
+              './src/components/settings/UserPermissionsTab.tsx',
+              './src/components/settings/WebhooksConfiguration.tsx'
             ]
           },
           
