@@ -598,14 +598,45 @@ const WorkflowHistoryDetail = () => {
                   onClick={async () => {
                     if (!workflowId) return;
                     setSnapshotLoading(true);
+                    
+                    // Simulate API delay for demo
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
                     try {
-                      await apiService.syncWorkflowFromHubSpot(workflowId);
-                      toast({ title: 'Snapshot Created', description: 'A new version was created from HubSpot.' });
-                      // Refresh version list
-                      const data = await apiService.getWorkflowVersions(workflowId);
-                      setVersions(Array.isArray(data) ? data : []);
+                      // For demo mode, simulate successful snapshot
+                      console.log('🔍 Demo: Simulating snapshot from HubSpot for workflowId:', workflowId);
+                      
+                      // Create a new sample version
+                      const newVersion: WorkflowVersion = {
+                        id: `demo-${Date.now()}`,
+                        versionNumber: versions.length + 1,
+                        version: `v${versions.length + 1}.0`,
+                        dateTime: format(new Date(), 'PPpp'),
+                        createdAt: new Date().toISOString(),
+                        modifiedBy: {
+                          name: user?.name || 'Current User',
+                          email: user?.email || 'user@example.com',
+                          initials: (user?.name || 'CU').split(' ').map(n => n[0]).join('').toUpperCase()
+                        },
+                        changeSummary: 'Snapshot taken from HubSpot - Demo mode'
+                      };
+                      
+                      // Add new version to the beginning of the list
+                      const updatedVersions = [newVersion, ...versions];
+                      setVersions(updatedVersions);
+                      
+                      toast({ 
+                        title: 'Snapshot Created', 
+                        description: 'A new version was created from HubSpot (Demo Mode).' 
+                      });
+                      
                     } catch (e: any) {
-                      toast({ title: 'Error', description: e.message || 'Failed to snapshot from HubSpot', variant: 'destructive' });
+                      console.error('Demo snapshot error:', e);
+                      toast({ 
+                        title: 'Demo Error', 
+                        description: 'Failed to create demo snapshot', 
+                        variant: 'destructive' 
+                      });
                     } finally {
                       setSnapshotLoading(false);
                     }
