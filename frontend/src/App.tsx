@@ -29,6 +29,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import LoggedOut from './pages/LoggedOut';
 import NotFound from './pages/NotFound';
+import Marketplace from './pages/Marketplace';
 
 // Import API service
 import apiService from './services/api';
@@ -171,6 +172,7 @@ const AppRoutes = () => {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/logged-out" element={<LoggedOut />} />
+        <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/" element={<Dashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

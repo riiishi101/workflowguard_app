@@ -95,6 +95,16 @@ export class AuthController {
       const frontendUrl = process.env.FRONTEND_URL;
       if (!frontendUrl)
         throw new Error('FRONTEND_URL must be set in environment variables');
+      
+      // Check if this is a marketplace installation
+      const installType = allQueryParams.installType;
+      const portalId = allQueryParams.portalId;
+      
+      if (installType === 'marketplace' && portalId) {
+        // Redirect to marketplace page for proper onboarding
+        return res.redirect(`${frontendUrl}/marketplace?portalId=${portalId}&installType=marketplace`);
+      }
+      
       const errorMsg = encodeURIComponent(
         'Missing code parameter. Please try connecting to HubSpot again from the app.',
       );
@@ -356,6 +366,30 @@ export class AuthController {
       console.error('Failed to find or create user:', error);
       throw new HttpException(
         'Failed to find or create user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Get('user/portal/:portalId')
+  @ApiParam({ name: 'portalId', type: String, description: 'HubSpot Portal ID' })
+  async findOrCreateUserByPortalId(@Param('portalId') portalId: string) {
+    try {
+      const user = await this.userService.findByHubspotPortalId(portalId);
+      if (user) {
+        return user;
+      }
+      // Create new user for this portal using authService
+      const newUser = await this.authService.findOrCreateUser(
+        `portal-${portalId}@workflowguard.pro`,
+        `Portal ${portalId} User`,
+        portalId
+      );
+      return newUser;
+    } catch (error) {
+      throw new HttpException(
+        `Failed to find or create user by portal ID: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

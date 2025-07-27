@@ -408,6 +408,10 @@ class ApiService {
     return this.request(`/auth/user/${email}`);
   }
 
+  async findOrCreateUserByPortalId(portalId: string) {
+    return this.request(`/auth/user/portal/${portalId}`);
+  }
+
   async getMyPlan() {
     return this.request('/users/me/plan');
   }

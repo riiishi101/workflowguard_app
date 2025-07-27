@@ -60,6 +60,75 @@ export class WebhookController {
     return this.webhookService.remove(id, userId);
   }
 
+  // HubSpot Install Webhook
+  @Public()
+  @Post('hubspot/install')
+  async handleHubSpotInstall(
+    @Body() body: { 
+      portalId: string; 
+      userId?: string; 
+      planId?: string;
+      installType?: string;
+    },
+    @Headers('x-hubspot-signature') signature: string,
+    @Req() req: Request,
+  ) {
+    // Validate signature if secret is set
+    const secret = process.env.HUBSPOT_WEBHOOK_SECRET;
+    if (secret) {
+      const payload = JSON.stringify(req.body);
+      const expectedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(payload)
+        .digest('hex');
+      if (signature !== expectedSignature) {
+        this.logger.warn(
+          `Invalid HubSpot webhook signature for install portalId ${body.portalId}`,
+        );
+        throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
+      }
+    }
+
+    this.logger.log(
+      `Received HubSpot install webhook for portalId ${body.portalId}`,
+    );
+
+    if (!body.portalId) {
+      this.logger.warn('Missing portalId in install webhook');
+      throw new HttpException('Missing portalId', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      // Create or find user for this portal
+      const user = await this.userService.findOrCreateUser(body.portalId);
+      
+      // Set up trial period if new user
+      if (user && !user.planId) {
+        await this.userService.updateUser(user.id, {
+          planId: body.planId || 'professional',
+          isTrialActive: true,
+          trialStartDate: new Date(),
+          trialEndDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 21 days
+        });
+      }
+
+      this.logger.log(`User setup completed for portalId ${body.portalId}`);
+      return { 
+        message: 'Installation successful', 
+        portalId: body.portalId,
+        userId: user?.id 
+      };
+    } catch (err) {
+      this.logger.error(
+        `Failed to setup user for portalId ${body.portalId}: ${err.message}`,
+      );
+      throw new HttpException(
+        'Failed to setup user: ' + err.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // HubSpot Uninstall Webhook
   @Public()
   @Post('hubspot/uninstall')
