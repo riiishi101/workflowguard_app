@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 import { usePlan } from '../components/AuthContext';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../components/ui/use-toast';
 import { AppLayout, PageHeader, ContentSection, GridLayout } from '../components/layout/AppLayout';
 import { EnhancedCard, EnhancedCardHeader, EnhancedCardContent } from '../components/ui/EnhancedCard';
 import { EnhancedButton } from '../components/ui/EnhancedButton';
@@ -29,7 +29,17 @@ import {
   Users,
   Database,
   Activity,
+  HelpCircle,
 } from 'lucide-react';
+
+// Simple date formatting function
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -44,11 +54,11 @@ const Settings = () => {
 
   // Form states
   const [profileForm, setProfileForm] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    firstName: user?.name?.split(' ')[0] || '',
+    lastName: user?.name?.split(' ').slice(1).join(' ') || '',
     email: user?.email || '',
-    company: user?.company || '',
-    phone: user?.phone || '',
+    company: '',
+    phone: '',
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -213,7 +223,9 @@ const Settings = () => {
           <ContentSection title="Security Settings" subtitle="Manage your account security">
             <div className="space-y-6">
               <EnhancedCard variant="outlined">
-                <EnhancedCardHeader title="Change Password" />
+                <EnhancedCardHeader title="Change Password">
+                  <div></div>
+                </EnhancedCardHeader>
                 <EnhancedCardContent>
                   <div className="space-y-4">
                     <EnhancedInput
@@ -265,7 +277,9 @@ const Settings = () => {
               </EnhancedCard>
 
               <EnhancedCard variant="outlined">
-                <EnhancedCardHeader title="Two-Factor Authentication" />
+                <EnhancedCardHeader title="Two-Factor Authentication">
+                  <div></div>
+                </EnhancedCardHeader>
                 <EnhancedCardContent>
                   <div className="flex items-center justify-between">
                     <div>
@@ -290,7 +304,9 @@ const Settings = () => {
           <ContentSection title="Notification Preferences" subtitle="Choose how you want to be notified">
             <div className="space-y-6">
               <EnhancedCard variant="outlined">
-                <EnhancedCardHeader title="Email Notifications" />
+                <EnhancedCardHeader title="Email Notifications">
+                  <div></div>
+                </EnhancedCardHeader>
                 <EnhancedCardContent>
                   <div className="space-y-4">
                     {Object.entries(notificationSettings).map(([key, value]) => (
@@ -314,13 +330,13 @@ const Settings = () => {
                         />
                       </div>
                     ))}
-                    <div className="flex justify-end pt-4">
+                    <div className="flex justify-end">
                       <EnhancedButton
                         onClick={handleNotificationUpdate}
                         loading={loading}
                         icon={<Bell className="w-4 h-4" />}
                       >
-                        Save Preferences
+                        Save Settings
                       </EnhancedButton>
                     </div>
                   </div>
@@ -335,48 +351,102 @@ const Settings = () => {
           <ContentSection title="Billing & Subscription" subtitle="Manage your subscription and billing">
             <div className="space-y-6">
               <EnhancedCard variant="outlined">
-                <EnhancedCardHeader title="Current Plan" />
+                <EnhancedCardHeader title="Current Plan">
+                  <div></div>
+                </EnhancedCardHeader>
                 <EnhancedCardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900">{plan?.name || 'Trial'}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {plan?.planId === 'trial' ? 'Professional Trial' : plan?.planId === 'starter' ? 'Starter Plan' : plan?.planId === 'professional' ? 'Professional Plan' : 'Enterprise Plan'}
+                      </h3>
                       <p className="text-sm text-gray-600">
-                        {plan?.description || 'Free trial plan'}
+                        {plan?.planId === 'trial' ? '21-day free trial of Professional features' : 
+                         plan?.planId === 'starter' ? 'Perfect for small teams getting started' :
+                         plan?.planId === 'professional' ? 'For growing businesses with advanced needs' :
+                         'Enterprise-grade solution for large organizations'}
                       </p>
                     </div>
-                    <StatusBadge status="active" />
-                  </div>
-                  <div className="mt-4">
-                    <EnhancedButton variant="primary" onClick={() => navigate('/marketplace')}>
-                      Upgrade Plan
-                    </EnhancedButton>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-600">
+                        ${plan?.planId === 'trial' ? '0' : plan?.planId === 'starter' ? '29' : plan?.planId === 'professional' ? '59' : '199'}/month
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {plan?.isTrialActive ? 'Free Trial' : 'Billed monthly'}
+                      </div>
+                    </div>
                   </div>
                 </EnhancedCardContent>
               </EnhancedCard>
 
               <EnhancedCard variant="outlined">
-                <EnhancedCardHeader title="Usage Statistics" />
+                <EnhancedCardHeader title="Usage Limits">
+                  <div></div>
+                </EnhancedCardHeader>
                 <EnhancedCardContent>
-                  <GridLayout cols={3} gap="lg">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {plan?.maxWorkflows || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">Workflows</div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Workflows</span>
+                      <span className="text-sm font-medium">
+                        0 / {plan?.planId === 'trial' ? '500' : plan?.planId === 'starter' ? '50' : plan?.planId === 'professional' ? '500' : '∞'}
+                      </span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {plan?.maxUsers || 1}
-                      </div>
-                      <div className="text-sm text-gray-600">Users</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Users</span>
+                      <span className="text-sm font-medium">
+                        1 / {plan?.planId === 'trial' ? '1' : plan?.planId === 'starter' ? '1' : plan?.planId === 'professional' ? '5' : '∞'}
+                      </span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {plan?.maxStorage || '1GB'}
-                      </div>
-                      <div className="text-sm text-gray-600">Storage</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Storage</span>
+                      <span className="text-sm font-medium">
+                        0 GB / {plan?.planId === 'trial' ? '10 GB' : plan?.planId === 'starter' ? '5 GB' : plan?.planId === 'professional' ? '50 GB' : '∞'}
+                      </span>
                     </div>
-                  </GridLayout>
+                  </div>
+                </EnhancedCardContent>
+              </EnhancedCard>
+
+              <EnhancedCard variant="outlined">
+                <EnhancedCardHeader title="Billing Information">
+                  <div></div>
+                </EnhancedCardHeader>
+                <EnhancedCardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Billing Provider</span>
+                      <span className="font-medium">HubSpot Marketplace</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Next Billing Date</span>
+                      <span className="font-medium">
+                        {plan?.trialEndDate ? formatDate(plan.trialEndDate) : 'Monthly'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Payment Method</span>
+                      <span className="font-medium">Managed by HubSpot</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 flex space-x-3">
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={() => window.open('https://app.hubspot.com/ecosystem/marketplace/apps', '_blank')}
+                      className="flex-1"
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Manage Billing
+                    </EnhancedButton>
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={() => window.open('https://workflowguard.com/support', '_blank')}
+                      className="flex-1"
+                    >
+                      <HelpCircle className="w-4 h-4 mr-2" />
+                      Get Help
+                    </EnhancedButton>
+                  </div>
                 </EnhancedCardContent>
               </EnhancedCard>
             </div>
@@ -388,7 +458,9 @@ const Settings = () => {
           <ContentSection title="Integrations" subtitle="Manage your connected services">
             <div className="space-y-6">
               <EnhancedCard variant="outlined">
-                <EnhancedCardHeader title="HubSpot Integration" />
+                <EnhancedCardHeader title="HubSpot Integration">
+                  <div></div>
+                </EnhancedCardHeader>
                 <EnhancedCardContent>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">

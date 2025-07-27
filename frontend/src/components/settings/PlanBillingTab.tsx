@@ -102,6 +102,19 @@ const PlanBillingTab = () => {
   const showTrialBanner = planData.isTrialActive && planData.trialPlanId === 'professional';
   const showTrialExpiredBanner = !planData.isTrialActive && planData.trialPlanId === 'professional' && planData.planId === 'trial';
 
+  // Calculate remaining trial days
+  const getRemainingTrialDays = () => {
+    if (!planData.trialEndDate) return null;
+    const now = new Date();
+    const trialEnd = new Date(planData.trialEndDate);
+    const diffTime = trialEnd.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  const remainingTrialDays = getRemainingTrialDays();
+  const isTrialActive = planData.isTrialActive && remainingTrialDays && remainingTrialDays > 0;
+
   const handleUpgrade = async (planId: string) => {
     try {
       setLoading(true);
@@ -278,8 +291,8 @@ const PlanBillingTab = () => {
             </h3>
             <p className="text-sm text-blue-700 mt-1">
               You're currently on a 21-day free trial of the Professional plan. 
-              {planData.remainingTrialDays !== undefined && (
-                <span className="font-medium"> {planData.remainingTrialDays} days remaining.</span>
+              {remainingTrialDays !== null && (
+                <span className="font-medium"> {remainingTrialDays} days remaining.</span>
               )}
             </p>
           </div>
@@ -300,19 +313,20 @@ const PlanBillingTab = () => {
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <div className="flex-1">
             <h3 className="text-sm font-medium text-red-800">
-              Trial Expired
+              Trial Expired - App Locked
             </h3>
             <p className="text-sm text-red-700 mt-1">
-              Your 21-day trial has expired. Upgrade to continue using WorkflowGuard.
+              Your 21-day trial has ended. The app is now locked and you can only access this Settings page. 
+              Upgrade to any plan to unlock all features.
             </p>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleUpgrade('starter')}
+            onClick={() => handleUpgrade('professional')}
             className="border-red-300 text-red-700 hover:bg-red-100"
           >
-            Choose Plan
+            Upgrade Now
           </Button>
         </Alert>
       )}

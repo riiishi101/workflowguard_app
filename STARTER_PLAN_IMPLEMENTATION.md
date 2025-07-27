@@ -50,17 +50,25 @@ starter: {
 
 #### User Management
 - New users start with a 21-day Professional trial
-- After trial expiration, users are automatically moved to Starter plan
-- Users can upgrade to Professional or Enterprise at any time
+- After trial expiration, users remain on trial plan (triggers lockout)
+- Users can upgrade to Starter, Professional, or Enterprise at any time
 - Users can downgrade from higher plans to Starter
+- Complete app lockout after trial expiration (only Settings page accessible)
 
 ### 2. Frontend Implementation
+
+#### App Lockout System (`frontend/src/App.tsx`)
+- **Trial Day Counter**: Shows remaining trial days on all pages
+- **Complete Lockout**: After trial expiration, overlay blocks all pages except Settings
+- **Trial Banner**: Blue banner showing trial status and remaining days
+- **Lockout Overlay**: Full-screen overlay with upgrade options
 
 #### Plan Billing Tab (`frontend/src/components/settings/PlanBillingTab.tsx`)
 - Displays all three plans (Starter, Professional, Enterprise)
 - Shows current plan with upgrade/downgrade options
 - Handles HubSpot Marketplace integration
 - Provides usage statistics and billing information
+- Shows trial day counter and lockout status
 
 #### Welcome Modal (`frontend/src/components/WelcomeModal.tsx`)
 - Shows plan options after trial
@@ -79,15 +87,23 @@ starter: {
 #### New User Journey
 1. **Sign Up**: User creates account
 2. **Trial Period**: 21-day Professional trial starts
-3. **Trial Expiration**: Automatically moved to Starter plan
-4. **Plan Selection**: User can choose to upgrade or stay on Starter
-5. **Billing**: Managed through HubSpot Marketplace
+3. **Trial Day Counter**: Shows remaining days on all pages
+4. **Trial Expiration**: Complete app lockout (only Settings accessible)
+5. **Plan Selection**: User must upgrade to continue using the app
+6. **Billing**: Managed through HubSpot Marketplace
 
 #### Existing User Journey
 1. **Current Plan**: User on any plan
 2. **Plan Management**: Access via Settings > Billing
 3. **Upgrade/Downgrade**: Choose new plan
 4. **Billing Changes**: Handled through HubSpot Marketplace
+
+#### Trial Expiration Flow
+1. **Trial Active**: Full app access with day counter
+2. **Trial Expires**: Complete lockout with overlay
+3. **Settings Only**: User can only access Settings page
+4. **Upgrade Required**: Must choose a plan to continue
+5. **App Unlocked**: Full access restored after upgrade
 
 ## 💰 Pricing Strategy
 
@@ -103,6 +119,12 @@ starter: {
 - **Scalable**: Clear upgrade path to higher tiers
 
 ## 🎨 UI/UX Enhancements
+
+### Trial Management
+- **Day Counter**: Real-time trial day tracking
+- **Trial Banner**: Prominent display of trial status
+- **Lockout Overlay**: Clear upgrade path after expiration
+- **Settings Access**: Only billing page accessible after lockout
 
 ### Plan Selection Interface
 - **Clear Comparison**: Side-by-side plan comparison
@@ -131,6 +153,12 @@ starter: {
 - **Auth Service**: Handles trial expiration logic
 
 ## 📊 Usage Tracking
+
+### Trial Management
+- **Day Counter**: Real-time calculation of remaining trial days
+- **Expiration Logic**: Automatic lockout after trial ends
+- **Lockout Enforcement**: Complete app access restriction
+- **Upgrade Tracking**: Monitor upgrade conversions
 
 ### Starter Plan Limits
 - **Workflow Count**: Maximum 50 workflows
@@ -223,5 +251,6 @@ The Starter plan implementation provides WorkflowGuard with:
 3. **User Satisfaction**: Better plan fit for different user needs
 4. **Competitive Advantage**: Comprehensive pricing strategy
 5. **Scalable Business Model**: Clear growth path for users
+6. **Trial Management**: Complete lockout system ensures conversions
 
-The implementation is production-ready and fully integrated with the existing WorkflowGuard infrastructure, providing a seamless experience for users across all plan tiers. 
+The implementation is production-ready and fully integrated with the existing WorkflowGuard infrastructure, providing a seamless experience for users across all plan tiers with a robust trial management system. 

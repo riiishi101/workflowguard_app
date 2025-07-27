@@ -95,19 +95,65 @@ const LockoutOverlay: React.FC = () => (
       left: 0,
       width: '100vw',
       height: '100vh',
-      background: 'rgba(255,255,255,0.7)',
+      background: 'rgba(255,255,255,0.95)',
       zIndex: 1000,
       pointerEvents: 'auto',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'flex-start',
+      justifyContent: 'center',
     }}
     tabIndex={-1}
     aria-hidden="true"
   >
-    <div style={{ width: '100%', maxWidth: 900, marginTop: 40 }}>
-      <LockoutBanner message="Your 21-day free trial has ended. Upgrade to the Professional plan ($59/month) to continue using WorkflowGuard. Click 'Settings' in the navigation to upgrade your plan." />
+    <div style={{ width: '100%', maxWidth: 600, textAlign: 'center', padding: '40px 20px' }}>
+      <LockoutBanner message="Your 21-day free trial has ended. Upgrade to continue using WorkflowGuard's features." />
+      
+      <div className="mt-8 space-y-4">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Trial Expired - Upgrade Required
+        </h2>
+        
+        <p className="text-gray-600 mb-6">
+          Your free trial has ended. To continue using WorkflowGuard and protect your HubSpot workflows, 
+          please upgrade to one of our paid plans.
+        </p>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Plans</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="text-center p-3 border border-gray-200 rounded">
+              <div className="font-semibold text-gray-900">Starter</div>
+              <div className="text-2xl font-bold text-blue-600">$29</div>
+              <div className="text-gray-600">/month</div>
+              <div className="text-xs text-gray-500 mt-1">50 Workflows</div>
+            </div>
+            <div className="text-center p-3 border-2 border-blue-500 rounded bg-blue-50">
+              <div className="font-semibold text-gray-900">Professional</div>
+              <div className="text-2xl font-bold text-blue-600">$59</div>
+              <div className="text-gray-600">/month</div>
+              <div className="text-xs text-gray-500 mt-1">500 Workflows</div>
+            </div>
+            <div className="text-center p-3 border border-gray-200 rounded">
+              <div className="font-semibold text-gray-900">Enterprise</div>
+              <div className="text-2xl font-bold text-blue-600">$199</div>
+              <div className="text-gray-600">/month</div>
+              <div className="text-xs text-gray-500 mt-1">Unlimited</div>
+            </div>
+          </div>
+        </div>
+        
+        <button
+          onClick={() => window.location.href = '/settings'}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+        >
+          Go to Settings & Upgrade
+        </button>
+        
+        <p className="text-xs text-gray-500 mt-4">
+          You can only access the Settings page to manage your subscription.
+        </p>
+      </div>
     </div>
   </div>
 );
@@ -155,13 +201,41 @@ const AppRoutes = () => {
 
   // Determine if user is locked out (trial expired, not paid)
   const isTrialExpired = plan && !plan.isTrialActive && plan.trialPlanId === 'professional';
-  const isOnPlanBilling = location.pathname === '/settings';
-  const isOnBillingPage = location.pathname === '/settings' || location.pathname.includes('/billing');
+  const isOnBillingPage = location.pathname === '/settings';
+  
+  // Calculate remaining trial days
+  const getRemainingTrialDays = () => {
+    if (!plan || !plan.trialEndDate) return null;
+    const now = new Date();
+    const trialEnd = new Date(plan.trialEndDate);
+    const diffTime = trialEnd.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  const remainingTrialDays = getRemainingTrialDays();
+  const isTrialActive = plan && plan.isTrialActive && remainingTrialDays && remainingTrialDays > 0;
 
   return (
     <>
       <ModalsManager />
+      
+      {/* Trial Expired Lockout - Show overlay on all pages except Settings */}
       {isTrialExpired && !isOnBillingPage && <LockoutOverlay />}
+      
+      {/* Trial Day Counter Banner - Show on all pages when trial is active */}
+      {isTrialActive && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white px-4 py-2 text-center text-sm font-medium">
+          <span className="flex items-center justify-center gap-2">
+            <span>🎉 Free Trial Active</span>
+            <span>•</span>
+            <span>{remainingTrialDays} days remaining</span>
+            <span>•</span>
+            <span>Upgrade to continue after trial ends</span>
+          </span>
+        </div>
+      )}
+
       <Routes>
         <Route path="/dashboard" element={
           <AuthRequired>
@@ -210,12 +284,20 @@ const AppRoutes = () => {
             <RealtimeDashboard />
           </AuthRequired>
         } />
-        <Route path="/contact" element={<ContactUs />} />
-        <Route path="/help" element={<HelpSupport />} />
+        <Route path="/contact" element={
+          <AuthRequired>
+            <ContactUs />
+          </AuthRequired>
+        } />
+        <Route path="/help" element={
+          <AuthRequired>
+            <HelpSupport />
+          </AuthRequired>
+        } />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/logged-out" element={<LoggedOut />} />
         <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/logged-out" element={<LoggedOut />} />
         <Route path="/" element={
           <AuthRequired>
             <Dashboard />

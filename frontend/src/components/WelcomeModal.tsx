@@ -177,7 +177,7 @@ const WelcomeModal = ({
 
           <p className="text-xs text-gray-500 leading-relaxed">
             Start your 21-day free trial of the Professional plan. No credit card required.
-            You can upgrade, downgrade, or cancel at any time.
+            After trial ends, you'll need to upgrade to continue using WorkflowGuard.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
