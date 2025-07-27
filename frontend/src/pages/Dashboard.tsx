@@ -108,7 +108,7 @@ const Dashboard = () => {
         activeWorkflows,
         monitoredWorkflows,
         recentActivity: workflows.filter(w => {
-          const updatedAt = new Date(w.updatedAt || w.createdAt || '');
+          const updatedAt = new Date(w.updatedAt || w.createdAt || Date.now());
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
           return updatedAt > oneDayAgo;
         }).length,
@@ -311,7 +311,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalWorkflows}</div>
               <p className="text-xs text-muted-foreground">
-                {plan?.maxWorkflows ? `${stats.totalWorkflows}/${plan.maxWorkflows} used` : 'No limit'}
+                {plan?.planId === 'trial' ? `${stats.totalWorkflows}/500 used` : 'No limit'}
               </p>
             </CardContent>
           </Card>
