@@ -272,14 +272,15 @@ const WorkflowHistoryDetail = () => {
       .catch((e) => {
         console.log('Failed to load workflow details:', e.message);
         setWorkflowError(e.message || "Failed to load workflow details");
-        // Use sample workflow data as fallback
+        // Use better fallback workflow data
         setWorkflowData({
           id: workflowId,
-          name: 'Customer Onboarding',
+          name: 'Sample Workflow',
           hubspotId: '12345',
           isLive: true,
           lastModified: new Date().toISOString(),
-          status: 'active'
+          status: 'active',
+          description: 'This is a sample workflow for demonstration purposes'
         });
       })
       .finally(() => setWorkflowLoading(false));

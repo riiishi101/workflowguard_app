@@ -89,6 +89,7 @@ export class WorkflowController {
     return this.toSerializable(workflows);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({ summary: 'Get a workflow by ID' })
   @ApiParam({ name: 'id', type: String, description: 'Workflow ID' })
