@@ -139,8 +139,23 @@ const Dashboard = () => {
       }
       
       // Defensive: Validate and filter out malformed data
+      // For localStorage data, be more lenient
       const validWorkflows = Array.isArray(data)
-        ? data.filter(isValidWorkflow)
+        ? data.filter(w => {
+            // Extra lenient validation for localStorage data
+            if (!w || typeof w !== 'object') return false;
+            
+            // Must have a name
+            const hasName = w.name && typeof w.name === 'string' && w.name.trim() !== '';
+            if (!hasName) return false;
+            
+            // Must have some kind of ID
+            const hasId = w.id || w.hubspotId || w.workflowId;
+            if (!hasId) return false;
+            
+            // Owner is optional for localStorage data
+            return true;
+          })
         : [];
       
       console.log('📊 Dashboard: Validation results:', {
@@ -164,6 +179,9 @@ const Dashboard = () => {
           hasId: typeof w.id === 'string' || typeof w.hubspotId === 'string',
           hasOwnerId: typeof w.ownerId === 'string'
         })));
+        
+        // Also log the raw data to see what's actually in localStorage
+        console.log('🔍 Dashboard: Raw localStorage data:', data);
       }
       
       if (Array.isArray(data) && validWorkflows.length !== data.length) {
