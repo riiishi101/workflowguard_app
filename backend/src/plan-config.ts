@@ -1,16 +1,22 @@
-export type PlanId = 'starter' | 'professional' | 'enterprise';
+export type PlanId = 'trial' | 'professional' | 'enterprise';
 
 export interface PlanConfig {
   maxWorkflows: number | null; // null = unlimited
   historyDays: number | null; // null = unlimited
   features: string[];
+  isPaid: boolean;
 }
 
 export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
-  starter: {
-    maxWorkflows: 25,
-    historyDays: 30,
-    features: ['basic_monitoring', 'email_support'],
+  trial: {
+    maxWorkflows: 500,
+    historyDays: 90,
+    features: [
+      'advanced_monitoring',
+      'priority_support',
+      'custom_notifications',
+    ],
+    isPaid: false,
   },
   professional: {
     maxWorkflows: 500,
@@ -20,6 +26,7 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
       'priority_support',
       'custom_notifications',
     ],
+    isPaid: true,
   },
   enterprise: {
     maxWorkflows: null,
@@ -32,5 +39,6 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
       'user_permissions',
       'audit_logs',
     ],
+    isPaid: true,
   },
 };

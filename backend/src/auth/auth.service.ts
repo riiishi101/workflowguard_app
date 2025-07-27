@@ -75,11 +75,11 @@ export class AuthService {
           role,
           firstInstalledAt: now,
           lastActiveAt: now,
-          planId: 'professional',
+          planId: 'trial', // Trial plan for new users
           trialStartDate: now,
           trialEndDate: trialEnd,
           isTrialActive: true,
-          trialPlanId: 'professional',
+          trialPlanId: 'professional', // They're trialing the professional plan
           hubspotPortalId: portalId ? String(portalId) : null,
         },
       });

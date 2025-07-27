@@ -87,11 +87,11 @@ export class UserService {
       const updatedUser = await this.prisma.user.update({
         where: { id },
         data: {
-          planId: user.planId || 'starter',
+          planId: user.planId || 'trial',
           trialStartDate: user.trialStartDate || now,
           trialEndDate: user.trialEndDate || trialEnd,
           isTrialActive:
-            user.isTrialActive !== null ? user.isTrialActive : false,
+            user.isTrialActive !== null ? user.isTrialActive : true,
           trialPlanId: user.trialPlanId || 'professional',
         },
         select: {
@@ -181,7 +181,7 @@ export class UserService {
   }
 
   async getPlanById(planId: string) {
-    return PLAN_CONFIG[planId as PlanId] || PLAN_CONFIG.starter;
+    return PLAN_CONFIG[planId as PlanId] || PLAN_CONFIG.trial;
   }
 
   async updateUserPlan(userId: string, newPlanId: string) {

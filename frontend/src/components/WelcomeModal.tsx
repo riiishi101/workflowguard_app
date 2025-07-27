@@ -90,12 +90,16 @@ const WelcomeModal = ({
                 <CheckCircle className="w-4 h-4 text-blue-500" />
                 <span className="text-gray-700">Workflow comparison</span>
               </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-blue-500" />
+                <span className="text-gray-700">500 workflows monitored</span>
+              </div>
             </div>
           </div>
 
           <p className="text-xs text-gray-500 leading-relaxed">
             You're currently on a 21-day free trial with access to Professional
-            Plan features
+            Plan features. After trial ends, upgrade to Professional ($59/month) or Enterprise ($199/month).
           </p>
 
           <Button

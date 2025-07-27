@@ -343,7 +343,7 @@ export class UserController {
         'Plan-status - No userId in JWT payload, returning default plan status',
       );
       return {
-        planId: 'starter',
+        planId: 'trial',
         isTrialActive: false,
         trialEndDate: null,
         trialPlanId: null,
@@ -362,7 +362,7 @@ export class UserController {
         'Plan-status - User not found in database, creating default plan status',
       );
       return {
-        planId: 'starter',
+        planId: 'trial',
         isTrialActive: false,
         trialEndDate: null,
         trialPlanId: null,
@@ -385,7 +385,7 @@ export class UserController {
       remainingTrialDays,
     });
     return {
-      planId: user.planId || 'starter',
+      planId: user.planId || 'trial',
       isTrialActive: user.isTrialActive || false,
       trialEndDate: user.trialEndDate,
       trialPlanId: user.trialPlanId,

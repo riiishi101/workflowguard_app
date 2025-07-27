@@ -99,58 +99,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      // Call backend to clear JWT cookie
       await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
-    } catch (e) {
-      // Ignore errors during logout
-    }
-    setUser(null);
-    setToken(null);
-    localStorage.clear();
-    sessionStorage.clear();
-    // Redirect to a dedicated logged-out page to prevent auto-login
-    if (typeof window !== 'undefined') {
-      window.location.href = '/logged-out';
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('authUser');
+      localStorage.removeItem('authToken');
     }
   };
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout }}>
-      {/* Only show error UI for real errors, not for unauthenticated users */}
-      {error && !(
-        error === 'Authentication failed. Please log in again.' ||
-        error === 'Authentication error. Please try again.'
-      ) ? (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-          <span style={{ color: 'red', fontSize: '1.2rem', marginBottom: '1rem' }}>{error}</span>
-          <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>Retry</button>
-        </div>
-      ) : children}
+      {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-};
-
-// Hook to require authentication - redirects or shows appropriate UI
-export const useRequireAuth = () => {
-  const { user, loading } = useAuth();
-  
-  // If still loading, don't redirect yet
-  if (loading) {
-    return;
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  
-  // If no user, the WelcomeModal will be shown by ModalsManager in App.tsx
-  // No need to redirect since the modal will handle the flow
-  return user;
+  return context;
 };
 
 // --- Plan Context ---
@@ -173,75 +148,77 @@ const PlanContext = createContext<PlanContextType | undefined>(undefined);
 
 export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [plan, setPlan] = useState<PlanStatus | null>(null);
-  const { user } = useAuth(); // Get user data from AuthContext
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchPlanStatus() {
       try {
-        // First try the plan-status endpoint
-        const res = await fetch(`${API_BASE_URL}/users/me/plan-status`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setPlan(data);
-          return;
+        const response = await fetch(`${API_BASE_URL}/users/me/plan-status`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const planData = await response.json();
+          setPlan(planData);
+        } else {
+          // Fallback to user data if plan status endpoint fails
+          if (user) {
+            setPlan({
+              planId: user.planId || 'trial',
+              isTrialActive: user.isTrialActive || false,
+              trialEndDate: user.trialEndDate || null,
+              trialPlanId: user.trialPlanId || 'professional',
+              remainingTrialDays: user.trialEndDate ?
+                Math.max(0, Math.ceil((new Date(user.trialEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) :
+                undefined
+            });
+          } else {
+            setPlan({ planId: 'trial', isTrialActive: false });
+          }
         }
-        
-        // If plan-status fails, use user data from successful /me endpoint as fallback
-        console.log('Plan-status endpoint failed, using user data fallback');
+      } catch (error) {
+        console.error('Failed to fetch plan status:', error);
+        // Fallback to user data if plan status endpoint fails
         if (user) {
-          // Extract plan info from user data
-          const fallbackPlan: PlanStatus = {
-            planId: user.planId || 'starter',
+          setPlan({
+            planId: user.planId || 'trial',
             isTrialActive: user.isTrialActive || false,
             trialEndDate: user.trialEndDate || null,
-            trialPlanId: user.trialPlanId || null,
-            remainingTrialDays: user.trialEndDate ? 
-              Math.max(0, Math.ceil((new Date(user.trialEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 
+            trialPlanId: user.trialPlanId || 'professional',
+            remainingTrialDays: user.trialEndDate ?
+              Math.max(0, Math.ceil((new Date(user.trialEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) :
               undefined
-          };
-          setPlan(fallbackPlan);
+          });
         } else {
-          // Ultimate fallback
-          setPlan({ planId: 'starter', isTrialActive: false });
-        }
-      } catch (e) {
-        console.log('Plan status fetch error, using fallback:', e);
-        // Use user data as fallback if available
-        if (user) {
-          const fallbackPlan: PlanStatus = {
-            planId: user.planId || 'starter',
-            isTrialActive: user.isTrialActive || false,
-            trialEndDate: user.trialEndDate || null,
-            trialPlanId: user.trialPlanId || null
-          };
-          setPlan(fallbackPlan);
-        } else {
-          setPlan({ planId: 'starter', isTrialActive: false });
+          setPlan({ planId: 'trial', isTrialActive: false });
         }
       }
     }
-    
-    // Only fetch if we have user data
     if (user) {
       fetchPlanStatus();
     }
-  }, [user]); // Re-run when user changes
+  }, [user]);
 
   const isTrialing = () => !!plan?.isTrialActive;
 
-  // Example feature map for demo; in production, fetch from backend or config
-  const planFeatures: Record<string, string[]> = {
-    starter: ['basic_monitoring', 'email_support'],
-    professional: ['advanced_monitoring', 'priority_support', 'custom_notifications'],
-    enterprise: ['unlimited_workflows', 'advanced_monitoring', '24_7_support', 'api_access', 'user_permissions', 'audit_logs'],
-  };
-
   const hasFeature = (feature: string) => {
     if (!plan) return false;
+    
+    // If user is on trial, check trial plan features
     if (plan.isTrialActive && plan.trialPlanId) {
-      return planFeatures[plan.trialPlanId]?.includes(feature);
+      const trialPlanFeatures = {
+        'professional': ['advanced_monitoring', 'priority_support', 'custom_notifications'],
+        'enterprise': ['unlimited_workflows', 'advanced_monitoring', '24_7_support', 'api_access', 'user_permissions', 'audit_logs']
+      };
+      return trialPlanFeatures[plan.trialPlanId as keyof typeof trialPlanFeatures]?.includes(feature) || false;
     }
-    return planFeatures[plan.planId]?.includes(feature);
+    
+    // Check current plan features
+    const planFeatures = {
+      'trial': ['advanced_monitoring', 'priority_support', 'custom_notifications'],
+      'professional': ['advanced_monitoring', 'priority_support', 'custom_notifications'],
+      'enterprise': ['unlimited_workflows', 'advanced_monitoring', '24_7_support', 'api_access', 'user_permissions', 'audit_logs']
+    };
+    return planFeatures[plan.planId as keyof typeof planFeatures]?.includes(feature) || false;
   };
 
   return (
@@ -252,7 +229,9 @@ export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const usePlan = () => {
-  const ctx = useContext(PlanContext);
-  if (!ctx) throw new Error('usePlan must be used within PlanProvider');
-  return ctx;
+  const context = useContext(PlanContext);
+  if (context === undefined) {
+    throw new Error('usePlan must be used within a PlanProvider');
+  }
+  return context;
 }; 

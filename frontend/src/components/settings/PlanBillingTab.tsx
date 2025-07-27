@@ -46,34 +46,22 @@ const PlanBillingTab = () => {
   // Plan definitions for display
   const plans = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: 29,
-      workflows: 25,
-      history: 30,
-      features: ['Basic Monitoring', 'Email Support'],
-    },
-    {
       id: 'professional',
       name: 'Professional',
       price: 59,
-      workflows: 500,
-      history: 90,
-      features: ['Advanced Monitoring', 'Priority Support', 'Custom Notifications'],
+      features: ['500 Workflows', '90 Days History', 'Advanced Monitoring', 'Priority Support', 'Custom Notifications'],
     },
     {
       id: 'enterprise',
       name: 'Enterprise',
-      price: 129,
-      workflows: null,
-      history: null,
-      features: ['Unlimited Workflows', '24/7 Support', 'API Access', 'User Permissions', 'Audit Logs'],
+      price: 199,
+      features: ['Unlimited Workflows', 'Unlimited History', '24/7 Support', 'API Access', 'User Permissions', 'Audit Logs'],
     },
   ];
 
   // Trial banner logic
   const showTrialBanner = planData.isTrialActive && planData.trialPlanId === 'professional';
-  const showTrialExpiredBanner = !planData.isTrialActive && planData.trialPlanId === 'professional' && planData.planId === 'starter';
+  const showTrialExpiredBanner = !planData.isTrialActive && planData.trialPlanId === 'professional' && planData.planId === 'trial';
 
   const handleUpgrade = async (planId: string) => {
     try {
@@ -189,8 +177,8 @@ const PlanBillingTab = () => {
       {showTrialExpiredBanner && (
         <div className="bg-yellow-100 border border-yellow-300 text-yellow-900 rounded-lg px-6 py-4 flex items-center justify-between">
           <div>
-            <span className="font-semibold">Your Professional trial has ended.</span>
-            <span className="ml-2">You are now on the Starter plan. Upgrade to unlock all features!</span>
+            <span className="font-semibold">Your 21-day Professional trial has ended.</span>
+            <span className="ml-2">Upgrade to Professional ($59/month) or Enterprise ($199/month) to continue using WorkflowGuard!</span>
           </div>
         </div>
       )}
@@ -277,13 +265,13 @@ const PlanBillingTab = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Workflows:</span>
                   <span className="font-medium">
-                    {p.workflows === null ? 'Unlimited' : p.workflows}
+                    {p.id === 'enterprise' ? 'Unlimited' : '500'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">History:</span>
                   <span className="font-medium">
-                    {p.history === null ? 'Unlimited' : `${p.history} days`}
+                    {p.id === 'enterprise' ? 'Unlimited' : '90 days'}
                   </span>
                 </div>
               </div>

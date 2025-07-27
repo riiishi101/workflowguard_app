@@ -107,7 +107,7 @@ const LockoutOverlay: React.FC = () => (
     aria-hidden="true"
   >
     <div style={{ width: '100%', maxWidth: 900, marginTop: 40 }}>
-      <LockoutBanner message="Your free trial has ended. Please upgrade your plan to continue using WorkflowGuard. You can manage your subscription below." />
+      <LockoutBanner message="Your 21-day free trial has ended. Upgrade to the Professional plan ($59/month) to continue using WorkflowGuard. Click 'Settings' in the navigation to upgrade your plan." />
     </div>
   </div>
 );
@@ -156,11 +156,12 @@ const AppRoutes = () => {
   // Determine if user is locked out (trial expired, not paid)
   const isTrialExpired = plan && !plan.isTrialActive && plan.trialPlanId === 'professional';
   const isOnPlanBilling = location.pathname === '/settings';
+  const isOnBillingPage = location.pathname === '/settings' || location.pathname.includes('/billing');
 
   return (
     <>
       <ModalsManager />
-      {isTrialExpired && !isOnPlanBilling && <LockoutOverlay />}
+      {isTrialExpired && !isOnBillingPage && <LockoutOverlay />}
       <Routes>
         <Route path="/dashboard" element={
           <AuthRequired>

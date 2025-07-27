@@ -67,6 +67,14 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
         <div className="space-y-4 mb-8">
           <div className="flex items-center space-x-3">
             <Check size={20} className="text-blue-600 flex-shrink-0" />
+            <span className="text-gray-700">500 workflows monitored</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Check size={20} className="text-blue-600 flex-shrink-0" />
+            <span className="text-gray-700">90 days of version history</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Check size={20} className="text-blue-600 flex-shrink-0" />
             <span className="text-gray-700">Advanced workflow monitoring</span>
           </div>
           <div className="flex items-center space-x-3">
@@ -76,6 +84,14 @@ const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanI
           <div className="flex items-center space-x-3">
             <Check size={20} className="text-blue-600 flex-shrink-0" />
             <span className="text-gray-700">Priority support and analytics</span>
+          </div>
+        </div>
+
+        {/* Pricing info */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-900">$59/month</div>
+            <div className="text-sm text-blue-700">Professional Plan</div>
           </div>
         </div>
 
