@@ -241,7 +241,7 @@ export class WorkflowService {
         version: versionNumber,
         snapshotType: 'manual',
         createdBy: userId,
-        data: response.data,
+        data: response.data as any, // Type assertion to fix Prisma JSON type issue
       },
     });
     // Audit log
@@ -336,7 +336,7 @@ export class WorkflowService {
         version: (latestVersion.version || 0) + 1,
         snapshotType: 'rollback',
         createdBy: userId,
-        data: latestVersion.data,
+        data: latestVersion.data as any, // Type assertion to fix Prisma JSON type issue
       },
     });
 
@@ -619,7 +619,7 @@ export class WorkflowService {
           version: (workflow.versions[0]?.version || 0) + 1,
           snapshotType: 'backup',
           createdBy: userId,
-          data: workflow.versions[0]?.data || {},
+          data: (workflow.versions[0]?.data || {}) as any, // Type assertion to fix Prisma JSON type issue
           description: description || 'Manual backup'
         }
       });
