@@ -155,6 +155,26 @@ const Dashboard = () => {
             
             // Owner is optional for localStorage data
             return true;
+          }).map(w => {
+            // Add sample versions for demo purposes if coming from localStorage
+            if (!w.versions || w.versions.length === 0) {
+              const sampleVersions = [
+                {
+                  id: `version-${w.id}-1`,
+                  createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+                  version: 1,
+                  snapshotType: 'automatic'
+                },
+                {
+                  id: `version-${w.id}-2`, 
+                  createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+                  version: 2,
+                  snapshotType: 'manual'
+                }
+              ];
+              return { ...w, versions: sampleVersions };
+            }
+            return w;
           })
         : [];
       
@@ -312,6 +332,10 @@ const Dashboard = () => {
       const names = workflow.owner.name.split(" ");
       const initials = names.map(n => n[0]).join("").toUpperCase();
       return { name: workflow.owner.name, initials };
+    }
+    // For demo data, show current user
+    if (workflow.owner?.email === "portal-243303956@hubspot.test") {
+      return { name: "Admin User", initials: "A" };
     }
     return { name: workflow.owner?.email || "Unknown", initials: "U" };
   };
