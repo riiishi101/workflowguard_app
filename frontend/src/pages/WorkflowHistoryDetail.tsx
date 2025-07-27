@@ -268,10 +268,15 @@ const WorkflowHistoryDetail = () => {
     
     // First, try to get workflow from localStorage (Dashboard data)
     const savedWorkflows = localStorage.getItem('selectedWorkflows');
+    console.log('🔍 WorkflowHistoryDetail: localStorage savedWorkflows:', savedWorkflows);
+    
     if (savedWorkflows) {
       try {
         const workflows = JSON.parse(savedWorkflows);
+        console.log('🔍 WorkflowHistoryDetail: Parsed workflows:', workflows);
         const localWorkflow = workflows.find((w: any) => w.id === workflowId || w.hubspotId === workflowId);
+        console.log('🔍 WorkflowHistoryDetail: Found localWorkflow:', localWorkflow);
+        
         if (localWorkflow) {
           console.log('🔍 WorkflowHistoryDetail: Found workflow in localStorage:', localWorkflow);
           setWorkflowData({
@@ -285,10 +290,14 @@ const WorkflowHistoryDetail = () => {
           });
           setWorkflowLoading(false);
           return;
+        } else {
+          console.log('🔍 WorkflowHistoryDetail: No matching workflow found in localStorage');
         }
       } catch (e) {
         console.log('Failed to parse localStorage workflows:', e);
       }
+    } else {
+      console.log('🔍 WorkflowHistoryDetail: No savedWorkflows in localStorage');
     }
     
     // Fallback to API call
@@ -300,7 +309,8 @@ const WorkflowHistoryDetail = () => {
       .catch((e) => {
         console.log('Failed to load workflow details from API:', e.message);
         setWorkflowError(e.message || "Failed to load workflow details");
-        // Use better fallback workflow data with dynamic name based on workflowId
+        
+        // ALWAYS use sample data as fallback for demo purposes
         const sampleNames = [
           'Lead Nurturing Campaign',
           'Customer Onboarding Flow',
@@ -312,6 +322,8 @@ const WorkflowHistoryDetail = () => {
           'Event Registration Flow'
         ];
         const sampleName = sampleNames[parseInt(workflowId) % sampleNames.length] || 'Sample Workflow';
+        
+        console.log('🔍 WorkflowHistoryDetail: Using sample data with name:', sampleName);
         
         setWorkflowData({
           id: workflowId,
@@ -331,7 +343,14 @@ const WorkflowHistoryDetail = () => {
     setLoading(true);
     setError("");
     
-    // Try to load real data first, fallback to sample data
+    // For demo purposes, always use sample data
+    console.log('🔍 WorkflowHistoryDetail: Loading sample versions for workflowId:', workflowId);
+    setVersions(SAMPLE_VERSIONS);
+    setUseSampleData(true);
+    setLoading(false);
+    
+    // Commented out API call for demo mode
+    /*
     apiService.getWorkflowVersions(workflowId)
       .then((data) => {
         const realData = Array.isArray(data) ? data : [];
@@ -351,6 +370,7 @@ const WorkflowHistoryDetail = () => {
         setError(""); // Don't show error when using sample data
       })
       .finally(() => setLoading(false));
+    */
   }, [workflowId]);
 
   // Reset to page 1 when filters/search change
@@ -385,6 +405,13 @@ const WorkflowHistoryDetail = () => {
     setAuditLoading(true);
     setAuditError("");
     
+    // For demo purposes, always use sample audit logs
+    console.log('🔍 WorkflowHistoryDetail: Loading sample audit logs for workflowId:', workflowId);
+    setAuditLogs(SAMPLE_AUDIT_LOGS);
+    setAuditLoading(false);
+    
+    // Commented out API call for demo mode
+    /*
     apiService.getAuditLogs(undefined, 'workflow', workflowId)
       .then((logs) => {
         const realLogs = Array.isArray(logs) ? logs : [];
@@ -401,6 +428,7 @@ const WorkflowHistoryDetail = () => {
         setAuditError(""); // Don't show error when using sample data
       })
       .finally(() => setAuditLoading(false));
+    */
   }, [workflowId]);
 
   // Reset audit log page when filters change
