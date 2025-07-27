@@ -184,6 +184,7 @@ export class WorkflowController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/rollback')
   @ApiParam({ name: 'id', type: String, description: 'Workflow ID' })
+  @UseGuards(JwtAuthGuard)
   async rollback(@Req() req: Request, @Param('id') id: string) {
     try {
       const userId = (req as any).user?.sub;
