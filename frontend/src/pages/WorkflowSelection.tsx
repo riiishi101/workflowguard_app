@@ -41,11 +41,16 @@ function isValidWorkflow(obj: any): obj is Workflow {
   // Check if name exists and is not empty
   const hasValidName = typeof obj.name === 'string' && obj.name.trim() !== '';
   
-  // Check if we have either id or hubspotId
-  const hasValidId = typeof obj.id === 'string' || typeof obj.hubspotId === 'string';
+  // Check if we have either id, hubspotId, or a fallback ID
+  const hasValidId = typeof obj.id === 'string' || typeof obj.hubspotId === 'string' || obj.id?.startsWith('fallback-');
   
-  // Check if ownerId exists (but be more lenient)
-  const hasOwnerId = typeof obj.ownerId === 'string';
+  // Check if ownerId exists (but be more lenient for test workflows)
+  const hasOwnerId = typeof obj.ownerId === 'string' || obj.ownerId === "unknown-owner";
+  
+  // Log validation details for debugging
+  if (!hasValidName) console.log('❌ Missing name:', obj);
+  if (!hasValidId) console.log('❌ Missing ID:', obj.name, obj);
+  if (!hasOwnerId) console.log('❌ Missing owner:', obj.name, obj);
   
   return hasValidName && hasValidId && hasOwnerId;
 }
@@ -75,19 +80,32 @@ const WorkflowSelection = () => {
         // Fetch live workflows from HubSpot for the connected user
         const workflowsData = await apiService.getWorkflows();
         console.log('📊 Raw workflows data from API:', workflowsData);
+        console.log('🔍 Looking for test workflows...');
+        if (Array.isArray(workflowsData)) {
+          const testWorkflows = workflowsData.filter(w => 
+            w.name && (w.name.toLowerCase().includes('test') || w.name.toLowerCase().includes('wg test'))
+          );
+          console.log('🧪 Test workflows found:', testWorkflows);
+        }
         // Use backend structure directly; fallback for legacy/edge cases
         const normalized = Array.isArray(workflowsData)
           ? workflowsData.map((w: any, index: number) => {
+              // Log raw workflow data for debugging
+              console.log(`🔍 Processing workflow ${index}:`, w);
+              
               // Ensure we have a valid ID - prefer hubspotId over id
               const workflowId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : `fallback-${index}`);
               const hubspotId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : `fallback-${index}`);
+              
+              // Better owner detection for HubSpot workflows
+              const ownerId = w.ownerId || w.createdBy || w.userId || user?.id || "unknown-owner";
               
               return {
                 ...w,
                 id: workflowId,
                 hubspotId: hubspotId,
                 name: w.name && w.name.trim() !== '' ? w.name : `Unnamed Workflow ${index + 1}`,
-                ownerId: w.ownerId || user?.id || "unknown-owner",
+                ownerId: ownerId,
                 status: w.status || w.enabled === false ? 'inactive' : 'active',
                 folder: w.folder || w.folderId || undefined,
                 createdAt: w.createdAt || w.insertedAt || undefined,
