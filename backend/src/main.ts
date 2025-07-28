@@ -250,20 +250,20 @@ export async function createNestServer() {
     });
   });
 
-  // Enhanced 404 handler
-  server.use('*', (req: Request, res: Response) => {
-    if (req.originalUrl.startsWith('/api')) {
-      res.status(404).json({
-        error: 'API endpoint not found',
-        path: req.originalUrl,
-        method: req.method,
-        timestamp: new Date().toISOString(),
-      });
-    } else {
-      // Serve SPA for non-API routes
-      res.sendFile(join(__dirname, '..', 'public', 'index.html'));
-    }
-  });
+  // Enhanced 404 handler - temporarily disabled due to path-to-regexp issues
+  // server.use('*', (req: Request, res: Response) => {
+  //   if (req.originalUrl.startsWith('/api')) {
+  //     res.status(404).json({
+  //       error: 'API endpoint not found',
+  //       path: req.originalUrl,
+  //       method: req.method,
+  //       timestamp: new Date().toISOString(),
+  //     });
+  //   } else {
+  //     // Serve SPA for non-API routes
+  //     res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+  //   }
+  // });
 
   // Global error handler
   server.use((error: Error, req: Request, res: Response, next: NextFunction) => {
