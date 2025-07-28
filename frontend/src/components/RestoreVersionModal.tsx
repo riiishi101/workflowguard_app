@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { X, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import RoleGuard from './RoleGuard';
 
 interface RestoreVersionModalProps {
   open: boolean;
@@ -36,7 +35,6 @@ const RestoreVersionModal = ({
   if (!version) return null;
 
   return (
-    <RoleGuard roles={['admin', 'restorer']}>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-lg">
           <VisuallyHidden>
@@ -147,7 +145,6 @@ const RestoreVersionModal = ({
           </div>
         </DialogContent>
       </Dialog>
-    </RoleGuard>
   );
 };
 

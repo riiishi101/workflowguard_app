@@ -19,6 +19,11 @@ out/
 
 # IDE and editor files
 .vscode/
+!.vscode/settings.json
+!.vscode/css_custom_data.json
+!.vscode/extensions.json
+frontend/.vscode/
+!frontend/.vscode/settings.json
 .idea/
 *.swp
 *.swo
@@ -87,6 +92,8 @@ jspm_packages/
 # Gatsby files
 .cache/
 public
+!backend/public/
+!backend/public/**
 
 # Storybook build outputs
 .out
@@ -117,3 +124,65 @@ nginx/ssl/
 # Backup files
 *.bak
 *.backup
+
+# Build artifacts
+backend/dist/
+frontend/dist/
+*.tsbuildinfo
+*.js.map
+
+# Test artifacts
+cypress/videos/
+cypress/screenshots/
+test-results/
+playwright-report/
+
+# Monitoring and logs
+monitoring/logs/
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE specific files
+.vscode/settings.json
+.idea/
+*.sublime-*
+
+# OS specific files
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+
+# Environment specific
+.env.*
+!.env.example
+
+# Backup and temporary
+*.bak
+*.backup
+*.old
+*.orig
+
+# Database files
+*.sqlite
+*.db
+
+# SSL and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Docker volumes
+docker-volumes/

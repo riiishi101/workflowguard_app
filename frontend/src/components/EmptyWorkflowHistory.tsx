@@ -1,18 +1,39 @@
 import { Button } from "@/components/ui/button";
 import TopNavigation from "@/components/TopNavigation";
 import { FileText, Plus, ExternalLink } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
+import { useState } from "react";
+import CreateNewWorkflowModal from "./CreateNewWorkflowModal";
 
-const EmptyWorkflowHistory = () => {
+// Accept workflow as a prop
+interface WorkflowInfo {
+  id: string;
+  name: string;
+  status: string;
+  hubspotId?: string;
+}
+
+const EmptyWorkflowHistory = ({ workflow }: { workflow?: WorkflowInfo }) => {
   const navigate = useNavigate();
+  const [redirect, setRedirect] = useState(false);
 
-  const handleCreateWorkflow = () => {
-    navigate("/workflow-selection");
+  const handleAddWorkflow = () => {
+    console.log('EmptyWorkflowHistory Add Workflow clicked, navigating to /select-workflows');
+    try {
+      navigate('/select-workflows');
+    } catch (e) {
+      console.error('navigate() failed, falling back to <Navigate>', e);
+      setRedirect(true);
+    }
+    setTimeout(() => setRedirect(true), 200);
   };
 
   const handleGoToHubSpot = () => {
-    // In a real app, this would open HubSpot
-    window.open("https://app.hubspot.com", "_blank");
+    if (workflow?.hubspotId) {
+      window.open(`https://app.hubspot.com/workflows/${workflow.hubspotId}`, "_blank");
+    } else {
+      window.open("https://app.hubspot.com", "_blank");
+    }
   };
 
   return (
@@ -33,31 +54,34 @@ const EmptyWorkflowHistory = () => {
           </div>
         </div>
 
-        {/* Workflow Info */}
-        <div className="flex items-center justify-between mb-8 p-4 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Customer Onboarding
-            </h2>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">Active</span>
+        {/* Workflow Info (only if workflow is provided) */}
+        {workflow && (
+          <div className="flex items-center justify-between mb-8 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {workflow.name}
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">{workflow.status || "Active"}</span>
+              </div>
+              <span className="text-sm text-gray-500">ID: {workflow.id}</span>
             </div>
-            <span className="text-sm text-gray-500">ID: adx2c-344</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGoToHubSpot}
+              className="text-blue-600"
+              disabled={!workflow.hubspotId}
+            >
+              Go to Workflow in HubSpot
+              <ExternalLink className="w-4 h-4 ml-2" />
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleGoToHubSpot}
-            className="text-blue-600"
-          >
-            Go to Workflow in HubSpot
-            <ExternalLink className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
+        )}
 
         {/* Empty State */}
-        <div className="py-20 text-center">
+        <div className="py-10 text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <FileText className="w-8 h-8 text-blue-500" />
           </div>
@@ -71,16 +95,17 @@ const EmptyWorkflowHistory = () => {
             Your workflow history will appear here.
           </p>
           <Button
-            onClick={handleCreateWorkflow}
+            onClick={handleAddWorkflow}
             className="bg-blue-500 hover:bg-blue-600 text-white"
+            title="Select workflows from your HubSpot account to start monitoring."
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Workflow
+            + Add Workflow
           </Button>
+          {redirect && <Navigate to="/select-workflows" replace />}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-8 border-t border-gray-200">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-8">
           <p className="text-sm text-gray-600">0 versions selected</p>
           <Button
             variant="outline"
