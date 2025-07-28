@@ -29,7 +29,26 @@ COPY prisma ./prisma/
 RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --only=production; fi && npm cache clean --force
 
 # ========================================
-# Build Stage
+# Frontend Build Stage
+# ========================================
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy frontend package files
+COPY ../frontend/package*.json ./
+
+# Install frontend dependencies
+RUN npm ci
+
+# Copy frontend source code
+COPY ../frontend/ .
+
+# Build frontend
+RUN npm run build
+
+# ========================================
+# Backend Build Stage
 # ========================================
 FROM base AS builder
 
@@ -48,6 +67,9 @@ RUN npx prisma generate
 
 # Build the application
 RUN npm run build
+
+# Copy frontend build to backend public directory
+COPY --from=frontend-builder /app/frontend/dist ./public
 
 # ========================================
 # Production Stage
