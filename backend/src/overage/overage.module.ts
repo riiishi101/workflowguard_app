@@ -11,4 +11,4 @@ import { NotificationModule } from '../notification/notification.module';
   providers: [OverageService, HubSpotBillingService],
   exports: [OverageService],
 })
-export class OverageModule {} 
+export class OverageModule {}
