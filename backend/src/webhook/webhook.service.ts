@@ -4,9 +4,18 @@ import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class WebhookService {
-  constructor(private prisma: PrismaService, private auditLogService: AuditLogService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditLogService: AuditLogService,
+  ) {}
 
-  async create(data: { userId: string; name?: string; endpointUrl: string; secret?: string; events: string[] }) {
+  async create(data: {
+    userId: string;
+    name?: string;
+    endpointUrl: string;
+    secret?: string;
+    events: string[];
+  }) {
     const webhook = await this.prisma.webhook.create({ data });
     await this.auditLogService.create({
       userId: data.userId,

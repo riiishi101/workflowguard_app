@@ -4,6 +4,7 @@ import WorkflowGuardLogo from "./WorkflowGuardLogo";
 import { cn } from "@/lib/utils";
 import { HelpCircle, Settings, AlertTriangle } from "lucide-react";
 import { useAuth } from './AuthContext';
+import { useEffect, useState } from 'react';
 
 interface TopNavigationProps {
   minimal?: boolean;

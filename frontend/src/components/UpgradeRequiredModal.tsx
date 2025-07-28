@@ -4,13 +4,27 @@ import { X, Lock, Check } from 'lucide-react';
 interface PremiumModalProps {
   isOpen: boolean;
   onClose: () => void;
+  feature?: string;
+  isTrialing?: boolean;
+  planId?: string;
+  trialPlanId?: string;
+  message?: string;
 }
 
-const PremiumModal = ({ isOpen, onClose }: PremiumModalProps) => {
+const PremiumModal = ({ isOpen, onClose, feature, isTrialing, planId, trialPlanId, message }: PremiumModalProps) => {
   if (!isOpen) return null;
 
+  let displayMessage = message;
+  if (!displayMessage) {
+    if (isTrialing && trialPlanId === 'professional') {
+      displayMessage = `This feature is part of the Professional plan. Enjoy full access during your free trial! Upgrade to keep using it after your trial ends.`;
+    } else {
+      displayMessage = `Upgrade your plan to unlock ${feature || 'this feature'}.`;
+    }
+  }
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" data-testid="upgrade-modal">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
         {/* Close button */}
         <button 
@@ -34,7 +48,7 @@ const PremiumModal = ({ isOpen, onClose }: PremiumModalProps) => {
 
         {/* Subtitle */}
         <p className="text-gray-600 text-center mb-8 leading-relaxed">
-          Get instant notifications and stay ahead of critical changes
+          {displayMessage}
         </p>
 
         {/* Features list */}
@@ -56,14 +70,14 @@ const PremiumModal = ({ isOpen, onClose }: PremiumModalProps) => {
         {/* Upgrade button */}
         <button
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors mb-6"
-          onClick={() => window.location.href = '/settings?tab=plan-billing'}
+          onClick={onClose}
         >
           Upgrade Now
         </button>
 
         {/* Bottom links */}
         <div className="flex justify-between items-center text-sm">
-          <button className="text-blue-600 hover:text-blue-700 font-medium">
+          <button className="text-blue-600 hover:text-blue-700 font-medium" onClick={onClose}>
             View Plan Details
           </button>
           <button 

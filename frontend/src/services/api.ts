@@ -1,3 +1,4 @@
+console.log('REAL API SERVICE MODULE LOADED');
 // Add type definitions
 interface Webhook {
   id: string;
@@ -16,27 +17,66 @@ interface CreateWebhookDto {
   secret?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+if (!API_BASE_URL) {
+  throw new Error('VITE_API_URL must be set in the environment variables');
+}
+
+// Helper to get a cookie by name
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
 
 class ApiService {
+  private token: string | null = null;
+
+  setToken(token: string | null) {
+    this.token = token;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    const token = localStorage.getItem('authToken');
+    // Try all sources for JWT
+    const token = this.token || localStorage.getItem('authToken') || getCookie('jwt');
+    
+    // Only send Authorization header if we have a valid token
+    // If no token, rely on JWT cookie authentication
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+    
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
+      headers,
       credentials: 'include',
       ...options,
     };
 
+    // Increase timeout to prevent hanging requests on slow connections
+    const timeoutDuration = 60000; // 60 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      console.warn(`Request to ${endpoint} timed out after ${timeoutDuration}ms`);
+    }, timeoutDuration);
+    
     try {
-      const response = await fetch(url, config);
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -45,7 +85,14 @@ class ApiService {
 
       return await response.json();
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('API request failed:', error);
+      
+      // Handle timeout specifically
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please try again.');
+      }
+      
       throw error;
     }
   }
@@ -92,12 +139,12 @@ class ApiService {
   }
 
   async getWorkflows(ownerId?: string) {
-    // Production: Fetch workflows from the real API
-    return this.request('/workflows');
+    // Fetch live workflows from HubSpot for the connected user
+    return this.request('/workflows?live=true');
   }
 
   async getWorkflowById(id: string) {
-    return { id, name: 'Demo Workflow', status: 'active', hubspotId: 'hs-1', ownerId: 'mock-user-id', createdAt: '2024-06-01', updatedAt: '2024-06-10' };
+    return this.request(`/workflows/${id}`);
   }
 
   async getWorkflowByHubspotId(hubspotId: string) {
@@ -114,6 +161,12 @@ class ApiService {
   async deleteWorkflow(id: string) {
     return this.request(`/workflows/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async rollbackWorkflow(id: string) {
+    return this.request(`/workflows/${id}/rollback`, {
+      method: 'POST',
     });
   }
 
@@ -137,7 +190,7 @@ class ApiService {
   }
 
   async getWorkflowVersionById(id: string) {
-    return { id, workflowId: '1', versionNumber: 1, createdAt: '2024-06-01', snapshotType: 'auto', createdBy: 'mock-user-id', data: {} };
+    return this.request(`/workflow-versions/${id}`);
   }
 
   async getLatestWorkflowVersion(workflowId: string) {
@@ -145,20 +198,11 @@ class ApiService {
   }
 
   async getWorkflowHistory(workflowId: string) {
-    return [
-      { id: 'v1', workflowId, versionNumber: 1, createdAt: '2024-06-01', snapshotType: 'auto', createdBy: 'mock-user-id', data: {} },
-      { id: 'v2', workflowId, versionNumber: 2, createdAt: '2024-06-05', snapshotType: 'manual', createdBy: 'mock-user-id', data: {} },
-    ];
+    return this.request(`/workflow-versions/workflow/${workflowId}/history`);
   }
 
   async compareVersions(version1Id: string, version2Id: string) {
-    return {
-      added: ['Step A'],
-      removed: ['Step B'],
-      modified: ['Step C'],
-      left: { id: version1Id, data: {} },
-      right: { id: version2Id, data: {} },
-    };
+    return this.request(`/workflow-versions/compare/${version1Id}/${version2Id}`);
   }
 
   async deleteWorkflowVersion(id: string) {
@@ -195,7 +239,7 @@ class ApiService {
   }
 
   async getAuditLogById(id: string) {
-    return { id, action: 'create', entityType: 'workflow', entityId: '1', userId: 'mock-user-id', createdAt: '2024-06-01', oldValue: null, newValue: { name: 'Demo Workflow' } };
+    return this.request(`/audit-logs/${id}`);
   }
 
   async getAuditLogsByUser(userId: string) {
@@ -244,6 +288,13 @@ class ApiService {
 
   async getMyPlan() {
     return this.request('/users/me/plan');
+  }
+
+  async upgradePlan(planId: string) {
+    return this.request('/users/me/plan', {
+      method: 'PUT',
+      body: JSON.stringify({ planId }),
+    });
   }
 
   // Webhook methods
@@ -503,12 +554,6 @@ class ApiService {
     });
   }
 
-  async sendTestEmail() {
-    return this.request('/email/test', {
-      method: 'POST',
-    });
-  }
-
   async sendWelcomeEmailToSelf(data: {
     planId: string;
     workflowLimit: number;
@@ -532,6 +577,13 @@ class ApiService {
     });
   }
 
+  async sendContactForm(data: { name: string; email: string; subject: string; message: string }) {
+    return this.request('/email/contact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Real-time endpoints
   async getRealtimeConnectionStatus() {
     return this.request('/realtime/status');
@@ -543,12 +595,6 @@ class ApiService {
 
   async getUserRooms() {
     return this.request('/realtime/rooms');
-  }
-
-  async testRealtimeConnection() {
-    return this.request('/realtime/test', {
-      method: 'POST',
-    });
   }
 
   async sendNotificationToUser(data: {
@@ -703,7 +749,7 @@ class ApiService {
   }
 
   async getMe() {
-    return this.request('/users/me');
+    return this.request('/auth/me');
   }
 
   async updateMe(profile: {
@@ -713,26 +759,43 @@ class ApiService {
     timezone?: string;
     language?: string;
   }) {
-    return this.request('/users/me', {
-      method: 'PUT',
+    return this.request('/auth/me', {
+      method: 'PATCH',
       body: JSON.stringify(profile),
     });
   }
 
   async deleteMe() {
-    return this.request('/users/me', { method: 'DELETE' });
+    return this.request('/auth/me', {
+      method: 'DELETE',
+    });
   }
 
   async getSsoConfig() {
-    return this.request('/sso-config');
+    return this.request('/auth/sso-config');
   }
 
   async updateSsoConfig(config: { provider: string; metadata: string; enabled: boolean }) {
-    return this.request('/sso-config', {
-      method: 'PUT',
+    return this.request('/auth/sso-config', {
+      method: 'PATCH',
       body: JSON.stringify(config),
     });
   }
+
+  async syncWorkflowFromHubSpot(workflowId: string) {
+    return this.request(`/workflows/sync/${workflowId}`, {
+      method: 'POST',
+    });
+  }
+
+  async setMonitoredWorkflows(workflowIds: string[]) {
+    return this.request('/workflows/monitored', {
+      method: 'POST',
+      body: JSON.stringify({ workflowIds }),
+    });
+  }
+
+
 }
 
 export const apiService = new ApiService();

@@ -10,6 +10,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   canActivate(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest();
+    console.log('[JwtAuthGuard] canActivate called. Method:', request.method, 'URL:', request.url, 'Headers:', request.headers, 'Cookies:', request.cookies, 'Body:', request.body);
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -19,4 +21,4 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
     return super.canActivate(context);
   }
-} 
+}

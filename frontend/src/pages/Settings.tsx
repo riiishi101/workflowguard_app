@@ -17,19 +17,39 @@ import {
   UserCircle,
 } from "lucide-react";
 import { useRequireAuth, useAuth, usePlan } from '../components/AuthContext';
-import RoleGuard from '../components/RoleGuard';
+import { useToast } from '@/components/ui/use-toast';
 
 const Settings = () => {
   useRequireAuth();
-  const { user } = useAuth();
-  const { plan, loading } = usePlan();
+  const { user, loading } = useAuth();
+  const { plan } = usePlan();
   const [activeTab, setActiveTab] = useState("plan-billing");
+  const { toast } = useToast();
+  
+  // Ensure plan always has a valid structure to prevent controlled/uncontrolled Tabs warning
+  const safePlan = plan && Array.isArray(plan.features)
+    ? plan
+    : {
+        name: 'Starter',
+        features: [],
+        status: 'active'
+      };
+  const safeSetActiveTab = (tab) => {
+    if (typeof tab === 'string' && tab) {
+      setActiveTab(tab);
+    } else {
+      setActiveTab('plan-billing');
+    }
+  };
 
-  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = plan?.hubspotPortalId
-    ? `https://app.hubspot.com/ecosystem/${plan.hubspotPortalId}/marketplace/apps`
+  // Debug log for user and plan
+  // console.log('Settings debug:', { user, plan: safePlan });
+
+  const HUBSPOT_MANAGE_SUBSCRIPTION_URL = user?.hubspotPortalId
+    ? `https://app.hubspot.com/ecosystem/${user.hubspotPortalId}/marketplace/apps`
     : 'https://app.hubspot.com/ecosystem/marketplace/apps';
 
-  const showPortalWarning = !plan?.hubspotPortalId;
+  const showPortalWarning = !user?.hubspotPortalId;
 
   if (loading) return null;
 
@@ -43,8 +63,17 @@ const Settings = () => {
   ];
 
   const handleTabClick = (tab) => {
-    if (tab.always || (tab.feature && plan.features.includes(tab.feature))) {
-      setActiveTab(tab.key);
+    setActiveTab(tab.key);
+  };
+
+  const handleDisconnectHubSpot = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your HubSpot account? This will disable all HubSpot features.')) return;
+    try {
+      await fetch('/api/users/me/disconnect-hubspot', { method: 'POST', credentials: 'include' });
+      toast({ title: 'Disconnected', description: 'Your HubSpot account has been disconnected.' });
+      window.location.reload();
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to disconnect HubSpot account.', variant: 'destructive' });
     }
   };
 
@@ -63,30 +92,41 @@ const Settings = () => {
           </p>
         </div>
 
-        <RoleGuard roles={['admin']}>
+        {user && user.role === 'admin' && (
           <div className="mb-8 flex items-center gap-4">
             <h2 className="text-lg font-semibold mr-4">User Management (Admin Only)</h2>
-            <Button onClick={() => alert('User management feature coming soon!')}>Manage Users</Button>
+            <Button onClick={() => setActiveTab('user-permissions')}>Manage Users</Button>
           </div>
-        </RoleGuard>
+        )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={safeSetActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-6 bg-gray-50 p-1 rounded-lg">
-            {tabs.map(tab => {
-              if (tab.always || (tab.feature && plan.features.includes(tab.feature))) {
-                return (
-                  <TabsTrigger key={tab.key} value={tab.key} onClick={() => handleTabClick(tab)}>
-                    {tab.label}
-                  </TabsTrigger>
-                );
-              }
-              // Optionally render disabled tab
-              return (
-                <TabsTrigger key={tab.key} value={tab.key} onClick={() => handleTabClick(tab)} disabled>
-                  {tab.label}
-                </TabsTrigger>
-              );
-            })}
+            <TabsTrigger key="plan-billing" value="plan-billing" onClick={() => safeSetActiveTab('plan-billing')}>
+              My Plan & Billing
+            </TabsTrigger>
+            <TabsTrigger key="profile" value="profile" onClick={() => safeSetActiveTab('profile')}>
+              My Profile
+            </TabsTrigger>
+            {Array.isArray(safePlan.features) && safePlan.features.includes('custom_notifications') && (
+              <TabsTrigger key="notifications" value="notifications" onClick={() => safeSetActiveTab('notifications')}>
+                Notifications
+              </TabsTrigger>
+            )}
+            {user && user.role === 'admin' && (
+              <TabsTrigger key="user-permissions" value="user-permissions" onClick={() => safeSetActiveTab('user-permissions')}>
+                User Permissions
+              </TabsTrigger>
+            )}
+            {user && (user.role === 'admin' || user.role === 'restorer') && (
+              <TabsTrigger key="audit-log" value="audit-log" onClick={() => safeSetActiveTab('audit-log')}>
+                Audit Log
+              </TabsTrigger>
+            )}
+            {user && user.role === 'admin' && (
+              <TabsTrigger key="api-access" value="api-access" onClick={() => safeSetActiveTab('api-access')}>
+                API Access
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <div className="mt-8">
@@ -94,54 +134,28 @@ const Settings = () => {
               <PlanBillingTab />
             </TabsContent>
             <TabsContent value="notifications">
-              <NotificationsTab />
+              <NotificationsTab setActiveTab={safeSetActiveTab} />
             </TabsContent>
             {user && user.role === 'admin' && (
               <TabsContent value="user-permissions">
-                <UserPermissionsTab />
+                <UserPermissionsTab setActiveTab={safeSetActiveTab} />
               </TabsContent>
             )}
-            {(user && (user.role === 'admin' || user.role === 'restorer')) && (
+            {user && (user.role === 'admin' || user.role === 'restorer') && (
               <TabsContent value="audit-log">
                 <AuditLogTab />
               </TabsContent>
             )}
             {user && user.role === 'admin' && (
               <TabsContent value="api-access">
-                <ApiAccessTab />
+                <ApiAccessTab setActiveTab={safeSetActiveTab} />
               </TabsContent>
             )}
             <TabsContent value="profile">
               <ProfileTab />
             </TabsContent>
           </div>
-
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-2">Billing History</h2>
-            <p className="mb-4 text-gray-600">
-              All invoices and billing history are managed in your HubSpot account.
-            </p>
-            <Button
-              onClick={() => window.open(`https://app.hubspot.com/billing/${plan.hubspotPortalId || ''}`, '_blank')}
-              className="bg-blue-600 text-white mb-4"
-            >
-              View Invoices in HubSpot
-            </Button>
-          </div>
         </Tabs>
-
-        {showPortalWarning && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 mt-2 text-yellow-800 rounded">
-            <strong>Note:</strong> To manage your subscription, please connect your HubSpot account.
-          </div>
-        )}
-
-        <Button
-          onClick={() => window.open(HUBSPOT_MANAGE_SUBSCRIPTION_URL, '_blank')}
-          className="text-blue-600 text-base font-medium bg-transparent shadow-none border-none hover:underline mt-2"
-        >
-          Manage Subscription
-        </Button>
       </main>
     </div>
   );

@@ -180,435 +180,403 @@ export default function RealTimeDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      <TopNavigation />
+      <div className="min-h-screen bg-white">
+        <TopNavigation />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-              Real-time Dashboard
-            </h1>
-            <p className="text-gray-600">
-              Monitor live connections, send notifications, and view real-time
-              updates
-            </p>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+                Real-time Dashboard
+              </h1>
+              <p className="text-gray-600">
+                Monitor live connections, send notifications, and view real-time
+                updates
+              </p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Badge className={connectionStatus?.isConnected ? 'bg-green-500 text-white px-3 py-1' : 'bg-gray-300 text-gray-700 px-3 py-1'}>
+                {connectionStatus?.isConnected ? 'Connected' : 'Disconnected'}
+              </Badge>
+              <Button variant="outline" className="flex items-center" onClick={handleTestConnection} disabled={loading}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Test Connection
+              </Button>
+              {testResult && <span className="ml-2 text-xs text-gray-500">{testResult}</span>}
+            </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <Badge className={connectionStatus?.isConnected ? 'bg-green-500 text-white px-3 py-1' : 'bg-gray-300 text-gray-700 px-3 py-1'}>
-              {connectionStatus?.isConnected ? 'Connected' : 'Disconnected'}
-            </Badge>
-            <Button variant="outline" className="flex items-center" onClick={handleTestConnection} disabled={loading}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Test Connection
-            </Button>
-            {testResult && <span className="ml-2 text-xs text-gray-500">{testResult}</span>}
-          </div>
-        </div>
 
-        {loading ? (
-          <div className="flex justify-center items-center h-64">Loading...</div>
-        ) : error ? (
-          <div className="flex justify-center items-center h-64 text-red-500">{error}</div>
-        ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
-            <TabsTrigger value="overview" className="flex items-center">
-              <Eye className="w-4 h-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center">
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="updates" className="flex items-center">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Updates
-            </TabsTrigger>
-            <TabsTrigger value="admin" className="flex items-center">
-              <User className="w-4 h-4 mr-2" />
-              Admin Controls
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center">
-              <Users className="w-4 h-4 mr-2" />
-              Connected Users
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-8">
-            {/* Status Cards */}
-            <div className="grid grid-cols-4 gap-6">
-              <StatusCard
-                title="Connection Status"
-                value={String(connectionStatus?.connectedUsersCount?.toLocaleString() || '0')}
-                subtitle="Connected users"
-                status={connectionStatus?.isConnected ? 'Online' : 'Offline'}
-                statusColor={connectionStatus?.isConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-              />
-              <StatusCard
-                title="Notifications"
-                value={String(connectedUsers.length)}
-                subtitle="Recent notifications"
-                status="Active"
-                statusColor="bg-blue-100 text-blue-800"
-              />
-              <StatusCard
-                title="Updates"
-                value={String(userRooms.length)}
-                subtitle="Recent updates"
-                status="New"
-                statusColor="bg-purple-100 text-purple-800"
-              />
-              <StatusCard
-                title="Your Rooms"
-                value={String(userRooms.length)}
-                subtitle="Active rooms"
-                status="View All"
-                statusColor="bg-gray-100 text-gray-800"
-              />
-            </div>
-
-            {/* Connection Details */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Connection Details
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">User ID</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {connectionStatus?.userId || '-'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Email Address</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {connectionStatus?.userEmail || '-'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
-                    Connected Users Count
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {connectionStatus?.connectedUsersCount?.toLocaleString() || '0'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Notifications */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Recent Notifications
-              </h3>
-              <div className="space-y-1">
-                <NotificationItem
-                  type="System Alert"
-                  severity="Critical"
-                  message="High CPU usage detected on server 01"
-                  time="2 minutes ago"
-                />
-                <NotificationItem
-                  type="Billing Update"
-                  severity="High"
-                  message="Monthly subscription payment processed successfully"
-                  time="15 minutes ago"
-                />
-                <NotificationItem
-                  type="Usage Warning"
-                  severity="Medium"
-                  message="Storage capacity reaching 80% threshold"
-                  time="1 hour ago"
-                />
-              </div>
-            </div>
-
-            {/* Connected Users */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">Loading...</div>
+          ) : error ? (
+            <div className="flex justify-center items-center h-64 text-red-500">{error}</div>
+          ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
+              <TabsTrigger value="overview" className="flex items-center">
+                <Eye className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center">
+                <Bell className="w-4 h-4 mr-2" />
+                Notifications
+              </TabsTrigger>
+              <TabsTrigger value="updates" className="flex items-center">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Updates
+              </TabsTrigger>
+                <TabsTrigger value="admin" className="flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Admin Controls
+                </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center">
+                <Users className="w-4 h-4 mr-2" />
                 Connected Users
-              </h3>
-              <div className="space-y-1">
-                {connectedUsers.length === 0 ? (
-                  <div className="text-gray-500 text-sm">No users connected.</div>
-                ) : connectedUsers.map((user, idx) => (
-                  <ConnectedUserItem
-                    key={user.id || idx}
-                    name={user.name || user.email || 'User'}
-                    email={user.email}
-                    connectionTime={`Connected: ${user.connectedAt ? new Date(user.connectedAt).toLocaleString() : '-'}`}
-                    status="Online"
-                  />
-                ))}
-              </div>
-            </div>
-          </TabsContent>
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="notifications" className="space-y-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                All Notifications
-              </h3>
-              <div className="space-y-1">
-                <NotificationItem
-                  type="System Alert"
-                  severity="Critical"
-                  message="High CPU usage detected on server 01"
-                  time="2 minutes ago"
+            <TabsContent value="overview" className="space-y-8">
+              {/* Status Cards */}
+              <div className="grid grid-cols-4 gap-6">
+                <StatusCard
+                  title="Connection Status"
+                  value={String(connectionStatus?.connectedUsersCount?.toLocaleString() || '0')}
+                  subtitle="Connected users"
+                  status={connectionStatus?.isConnected ? 'Online' : 'Offline'}
+                  statusColor={connectionStatus?.isConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                 />
-                <NotificationItem
-                  type="Billing Update"
-                  severity="High"
-                  message="Monthly subscription payment processed successfully"
-                  time="15 minutes ago"
+                <StatusCard
+                  title="Notifications"
+                  value={String(connectedUsers.length)}
+                  subtitle="Recent notifications"
+                  status="Active"
+                  statusColor="bg-blue-100 text-blue-800"
                 />
-                <NotificationItem
-                  type="Usage Warning"
-                  severity="Medium"
-                  message="Storage capacity reaching 80% threshold"
-                  time="1 hour ago"
+                <StatusCard
+                  title="Updates"
+                  value={String(userRooms.length)}
+                  subtitle="Recent updates"
+                  status="New"
+                  statusColor="bg-purple-100 text-purple-800"
                 />
-                <NotificationItem
-                  type="System Alert"
-                  severity="Critical"
-                  message="Database connection timeout detected"
-                  time="2 hours ago"
-                />
-                <NotificationItem
-                  type="Security Alert"
-                  severity="High"
-                  message="Multiple failed login attempts detected"
-                  time="3 hours ago"
+                <StatusCard
+                  title="Your Rooms"
+                  value={String(userRooms.length)}
+                  subtitle="Active rooms"
+                  status="View All"
+                  statusColor="bg-gray-100 text-gray-800"
                 />
               </div>
-            </div>
-          </TabsContent>
 
-          <TabsContent value="updates" className="space-y-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Recent Updates
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                  <div>
-                    <div className="font-medium text-gray-900 mb-1">
-                      Workflow Monitoring Enhanced
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Improved real-time monitoring capabilities with better
-                      performance
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-500">5 minutes ago</span>
-                </div>
-                <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                  <div>
-                    <div className="font-medium text-gray-900 mb-1">
-                      Security Patch Applied
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Latest security updates have been successfully deployed
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-500">1 hour ago</span>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="admin" className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              {/* Send Notification Section */}
+              {/* Connection Details */}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Send Notification
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Send real-time notifications to users
-                  </p>
-                </div>
-
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                  Connection Details
+                </h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type
-                    </label>
-                    <Select defaultValue="system-alert">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="system-alert">
-                          System Alert
-                        </SelectItem>
-                        <SelectItem value="maintenance">Maintenance</SelectItem>
-                        <SelectItem value="update">Update</SelectItem>
-                        <SelectItem value="security">Security Alert</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">User ID</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {connectionStatus?.userId || '-'}
+                    </span>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Priority
-                    </label>
-                    <Select defaultValue="medium">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Email Address</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {connectionStatus?.userEmail || '-'}
+                    </span>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Target
-                    </label>
-                    <Select defaultValue="all-users">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all-users">All Users</SelectItem>
-                        <SelectItem value="specific-user">
-                          Specific User
-                        </SelectItem>
-                        <SelectItem value="admin-only">Admin Only</SelectItem>
-                        <SelectItem value="active-users">
-                          Active Users
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                      Connected Users Count
+                    </span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {connectionStatus?.connectedUsersCount?.toLocaleString() || '0'}
+                    </span>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title
-                    </label>
-                    <Input placeholder="Notification title" />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Message
-                    </label>
-                    <textarea
-                      className="w-full min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Notification message"
-                    />
-                  </div>
-
-                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendNotification} disabled={loading}>
-                    Send Notification
-                  </Button>
                 </div>
               </div>
 
-              {/* Send Update Section */}
+              {/* Recent Notifications */}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Send Update
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Send real-time updates to users
-                  </p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                  Recent Notifications
+                </h3>
+                <div className="space-y-1">
+                  {liveNotifications.length === 0 ? (
+                    <div className="text-gray-500 text-sm">No notifications.</div>
+                  ) : (
+                    liveNotifications.map((notif, idx) => (
+                      <NotificationItem
+                        key={notif.id || idx}
+                        type={notif.type}
+                        severity={notif.severity || 'Medium'}
+                        message={notif.message}
+                        time={notif.time || ''}
+                      />
+                    ))
+                  )}
                 </div>
+              </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type
-                    </label>
-                    <Select defaultValue="workflow-updated">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="workflow-updated">
-                          Workflow Updated
-                        </SelectItem>
-                        <SelectItem value="system-status">
-                          System Status
-                        </SelectItem>
-                        <SelectItem value="user-action">User Action</SelectItem>
-                        <SelectItem value="data-sync">Data Sync</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Target
-                    </label>
-                    <Select defaultValue="all-users">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all-users">All Users</SelectItem>
-                        <SelectItem value="specific-user">
-                          Specific User
-                        </SelectItem>
-                        <SelectItem value="admin-only">Admin Only</SelectItem>
-                        <SelectItem value="active-users">
-                          Active Users
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data (JSON)
-                    </label>
-                    <textarea
-                      className="w-full min-h-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-                      placeholder='{"key": "value"}'
-                      defaultValue='{"key": "value"}'
+              {/* Connected Users */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                  Connected Users
+                </h3>
+                <div className="space-y-1">
+                  {connectedUsers.length === 0 ? (
+                    <div className="text-gray-500 text-sm">No users connected.</div>
+                  ) : connectedUsers.map((user, idx) => (
+                    <ConnectedUserItem
+                      key={user.id || idx}
+                      name={user.name || user.email || 'User'}
+                      email={user.email}
+                      connectionTime={`Connected: ${user.connectedAt ? new Date(user.connectedAt).toLocaleString() : '-'}`}
+                      status="Online"
                     />
-                  </div>
-
-                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendUpdate} disabled={loading}>
-                    Send Update
-                  </Button>
+                  ))}
                 </div>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="users" className="space-y-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                All Connected Users
-              </h3>
-              <div className="space-y-1">
-                {connectedUsers.length === 0 ? (
-                  <div className="text-gray-500 text-sm">No users connected.</div>
-                ) : connectedUsers.map((user, idx) => (
-                  <ConnectedUserItem
-                    key={user.id || idx}
-                    name={user.name || user.email || 'User'}
-                    email={user.email}
-                    connectionTime={`Connected: ${user.connectedAt ? new Date(user.connectedAt).toLocaleString() : '-'}`}
-                    status="Online"
-                  />
-                ))}
+            <TabsContent value="notifications" className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                  All Notifications
+                </h3>
+                <div className="space-y-1">
+                  {liveNotifications.length === 0 ? (
+                    <div className="text-gray-500 text-sm">No notifications.</div>
+                  ) : (
+                    liveNotifications.map((notif, idx) => (
+                      <NotificationItem
+                        key={notif.id || idx}
+                        type={notif.type}
+                        severity={notif.severity || 'Medium'}
+                        message={notif.message}
+                        time={notif.time || ''}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-        )}
+            </TabsContent>
+
+            <TabsContent value="updates" className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                  Recent Updates
+                </h3>
+                <div className="space-y-4">
+                  {liveUpdates.length === 0 ? (
+                    <div className="text-gray-500 text-sm">No updates.</div>
+                  ) : (
+                    liveUpdates.map((update, idx) => (
+                      <div key={update.id || idx} className="flex items-start justify-between py-3 border-b border-gray-100">
+                        <div>
+                          <div className="font-medium text-gray-900 mb-1">{update.title}</div>
+                          <div className="text-sm text-gray-600">{update.message}</div>
+                        </div>
+                        <div className="text-xs text-gray-500">{update.time || ''}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+              <TabsContent value="admin" className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Send Notification Section */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Send Notification
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Send real-time notifications to users
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Type
+                        </label>
+                        <Select defaultValue="system-alert">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="system-alert">
+                              System Alert
+                            </SelectItem>
+                            <SelectItem value="maintenance">Maintenance</SelectItem>
+                            <SelectItem value="update">Update</SelectItem>
+                            <SelectItem value="security">Security Alert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Priority
+                        </label>
+                        <Select defaultValue="medium">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="critical">Critical</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Target
+                        </label>
+                        <Select defaultValue="all-users">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all-users">All Users</SelectItem>
+                            <SelectItem value="specific-user">
+                              Specific User
+                            </SelectItem>
+                            <SelectItem value="admin-only">Admin Only</SelectItem>
+                            <SelectItem value="active-users">
+                              Active Users
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Title
+                        </label>
+                        <Input placeholder="Notification title" />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Message
+                        </label>
+                        <textarea
+                          className="w-full min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Notification message"
+                        />
+                      </div>
+
+                      <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendNotification} disabled={loading}>
+                        Send Notification
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Send Update Section */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Send Update
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Send real-time updates to users
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Type
+                        </label>
+                        <Select defaultValue="workflow-updated">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="workflow-updated">
+                              Workflow Updated
+                            </SelectItem>
+                            <SelectItem value="system-status">
+                              System Status
+                            </SelectItem>
+                            <SelectItem value="user-action">User Action</SelectItem>
+                            <SelectItem value="data-sync">Data Sync</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Target
+                        </label>
+                        <Select defaultValue="all-users">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all-users">All Users</SelectItem>
+                            <SelectItem value="specific-user">
+                              Specific User
+                            </SelectItem>
+                            <SelectItem value="admin-only">Admin Only</SelectItem>
+                            <SelectItem value="active-users">
+                              Active Users
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Data (JSON)
+                        </label>
+                        <textarea
+                          className="w-full min-h-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                          placeholder='{"key": "value"}'
+                          defaultValue='{"key": "value"}'
+                        />
+                      </div>
+
+                      <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" onClick={handleSendUpdate} disabled={loading}>
+                        Send Update
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+            <TabsContent value="users" className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                  All Connected Users
+                </h3>
+                <div className="space-y-1">
+                  {connectedUsers.length === 0 ? (
+                    <div className="text-gray-500 text-sm">No users connected.</div>
+                  ) : connectedUsers.map((user, idx) => (
+                    <ConnectedUserItem
+                      key={user.id || idx}
+                      name={user.name || user.email || 'User'}
+                      email={user.email}
+                      connectionTime={`Connected: ${user.connectedAt ? new Date(user.connectedAt).toLocaleString() : '-'}`}
+                      status="Online"
+                    />
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          )}
+        </div>
       </div>
-    </div>
   );
 }
