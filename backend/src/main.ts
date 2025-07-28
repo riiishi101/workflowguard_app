@@ -22,10 +22,6 @@ if (process.env.SENTRY_DSN) {
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    integrations: [
-      new Sentry.HttpIntegration({ tracing: true }),
-      new Sentry.ExpressIntegration({ app: express() }),
-    ],
   });
 }
 
@@ -67,10 +63,10 @@ const logger = createLogger({
 export async function createNestServer() {
   const server = express();
   
-  // Initialize Sentry request handler
-  if (process.env.SENTRY_DSN) {
-    server.use(Sentry.requestHandler());
-  }
+  // Initialize Sentry request handler - temporarily disabled due to API changes
+  // if (process.env.SENTRY_DSN) {
+  //   server.use(Sentry.requestHandler());
+  // }
 
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule,
@@ -239,10 +235,10 @@ export async function createNestServer() {
 
   await app.init();
 
-  // Sentry error handler (must be registered before any other error middleware)
-  if (process.env.SENTRY_DSN) {
-    server.use(Sentry.errorHandler());
-  }
+  // Sentry error handler (must be registered before any other error middleware) - temporarily disabled due to API changes
+  // if (process.env.SENTRY_DSN) {
+  //   server.use(Sentry.errorHandler());
+  // }
 
   // Root health route
   server.get('/', (req: Request, res: Response) => {
