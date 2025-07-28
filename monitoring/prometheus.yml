@@ -1,0 +1,155 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'workflowguard'
+
+# Alerting rules
+rule_files:
+  - "alerts.yml"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Scrape configurations
+scrape_configs:
+  # ========================================
+  # WorkflowGuard Backend
+  # ========================================
+  - job_name: 'workflowguard-backend'
+    static_configs:
+      - targets: ['workflowguard-backend:3000']
+    metrics_path: '/api/metrics'
+    scrape_interval: 5s
+    scrape_timeout: 10s
+    honor_labels: true
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+)(?::\d+)?'
+        replacement: '${1}'
+
+  # ========================================
+  # WorkflowGuard Frontend
+  # ========================================
+  - job_name: 'workflowguard-frontend'
+    static_configs:
+      - targets: ['workflowguard-frontend:80']
+    metrics_path: '/health'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: '/metrics'
+    honor_labels: true
+
+  # ========================================
+  # Redis Cache
+  # ========================================
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    metrics_path: '/metrics'
+    honor_labels: true
+
+  # ========================================
+  # Nginx
+  # ========================================
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    metrics_path: '/nginx_status'
+    honor_labels: true
+
+  # ========================================
+  # Node Exporter (System Metrics)
+  # ========================================
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    honor_labels: true
+
+  # ========================================
+  # Docker Metrics
+  # ========================================
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['docker:9323']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    honor_labels: true
+
+  # ========================================
+  # Custom Application Metrics
+  # ========================================
+  - job_name: 'workflowguard-custom'
+    static_configs:
+      - targets: ['workflowguard-backend:3000']
+    metrics_path: '/api/metrics/custom'
+    scrape_interval: 30s
+    scrape_timeout: 15s
+    honor_labels: true
+    metrics_path: '/api/metrics/custom'
+    params:
+      include:
+        - 'workflow_sync_status'
+        - 'user_activity'
+        - 'billing_metrics'
+        - 'api_usage'
+
+  # ========================================
+  # Health Checks
+  # ========================================
+  - job_name: 'health-checks'
+    static_configs:
+      - targets: 
+        - 'workflowguard-backend:3000'
+        - 'workflowguard-frontend:80'
+        - 'postgres:5432'
+        - 'redis:6379'
+    metrics_path: '/health'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    honor_labels: true
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: service
+        regex: '([^:]+)'
+        replacement: '${1}'
+
+  # ========================================
+  # Blackbox Exporter (External Monitoring)
+  # ========================================
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://workflowguard.pro
+        - https://api.workflowguard.pro
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115 

@@ -10,4 +10,4 @@ import { NotificationModule } from '../notification/notification.module';
   providers: [HubSpotBillingService],
   exports: [HubSpotBillingService],
 })
-export class HubSpotBillingModule {} 
+export class HubSpotBillingModule {}

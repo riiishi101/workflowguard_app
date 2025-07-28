@@ -12,10 +12,10 @@ import {
 import { X } from "lucide-react";
 import { useState } from "react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import RoleGuard from './RoleGuard';
 import apiService from "@/services/api";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 interface CreateNewWorkflowModalProps {
   open: boolean;
@@ -35,6 +35,7 @@ const CreateNewWorkflowModal = ({
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const handleCreate = async () => {
     if (!user) return;
@@ -45,13 +46,13 @@ const CreateNewWorkflowModal = ({
         hubspotId: Math.random().toString(36).substring(2, 10), // placeholder
         ownerId: user.id,
       });
-      toast({ title: "Workflow created!", description: `Workflow '${workflowName}' was created successfully.` });
+      setBanner({ type: 'success', message: `Workflow '${workflowName}' was created successfully.` });
       setWorkflowName("");
       setSelectedFolder("");
       onClose();
       if (onCreated) onCreated();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to create workflow.", variant: "destructive" });
+      setBanner({ type: 'error', message: err.message || 'Failed to create workflow.' });
     } finally {
       setLoading(false);
     }
@@ -60,9 +61,11 @@ const CreateNewWorkflowModal = ({
   if (!version) return null;
 
   return (
-    <RoleGuard roles={['admin', 'editor']}>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
+          {banner && (
+            <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+          )}
           <VisuallyHidden>
             <DialogTitle>Create New Workflow from Version</DialogTitle>
             <DialogDescription>Fill out the form to create a new workflow based on this version.</DialogDescription>
@@ -146,7 +149,6 @@ const CreateNewWorkflowModal = ({
           </div>
         </DialogContent>
       </Dialog>
-    </RoleGuard>
   );
 };
 

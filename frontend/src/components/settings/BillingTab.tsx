@@ -75,11 +75,11 @@ export default function BillingTab() {
 
   const getPlanLimits = (planId: string) => {
     const limits: { [key: string]: { workflows: number; history: number } } = {
-      starter: { workflows: 10, history: 30 },
-      professional: { workflows: 50, history: 90 },
+      starter: { workflows: 25, history: 30 },
+      professional: { workflows: 500, history: 90 },
       enterprise: { workflows: -1, history: -1 }, // Unlimited
     };
-    return limits[planId] || { workflows: 0, history: 0 };
+    return limits[planId] || { workflows: 500, history: 90 }; // Default to professional limits
   };
 
   if (loading) {
@@ -90,7 +90,7 @@ export default function BillingTab() {
     );
   }
 
-  const planLimits = getPlanLimits(userPlan?.planId || 'starter');
+  const planLimits = getPlanLimits(userPlan?.planId || 'professional');
 
   return (
     <div className="space-y-6">

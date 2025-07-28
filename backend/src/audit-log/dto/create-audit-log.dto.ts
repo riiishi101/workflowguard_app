@@ -28,4 +28,4 @@ export class CreateAuditLogDto {
   @IsString()
   @IsOptional()
   ipAddress?: string;
-} 
+}
