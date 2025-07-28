@@ -22,4 +22,4 @@ import { PrismaModule } from '../prisma/prisma.module';
   providers: [RealtimeService],
   exports: [RealtimeService],
 })
-export class RealtimeModule {} 
+export class RealtimeModule {}

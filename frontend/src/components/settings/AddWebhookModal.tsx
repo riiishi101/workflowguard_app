@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Eye, EyeOff } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import RoleGuard from '../../components/RoleGuard';
+// Remove import RoleGuard from '../../components/RoleGuard';
 
 interface AddWebhookModalProps {
   open: boolean;
@@ -69,11 +69,13 @@ const AddWebhookModal = ({ open, onClose, onAdd, initialData }: AddWebhookModalP
     formData.selectedEvents.length > 0;
 
   return (
-    <RoleGuard roles={['admin', 'editor']}>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-lg">
           <VisuallyHidden>
             <DialogTitle>{initialData ? 'Edit Webhook' : 'Add New Webhook'}</DialogTitle>
+            <DialogDescription>
+              {initialData ? 'Edit webhook configuration and settings.' : 'Configure a new webhook to receive notifications about workflow events.'}
+            </DialogDescription>
           </VisuallyHidden>
 
           <div className="flex items-center justify-between mb-6">
@@ -185,7 +187,6 @@ const AddWebhookModal = ({ open, onClose, onAdd, initialData }: AddWebhookModalP
           </div>
         </DialogContent>
       </Dialog>
-    </RoleGuard>
   );
 };
 
