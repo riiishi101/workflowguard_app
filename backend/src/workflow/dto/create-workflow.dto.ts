@@ -12,4 +12,4 @@ export class CreateWorkflowDto {
   @IsString()
   @IsNotEmpty()
   ownerId: string;
-} 
+}

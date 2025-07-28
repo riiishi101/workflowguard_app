@@ -8,7 +8,11 @@ import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class WorkflowVersionService {
-  constructor(private prisma: PrismaService, private userService: UserService, private auditLogService: AuditLogService) {}
+  constructor(
+    private prisma: PrismaService,
+    private userService: UserService,
+    private auditLogService: AuditLogService,
+  ) {}
 
   async create(data: CreateWorkflowVersionDto): Promise<WorkflowVersion> {
     const { workflowId, ...rest } = data;
@@ -71,7 +75,9 @@ export class WorkflowVersionService {
     });
   }
 
-  async findLatestByWorkflowId(workflowId: string): Promise<WorkflowVersion | null> {
+  async findLatestByWorkflowId(
+    workflowId: string,
+  ): Promise<WorkflowVersion | null> {
     return this.prisma.workflowVersion.findFirst({
       where: { workflowId },
       orderBy: {
@@ -83,7 +89,10 @@ export class WorkflowVersionService {
     });
   }
 
-  async update(id: string, data: Prisma.WorkflowVersionUpdateInput): Promise<WorkflowVersion> {
+  async update(
+    id: string,
+    data: Prisma.WorkflowVersionUpdateInput,
+  ): Promise<WorkflowVersion> {
     return this.prisma.workflowVersion.update({
       where: { id },
       data,
@@ -99,13 +108,19 @@ export class WorkflowVersionService {
     });
   }
 
-  async findByWorkflowIdWithHistoryLimit(workflowId: string, userId: string): Promise<WorkflowVersion[]> {
+  async findByWorkflowIdWithHistoryLimit(
+    workflowId: string,
+    userId: string,
+  ): Promise<WorkflowVersion[]> {
     const user = await this.userService.findOneWithSubscription(userId);
-    const planId = (user?.subscription?.planId as keyof typeof PLAN_CONFIG) || 'starter';
+    const planId =
+      (user?.subscription?.planId as keyof typeof PLAN_CONFIG) || 'starter';
     const plan = PLAN_CONFIG[planId] || PLAN_CONFIG['starter'];
-    let where: any = { workflowId };
+    const where: any = { workflowId };
     if (plan.historyDays !== null) {
-      const cutoff = new Date(Date.now() - plan.historyDays * 24 * 60 * 60 * 1000);
+      const cutoff = new Date(
+        Date.now() - plan.historyDays * 24 * 60 * 60 * 1000,
+      );
       where.createdAt = { gte: cutoff };
     }
     return this.prisma.workflowVersion.findMany({

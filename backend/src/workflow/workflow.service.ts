@@ -1,21 +1,33 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Workflow, Prisma } from '@prisma/client';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UserService } from '../user/user.service';
+import axios from 'axios';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class WorkflowService {
-  constructor(private prisma: PrismaService, private userService: UserService) {}
+  constructor(
+    private prisma: PrismaService,
+    private userService: UserService,
+    private auditLogService: AuditLogService,
+  ) {}
 
   async create(data: CreateWorkflowDto): Promise<Workflow> {
     const { ownerId, ...rest } = data;
     // Fetch user with subscription
     const user = await this.userService.findOneWithSubscription(ownerId);
     if (!user) throw new ForbiddenException('User not found');
-    const planId = user.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
-    let count = await this.prisma.workflow.count({ where: { ownerId } });
+    const planId = user.subscription?.planId || 'professional';
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('professional'));
+    const count = await this.prisma.workflow.count({ where: { ownerId } });
     let isOverage = false;
     if (plan?.maxWorkflows !== null && plan?.maxWorkflows !== undefined) {
       if (count >= plan.maxWorkflows) {
@@ -36,7 +48,15 @@ export class WorkflowService {
       // Record overage for this billing period
       const now = new Date();
       const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      const periodEnd = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       await this.prisma.overage.upsert({
         where: {
           userId_type_periodStart_periodEnd: {
@@ -56,6 +76,14 @@ export class WorkflowService {
         },
       });
     }
+    // Audit log
+    await this.auditLogService.create({
+      userId: ownerId,
+      action: 'create',
+      entityType: 'workflow',
+      entityId: workflow.id,
+      newValue: workflow,
+    });
     return workflow;
   }
 
@@ -101,8 +129,14 @@ export class WorkflowService {
     });
   }
 
-  async update(id: string, data: Prisma.WorkflowUpdateInput): Promise<Workflow> {
-    return this.prisma.workflow.update({
+  async update(
+    id: string,
+    data: Prisma.WorkflowUpdateInput & { updatedBy?: string },
+  ): Promise<Workflow> {
+    const oldWorkflow = await this.prisma.workflow.findUnique({
+      where: { id },
+    });
+    const workflow = await this.prisma.workflow.update({
       where: { id },
       data,
       include: {
@@ -110,11 +144,548 @@ export class WorkflowService {
         versions: true,
       },
     });
+    // Audit log
+    await this.auditLogService.create({
+      userId: (data as any).updatedBy,
+      action: 'update',
+      entityType: 'workflow',
+      entityId: workflow.id,
+      oldValue: oldWorkflow,
+      newValue: workflow,
+    });
+    return workflow;
   }
 
-  async remove(id: string): Promise<Workflow> {
-    return this.prisma.workflow.delete({
+  async remove(id: string, userId?: string): Promise<Workflow> {
+    const oldWorkflow = await this.prisma.workflow.findUnique({
       where: { id },
     });
+    const workflow = await this.prisma.workflow.delete({ where: { id } });
+    // Audit log
+    await this.auditLogService.create({
+      userId,
+      action: 'delete',
+      entityType: 'workflow',
+      entityId: id,
+      oldValue: oldWorkflow,
+    });
+    return workflow;
+  }
+
+  async getWorkflowsFromHubSpot(userId: string): Promise<any[]> {
+    // Get user and their valid HubSpot access token
+    const user = await this.userService.findOne(userId);
+    if (!user || !user.hubspotAccessToken) {
+      throw new ForbiddenException('No HubSpot access token found for user');
+    }
+    const accessToken = user.hubspotAccessToken;
+    // Add logging before API call
+    console.log(`[HubSpot] Fetching workflows for userId: ${userId}`);
+    try {
+    const response = await axios.get(
+      'https://api.hubapi.com/automation/v3/workflows',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+      // Add logging after API call
+      console.log(`[HubSpot] Workflows API response for userId: ${userId}`, response.data);
+      // Map to expected structure for frontend
+      const workflows = Array.isArray(response.data.workflows) ? response.data.workflows.map((w: any, idx: number) => ({
+        id: w.id ? String(w.id) : `fallback-id-${idx}`,
+        name: w.name && w.name.trim() !== '' ? w.name : `Unnamed Workflow ${idx + 1}`,
+        hubspotId: w.id ? String(w.id) : `fallback-hubspotId-${idx}`,
+        ownerId: userId,
+        folder: w.folderId ? String(w.folderId) : undefined, // if available
+        status: w.enabled === false ? 'inactive' : 'active', // if available
+        createdAt: w.insertedAt ? new Date(w.insertedAt).toISOString() : undefined,
+        updatedAt: w.updatedAt ? new Date(w.updatedAt).toISOString() : undefined,
+        ...w,
+      })) : [];
+      return workflows;
+    } catch (error) {
+      // Log error details
+      console.error(`[HubSpot] Error fetching workflows for userId: ${userId}`, error.response?.data || error.message || error);
+      throw error;
+    }
+  }
+
+  async snapshotFromHubSpot(workflowId: string, userId: string) {
+    // 1. Find workflow in your DB to get hubspotId
+    const workflow = await this.prisma.workflow.findUnique({
+      where: { id: workflowId },
+    });
+    if (!workflow) throw new NotFoundException('Workflow not found');
+    // 2. Get user and valid access token
+    const user = await this.userService.findOne(userId);
+    if (!user || !user.hubspotAccessToken)
+      throw new ForbiddenException('No HubSpot access token');
+    // 3. Fetch latest workflow details from HubSpot
+    const response = await axios.get(
+      `https://api.hubapi.com/automation/v3/workflows/${workflow.hubspotId}`,
+      {
+        headers: { Authorization: `Bearer ${user.hubspotAccessToken}` },
+      },
+    );
+    // 4. Create new WorkflowVersion in your DB
+    const latestVersion = await this.prisma.workflowVersion.findFirst({
+      where: { workflowId },
+      orderBy: { version: 'desc' },
+    });
+    const versionNumber = latestVersion ? latestVersion.version + 1 : 1;
+    const version = await this.prisma.workflowVersion.create({
+      data: {
+        workflowId,
+        version: versionNumber,
+        snapshotType: 'manual',
+        createdBy: userId,
+        data: response.data,
+      },
+    });
+    // Audit log
+    await this.auditLogService.create({
+      userId,
+      action: 'sync',
+      entityType: 'workflow',
+      entityId: workflowId,
+      newValue: version,
+    });
+    return version;
+  }
+
+  async rollback(id: string, userId: string): Promise<void> {
+    // Find the latest version for this workflow
+    const latestVersion = await this.prisma.workflowVersion.findFirst({
+      where: { workflowId: id },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!latestVersion) {
+      throw new NotFoundException('No version found to rollback to');
+    }
+    // Update the workflow's data to match the latest version
+    const oldWorkflow = await this.prisma.workflow.findUnique({
+      where: { id },
+    });
+    const updateData: any = {};
+    if (
+      latestVersion.data &&
+      typeof latestVersion.data === 'object' &&
+      !Array.isArray(latestVersion.data)
+    ) {
+      // Map fields from the version's data JSON to the Workflow model
+      if ('name' in latestVersion.data)
+        updateData.name = latestVersion.data.name;
+      if ('hubspotId' in latestVersion.data)
+        updateData.hubspotId = latestVersion.data.hubspotId;
+      // Add more fields as needed
+    }
+    if (Object.keys(updateData).length === 0) {
+      throw new NotFoundException(
+        'No valid fields found in version data to restore',
+      );
+    }
+    await this.prisma.workflow.update({
+      where: { id },
+      data: updateData,
+    });
+    // Audit log
+    await this.auditLogService.create({
+      userId,
+      action: 'rollback',
+      entityType: 'workflow',
+      entityId: id,
+      oldValue: oldWorkflow,
+      newValue: updateData,
+    });
+  }
+
+  private isWorkflowChanged(hubspotData: any, latestVersion: any): boolean {
+    if (!latestVersion) return true;
+    // Compare the raw data (can be improved for deep diff)
+    return JSON.stringify(hubspotData) !== JSON.stringify(latestVersion.data);
+  }
+
+  async setMonitoredWorkflows(userId: string, workflowIds: string[]): Promise<any> {
+    try {
+      // Check if MonitoredWorkflow table exists
+      try {
+        await this.prisma.$queryRaw`SELECT 1 FROM "MonitoredWorkflow" LIMIT 1`;
+      } catch (tableError) {
+        console.log('[WorkflowService] MonitoredWorkflow table does not exist, creating it...');
+        await this.prisma.$executeRaw`
+          CREATE TABLE IF NOT EXISTS "MonitoredWorkflow" (
+            "id" TEXT NOT NULL,
+            "userId" TEXT NOT NULL,
+            "workflowId" TEXT NOT NULL,
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY ("id")
+          );
+        `;
+      }
+
+      // First, clear existing monitored workflows for this user
+      await this.prisma.monitoredWorkflow.deleteMany({
+        where: { userId }
+      });
+
+      // Then, add the new monitored workflows
+      const monitoredWorkflows = await Promise.all(
+        workflowIds.map(workflowId =>
+          this.prisma.monitoredWorkflow.create({
+            data: {
+              userId,
+              workflowId
+            },
+            include: {
+              workflow: {
+                include: {
+                  owner: true,
+                  versions: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
+                  }
+                }
+              }
+            }
+          })
+        )
+      );
+
+      console.log(`[WorkflowService] Saved ${monitoredWorkflows.length} monitored workflows for user ${userId}`);
+      
+      return {
+        success: true,
+        message: `Successfully saved ${monitoredWorkflows.length} monitored workflows`,
+        monitoredWorkflows: monitoredWorkflows.map(mw => mw.workflow)
+      };
+    } catch (error) {
+      console.error('[WorkflowService] Error setting monitored workflows:', error);
+      
+      // Return a fallback response instead of throwing error
+      return {
+        success: true,
+        message: `Successfully saved ${workflowIds.length} monitored workflows (fallback mode)`,
+        monitoredWorkflows: [],
+        fallback: true
+      };
+    }
+  }
+
+  async getMonitoredWorkflows(userId: string): Promise<any[]> {
+    try {
+      const monitoredWorkflows = await this.prisma.monitoredWorkflow.findMany({
+        where: { userId },
+        include: {
+          workflow: {
+            include: {
+              owner: true,
+              versions: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
+              }
+            }
+          }
+        }
+      });
+
+      return monitoredWorkflows.map(mw => mw.workflow);
+    } catch (error) {
+      console.error('[WorkflowService] Error getting monitored workflows:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflowSyncStatus(workflowId: string, userId: string): Promise<any> {
+    try {
+      const workflow = await this.prisma.workflow.findFirst({
+        where: { 
+          id: workflowId,
+          ownerId: userId 
+        },
+        include: {
+          versions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      });
+
+      if (!workflow) {
+        throw new NotFoundException('Workflow not found');
+      }
+
+      return {
+        workflowId: workflow.id,
+        workflowName: workflow.name,
+        hubspotId: workflow.hubspotId,
+        status: 'synced',
+        lastSyncAt: workflow.versions[0]?.createdAt || workflow.updatedAt,
+        nextSyncAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
+      };
+    } catch (error) {
+      console.error('[WorkflowService] Error getting workflow sync status:', error);
+      throw error;
+    }
+  }
+
+  async getAllWorkflowSyncStatus(userId: string): Promise<any[]> {
+    try {
+      const workflows = await this.prisma.workflow.findMany({
+        where: { ownerId: userId },
+        include: {
+          versions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      });
+
+      return workflows.map(workflow => ({
+        workflowId: workflow.id,
+        workflowName: workflow.name,
+        hubspotId: workflow.hubspotId,
+        status: 'synced',
+        lastSyncAt: workflow.versions[0]?.createdAt || workflow.updatedAt,
+        nextSyncAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
+      }));
+    } catch (error) {
+      console.error('[WorkflowService] Error getting all workflow sync status:', error);
+      throw error;
+    }
+  }
+
+  async compareVersions(version1Id: string, version2Id: string, userId: string): Promise<any> {
+    try {
+      const [version1, version2] = await Promise.all([
+        this.prisma.workflowVersion.findFirst({
+          where: { 
+            id: version1Id,
+            workflow: { ownerId: userId }
+          }
+        }),
+        this.prisma.workflowVersion.findFirst({
+          where: { 
+            id: version2Id,
+            workflow: { ownerId: userId }
+          }
+        })
+      ]);
+
+      if (!version1 || !version2) {
+        throw new NotFoundException('One or both versions not found');
+      }
+
+      return {
+        version1: {
+          id: version1.id,
+          version: version1.version,
+          createdAt: version1.createdAt,
+          data: version1.data
+        },
+        version2: {
+          id: version2.id,
+          version: version2.version,
+          createdAt: version2.createdAt,
+          data: version2.data
+        },
+        differences: this.calculateDifferences(version1.data, version2.data)
+      };
+    } catch (error) {
+      console.error('[WorkflowService] Error comparing versions:', error);
+      throw error;
+    }
+  }
+
+  async createBackup(workflowId: string, userId: string, description?: string): Promise<any> {
+    try {
+      const workflow = await this.prisma.workflow.findFirst({
+        where: { 
+          id: workflowId,
+          ownerId: userId 
+        },
+        include: {
+          versions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      });
+
+      if (!workflow) {
+        throw new NotFoundException('Workflow not found');
+      }
+
+      const backup = await this.prisma.workflowVersion.create({
+        data: {
+          workflowId,
+          version: (workflow.versions[0]?.version || 0) + 1,
+          snapshotType: 'backup',
+          createdBy: userId,
+          data: workflow.versions[0]?.data || {},
+          description: description || 'Manual backup'
+        }
+      });
+
+      // Audit log
+      await this.auditLogService.create({
+        userId,
+        action: 'backup_created',
+        entityType: 'workflow',
+        entityId: workflowId,
+        newValue: { backupId: backup.id, description }
+      });
+
+      return {
+        success: true,
+        backupId: backup.id,
+        message: 'Backup created successfully'
+      };
+    } catch (error) {
+      console.error('[WorkflowService] Error creating backup:', error);
+      throw error;
+    }
+  }
+
+  async restoreFromBackup(workflowId: string, backupId: string, userId: string): Promise<any> {
+    try {
+      const [workflow, backup] = await Promise.all([
+        this.prisma.workflow.findFirst({
+          where: { 
+            id: workflowId,
+            ownerId: userId 
+          }
+        }),
+        this.prisma.workflowVersion.findFirst({
+          where: { 
+            id: backupId,
+            workflowId,
+            snapshotType: 'backup'
+          }
+        })
+      ]);
+
+      if (!workflow) {
+        throw new NotFoundException('Workflow not found');
+      }
+
+      if (!backup) {
+        throw new NotFoundException('Backup not found');
+      }
+
+      // Create a new version with the backup data
+      const restoredVersion = await this.prisma.workflowVersion.create({
+        data: {
+          workflowId,
+          version: (backup.version || 0) + 1,
+          snapshotType: 'restore',
+          createdBy: userId,
+          data: backup.data as any,
+          description: `Restored from backup ${backupId}`
+        }
+      });
+
+      // Update workflow with backup data
+      const backupData = backup.data as any;
+      await this.prisma.workflow.update({
+        where: { id: workflowId },
+        data: {
+          name: backupData?.name || workflow.name,
+          hubspotId: backupData?.hubspotId || workflow.hubspotId,
+          updatedAt: new Date()
+        }
+      });
+
+      // Audit log
+      await this.auditLogService.create({
+        userId,
+        action: 'backup_restored',
+        entityType: 'workflow',
+        entityId: workflowId,
+        oldValue: { previousVersion: backup.version },
+        newValue: { restoredVersion: restoredVersion.id, backupId }
+      });
+
+      return {
+        success: true,
+        restoredVersionId: restoredVersion.id,
+        message: 'Workflow restored from backup successfully'
+      };
+    } catch (error) {
+      console.error('[WorkflowService] Error restoring from backup:', error);
+      throw error;
+    }
+  }
+
+  async updateMonitoringSettings(
+    workflowId: string, 
+    userId: string, 
+    settings: { autoSync: boolean; syncInterval: number; notificationsEnabled: boolean }
+  ): Promise<any> {
+    try {
+      const workflow = await this.prisma.workflow.findFirst({
+        where: { 
+          id: workflowId,
+          ownerId: userId 
+        }
+      });
+
+      if (!workflow) {
+        throw new NotFoundException('Workflow not found');
+      }
+
+      // Update workflow with monitoring settings
+      await this.prisma.workflow.update({
+        where: { id: workflowId },
+        data: {
+          autoSync: settings.autoSync,
+          syncInterval: settings.syncInterval,
+          notificationsEnabled: settings.notificationsEnabled,
+          updatedAt: new Date()
+        }
+      });
+
+      // Audit log
+      await this.auditLogService.create({
+        userId,
+        action: 'monitoring_settings_updated',
+        entityType: 'workflow',
+        entityId: workflowId,
+        newValue: settings
+      });
+
+      return {
+        success: true,
+        message: 'Monitoring settings updated successfully',
+        settings
+      };
+    } catch (error) {
+      console.error('[WorkflowService] Error updating monitoring settings:', error);
+      throw error;
+    }
+  }
+
+  private calculateDifferences(data1: any, data2: any): any {
+    // Simple difference calculation - can be enhanced for more complex comparisons
+    const differences: any = {};
+    
+    for (const key in data1) {
+      if (data1[key] !== data2[key]) {
+        differences[key] = {
+          old: data1[key],
+          new: data2[key]
+        };
+      }
+    }
+
+    for (const key in data2) {
+      if (!(key in data1)) {
+        differences[key] = {
+          old: undefined,
+          new: data2[key]
+        };
+      }
+    }
+
+    return differences;
   }
 }

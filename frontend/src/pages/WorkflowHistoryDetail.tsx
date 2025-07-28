@@ -26,6 +26,8 @@ import {
   Eye,
   RotateCcw,
   Copy,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { useRequireAuth, useAuth } from '../components/AuthContext';
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
@@ -34,7 +36,42 @@ import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import { saveAs } from 'file-saver';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
+// TypeScript interfaces
+interface WorkflowVersion {
+  id: string;
+  versionNumber: number;
+  version?: string;
+  dateTime?: string;
+  createdAt?: string;
+  modifiedBy?: {
+    name?: string;
+    email?: string;
+    initials?: string;
+  };
+  changeSummary?: string;
+  data?: any;
+  [key: string]: any;
+}
+
+interface AuditLog {
+  id: string;
+  action: string;
+  user?: {
+    name?: string;
+    email?: string;
+  };
+  userId?: string;
+  timestamp?: string;
+  details?: any;
+  entityType?: string;
+  entityId?: string;
+  oldValue?: any;
+  newValue?: any;
+  ipAddress?: string;
+  [key: string]: any;
+}
 
 const WorkflowHistoryDetail = () => {
   useRequireAuth();
@@ -45,24 +82,25 @@ const WorkflowHistoryDetail = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showRollbackModal, setShowRollbackModal] = useState(false);
   const [showViewDetailsModal, setShowViewDetailsModal] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState(null);
-  const [versions, setVersions] = useState([]);
+  const [selectedVersion, setSelectedVersion] = useState<WorkflowVersion | null>(null);
+  const [versions, setVersions] = useState<WorkflowVersion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedModifiedBy, setSelectedModifiedBy] = useState<string>("all");
   const [selectedDateRange, setSelectedDateRange] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState("");
   const [auditActionFilter, setAuditActionFilter] = useState('all');
   const [auditUserFilter, setAuditUserFilter] = useState('all');
-  const [selectedAuditLog, setSelectedAuditLog] = useState(null);
+  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
   const [auditCurrentPage, setAuditCurrentPage] = useState(1);
   const [auditRowsPerPage, setAuditRowsPerPage] = useState(10);
   const [auditSearchTerm, setAuditSearchTerm] = useState("");
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
   
   useEffect(() => {
     if (!workflowId) return;
@@ -163,7 +201,7 @@ const WorkflowHistoryDetail = () => {
     saveAs(blob, 'audit-log.json');
   };
 
-  const handleAuditLogRowClick = (log) => {
+  const handleAuditLogRowClick = (log: AuditLog) => {
     setSelectedAuditLog(log);
     setShowAuditLogModal(true);
   };
@@ -208,6 +246,7 @@ const WorkflowHistoryDetail = () => {
                 <ExternalLink className="w-4 h-4 mr-2" />
                 View in HubSpot
               </Button>
+              {user && user.role === 'admin' && (
               <Button
                 onClick={() => {
                   if (filteredVersions.length > 0) {
@@ -221,6 +260,32 @@ const WorkflowHistoryDetail = () => {
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Rollback Latest
               </Button>
+              )}
+              {user && user.role === 'admin' && (
+                <Button
+                  onClick={async () => {
+                    if (!workflowId) return;
+                    setSnapshotLoading(true);
+                    try {
+                      await apiService.syncWorkflowFromHubSpot(workflowId);
+                      toast({ title: 'Snapshot Created', description: 'A new version was created from HubSpot.' });
+                      // Refresh version list
+                      const data = await apiService.getWorkflowVersions(workflowId);
+                      setVersions(Array.isArray(data) ? data : []);
+                    } catch (e: any) {
+                      toast({ title: 'Error', description: e.message || 'Failed to snapshot from HubSpot', variant: 'destructive' });
+                    } finally {
+                      setSnapshotLoading(false);
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                  disabled={snapshotLoading}
+                >
+                  {snapshotLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                  Snapshot from HubSpot
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -353,6 +418,7 @@ const WorkflowHistoryDetail = () => {
                         >
                           View Changes
                         </Button>
+                        {user && user.role === 'admin' && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -365,6 +431,7 @@ const WorkflowHistoryDetail = () => {
                         >
                           Rollback
                         </Button>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -595,6 +662,9 @@ const WorkflowHistoryDetail = () => {
       <Dialog open={showAuditLogModal} onOpenChange={setShowAuditLogModal}>
         <DialogContent className="max-w-lg">
           <DialogTitle>Audit Log Details</DialogTitle>
+          <DialogDescription>
+            Detailed information about the selected audit log entry.
+          </DialogDescription>
           {selectedAuditLog && (
             <div className="space-y-2 mt-4">
               <div><strong>Action:</strong> {selectedAuditLog.action}</div>

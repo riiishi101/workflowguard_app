@@ -123,15 +123,6 @@ const HelpSupport = () => {
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-12">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input
-            placeholder="Search for articles, topics, or FAQs..."
-            className="pl-10 py-3 text-base"
-          />
-        </div>
-
         {/* FAQ Section Only */}
         <div className="mb-12">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Frequently Asked Questions</h2>
@@ -143,6 +134,13 @@ const HelpSupport = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="mt-12 border-t pt-8 text-center">
+          <h2 className="text-lg font-semibold mb-2">Contact & Support</h2>
+          <p className="mb-2 text-gray-700">For help, questions, or to request data deletion, contact us at:</p>
+          <a href="mailto:contact@workflowguard.pro" className="text-blue-600 hover:underline text-base font-medium">contact@workflowguard.pro</a>
+          <p className="mt-2 text-xs text-gray-500">For HubSpot App Marketplace reviewers: This app provides a disconnect and data deletion flow in Settings. See our Privacy Policy and Terms of Service for details.</p>
         </div>
       </main>
     </div>

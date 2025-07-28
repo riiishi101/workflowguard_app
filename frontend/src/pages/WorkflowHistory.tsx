@@ -24,34 +24,64 @@ import {
   Loader2,
 } from "lucide-react";
 import EmptyWorkflowHistory from '../components/EmptyWorkflowHistory';
-import { useRequireAuth } from '../components/AuthContext';
-import RoleGuard from '../components/RoleGuard';
+import { useRequireAuth, usePlan } from '../components/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import React from 'react';
 import apiService from '@/services/api';
 import { saveAs } from 'file-saver';
+import UpgradeRequiredModal from "../components/UpgradeRequiredModal";
+import { useAuth } from '@/components/AuthContext';
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
+
+// TypeScript interfaces
+interface Workflow {
+  id: string;
+  name: string;
+  status: string;
+  hubspotId?: string;
+  // Add other fields as needed
+}
+
+interface WorkflowVersion {
+  id: string;
+  versionNumber: number;
+  snapshotType: string;
+  createdBy: string;
+  createdAt: string;
+  notes?: string;
+  data: any;
+  selected?: boolean;
+  // Add other fields as needed
+}
 
 const WorkflowHistory = () => {
   useRequireAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { workflowId } = useParams();
-  const [workflow, setWorkflow] = useState<any>(null);
-  const [versions, setVersions] = useState<any[]>([]);
+  const [workflow, setWorkflow] = useState<Workflow | null>(null);
+  const [versions, setVersions] = useState<WorkflowVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showViewDetails, setShowViewDetails] = useState(false);
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<any>(null);
+  const [selectedVersion, setSelectedVersion] = useState<WorkflowVersion | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [lastDeletedVersion, setLastDeletedVersion] = useState<any | null>(null);
+  const [lastDeletedVersion, setLastDeletedVersion] = useState<WorkflowVersion | null>(null);
   const undoTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [lastBulkDeleted, setLastBulkDeleted] = useState<any[]>([]);
+  const [lastBulkDeleted, setLastBulkDeleted] = useState<WorkflowVersion[]>([]);
+  const { plan, hasFeature, isTrialing } = usePlan();
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  if (!workflowId) {
+    return <EmptyWorkflowHistory />;
+  }
 
   // Fetch workflow and versions from backend
   useEffect(() => {
@@ -63,8 +93,8 @@ const WorkflowHistory = () => {
       apiService.getWorkflowVersions(workflowId).catch((e: any) => { throw new Error(e.message || "Failed to load workflow versions"); })
     ])
       .then(([wf, vers]) => {
-        setWorkflow(wf);
-        setVersions(Array.isArray(vers) ? vers.map((v: any) => ({ ...v, selected: false })) : []);
+        setWorkflow(wf as Workflow);
+        setVersions(Array.isArray(vers) ? vers.map((v: WorkflowVersion) => ({ ...v, selected: false })) : []);
       })
       .catch((e: any) => setError(e.message || "Failed to load workflow or versions"))
       .finally(() => setLoading(false));
@@ -84,7 +114,7 @@ const WorkflowHistory = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <p className="text-red-500 mb-4">{error}</p>
+        <span data-testid="workflow-history-error" className="text-red-500 mb-4">API Error</span>
         <Button onClick={() => window.location.reload()} variant="outline">Try Again</Button>
       </div>
     );
@@ -97,11 +127,13 @@ const WorkflowHistory = () => {
 
   // Show empty state if workflow is found but has no versions
   if (!versions || versions.length === 0) {
-    return <EmptyWorkflowHistory />;
+    return <EmptyWorkflowHistory workflow={workflow} />;
   }
 
   const selectedCount = versions.filter((v) => v.selected).length;
   const selectedVersions = versions.filter((v) => v.selected);
+
+  const canCompareVersions = hasFeature('advanced_monitoring') || hasFeature('unlimited_workflows');
 
   const handleCompareVersions = () => {
     if (selectedCount === 2) {
@@ -149,11 +181,11 @@ const WorkflowHistory = () => {
       for (const id of bulkDeleteIds) {
         await apiService.deleteWorkflowVersion(id);
       }
-      setVersions(versions.filter(v => !bulkDeleteIds.includes(v.id)));
+    setVersions(versions.filter(v => !bulkDeleteIds.includes(v.id)));
       setLastBulkDeleted(versions.filter(v => bulkDeleteIds.includes(v.id)));
-      setShowBulkDeleteDialog(false);
-      toast({
-        title: 'Versions Deleted',
+    setShowBulkDeleteDialog(false);
+    toast({
+      title: 'Versions Deleted',
         description: `${bulkDeleteIds.length} workflow version(s) have been deleted.`,
         variant: 'default',
         duration: 4000,
@@ -165,17 +197,17 @@ const WorkflowHistory = () => {
     }
   };
 
-  const handleViewDetails = (version: any) => {
+  const handleViewDetails = (version: WorkflowVersion) => {
     setSelectedVersion(version);
     setShowViewDetails(true);
   };
 
-  const handleCreateNew = (version: any) => {
+  const handleCreateNew = (version: WorkflowVersion) => {
     setSelectedVersion(version);
     setShowCreateNew(true);
   };
 
-  const handleRestore = async (version: any) => {
+  const handleRestore = async (version: WorkflowVersion) => {
     setShowRestore(true);
     setSelectedVersion(version);
   };
@@ -188,25 +220,15 @@ const WorkflowHistory = () => {
         workflowId: workflow.id,
         versionNumber: selectedVersion.versionNumber,
         snapshotType: 'restore',
-        createdBy: 'current-user-id', // Replace with real user id if available
+        createdBy: user?.id || 'system',
         data: selectedVersion.data,
       });
-      toast({
-        title: 'Restore Successful',
-        description: 'Workflow version has been restored.',
-        variant: 'default',
-        duration: 4000,
-      });
+      setBanner({ type: 'success', message: 'Workflow version has been restored.' });
       // Refetch versions
       const data = await apiService.getWorkflowVersions(workflow.id);
       setVersions(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      toast({
-        title: 'Error',
-        description: e.message || 'Failed to restore workflow version',
-        variant: 'destructive',
-        duration: 5000,
-      });
+      setBanner({ type: 'error', message: e.message || 'Failed to restore workflow version' });
     } finally {
       setShowRestore(false);
       setSelectedVersion(null);
@@ -254,7 +276,7 @@ const WorkflowHistory = () => {
   };
 
   // Download workflow version JSON
-  const handleDownloadJSON = (version: any) => {
+  const handleDownloadJSON = (version: WorkflowVersion) => {
     if (!version || !version.data) {
       toast({ title: 'Error', description: 'No workflow data to download.', variant: 'destructive', duration: 5000 });
       return;
@@ -267,6 +289,11 @@ const WorkflowHistory = () => {
   return (
     <div className="min-h-screen bg-white">
       <TopNavigation />
+      {banner && (
+        <div className="max-w-7xl mx-auto px-6 pt-6">
+          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
@@ -291,10 +318,10 @@ const WorkflowHistory = () => {
             {workflow?.hubspotId && (
               <Button variant="outline" size="sm" className="text-blue-600" asChild>
                 <a href={`https://app.hubspot.com/workflows/${workflow.hubspotId}`} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Go to Workflow in HubSpot
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Go to Workflow in HubSpot
                 </a>
-              </Button>
+            </Button>
             )}
           </div>
         </div>
@@ -403,7 +430,7 @@ const WorkflowHistory = () => {
                               <Eye className="w-4 h-4 mr-3" />
                               View Details
                             </DropdownMenuItem>
-                            <RoleGuard roles={['admin', 'restorer']}>
+                            {user?.role === 'admin' || user?.role === 'restorer' ? (
                               <DropdownMenuItem
                                 onClick={() => {
                                   setShowRestore(false);
@@ -416,15 +443,14 @@ const WorkflowHistory = () => {
                                 <RotateCcw className="w-4 h-4 mr-3" />
                                 Restore this Version
                               </DropdownMenuItem>
-                            </RoleGuard>
-                            <RoleGuard roles={['viewer']}>
+                            ) : (
                               <DropdownMenuItem
                                 onClick={() => alert('Request sent to admin for rollback.')}
                               >
                                 <RotateCcw className="w-4 h-4 mr-3" />
                                 Request Rollback
                               </DropdownMenuItem>
-                            </RoleGuard>
+                            )}
                             <DropdownMenuItem
                               onClick={() => handleDownloadJSON(version)}
                             >
@@ -463,15 +489,21 @@ const WorkflowHistory = () => {
               <p className="text-sm text-gray-600">
                 ✓ {selectedCount} versions selected
                 {selectedCount === 1 && " (select 1 more to compare)"}
-                {selectedCount === 2 && " (ready to compare)"}
+                {selectedCount === 2 && (
+                  canCompareVersions ? (
+                    <button onClick={handleCompareVersions} className="btn btn-primary">Compare Selected Versions</button>
+                  ) : (
+                    <UpgradeRequiredModal
+                      isOpen={true}
+                      onClose={() => {}}
+                      feature="version comparison"
+                      isTrialing={isTrialing()}
+                      planId={plan?.planId}
+                      trialPlanId={plan?.trialPlanId}
+                    />
+                  )
+                )}
               </p>
-              <Button
-                onClick={handleCompareVersions}
-                disabled={selectedCount !== 2}
-                className="bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Compare Selected Versions
-              </Button>
             </div>
           )}
         </div>

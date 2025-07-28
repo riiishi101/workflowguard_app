@@ -33,8 +33,10 @@ import UpgradeRequiredModal from '@/components/UpgradeRequiredModal';
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import CreateNewWorkflowModal from "@/components/CreateNewWorkflowModal";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
+import { useAuth } from '@/components/AuthContext';
 
 // Define the workflow type with proper validation
 interface Workflow {
@@ -78,9 +80,12 @@ const STATUS_COLORS = {
 
 const Dashboard = () => {
   useRequireAuth();
-  const { plan, loading } = usePlan();
+  const { plan, hasFeature, isTrialing } = usePlan();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdminOrRestorer = user && (user.role === 'admin' || user.role === 'restorer');
+  const [redirect, setRedirect] = useState(false);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -93,47 +98,33 @@ const Dashboard = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showRollbackModal, setShowRollbackModal] = useState(false);
   const [rollbackWorkflow, setRollbackWorkflow] = useState<Workflow | null>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  useEffect(() => {
-    fetchWorkflows();
-  }, []);
-
-  // Fallback: Load selected workflows from localStorage if API returns none
-  useEffect(() => {
-    if (!loading && workflows.length === 0) {
-      const stored = localStorage.getItem('selectedWorkflows');
-      if (stored) {
-        try {
-          const selected = JSON.parse(stored);
-          if (Array.isArray(selected) && selected.length > 0) {
-            setWorkflows(selected.map(id => ({
-              id,
-              name: `Workflow ${id}`,
-              hubspotId: id,
-              ownerId: '',
-              createdAt: '',
-              updatedAt: '',
-              owner: { email: 'user@example.com' },
-              versions: []
-            })));
-          } else {
-            setWorkflows([]); // Explicitly set to empty to trigger empty state
-          }
-        } catch (err) {
-          console.error('Error parsing stored workflows:', err);
-          setWorkflows([]);
-        }
-      } else {
-        setWorkflows([]); // Explicitly set to empty to trigger empty state
-      }
-    }
-  }, [loading, workflows.length]);
+  const canAddMoreWorkflows = hasFeature('unlimited_workflows') || hasFeature('advanced_monitoring');
 
   const fetchWorkflows = async () => {
     try {
       setWorkflowsLoading(true);
       setError(null);
-      const data = await apiService.getWorkflows() as any[];
+      
+      // Try to get workflows from API first
+      let data: any[] = [];
+      try {
+        data = await apiService.getWorkflows() as any[];
+      } catch (apiError) {
+        console.log('API not available, checking localStorage for saved workflows');
+        // Check localStorage for saved workflows from selection
+        const savedWorkflows = localStorage.getItem('selectedWorkflows');
+        if (savedWorkflows) {
+          try {
+            data = JSON.parse(savedWorkflows);
+          } catch (parseError) {
+            console.log('Failed to parse saved workflows');
+          }
+        }
+      }
       
       // Defensive: Validate and filter out malformed data
       const validWorkflows = Array.isArray(data)
@@ -150,6 +141,12 @@ const Dashboard = () => {
       
       setWorkflows(validWorkflows);
     } catch (err: any) {
+      // Don't set error for aborted requests (user navigation)
+      if (err.name === 'AbortError') {
+        console.log('Workflows request was aborted');
+        return;
+      }
+      
       // Improved error handling
       const apiError = err?.response?.data?.message || err?.message || String(err);
       setError(`Failed to fetch workflows: ${apiError}`);
@@ -158,6 +155,78 @@ const Dashboard = () => {
       setWorkflowsLoading(false);
     }
   };
+
+  const fetchAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const data = await apiService.getBusinessIntelligence();
+      setAnalytics(data);
+    } catch (err: any) {
+      // Don't show toast for aborted requests (user navigation)
+      if (err.name === 'AbortError') {
+        console.log('Analytics request was aborted');
+        return;
+      }
+      
+      toast({
+        title: "Analytics Error",
+        description: err?.message || "Failed to load analytics.",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  // Only fetch data if user is authenticated
+  useEffect(() => {
+    if (!user) return;
+    
+    let isMounted = true;
+    
+    const loadData = async () => {
+      try {
+        // Use Promise.allSettled to handle both requests independently
+        const results = await Promise.allSettled([
+          fetchWorkflows(),
+          fetchAnalytics()
+        ]);
+        
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+        
+        // Handle individual results
+        results.forEach((result, index) => {
+          if (result.status === 'rejected' && isMounted) {
+            const error = result.reason;
+            if (error.name === 'AbortError') {
+              console.log('Request was aborted, likely due to navigation');
+            } else {
+              console.error(`Error loading data (${index === 0 ? 'workflows' : 'analytics'}):`, error);
+            }
+          }
+        });
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error loading dashboard data:', error);
+        }
+      }
+    };
+    
+    loadData();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!plan && workflows.length === 0) {
+      // Remove fallback: do not load from localStorage, just show empty state
+        setWorkflows([]); // Explicitly set to empty to trigger empty state
+    }
+  }, [plan, workflows.length]);
 
   const filteredWorkflows = workflows.filter(workflow => {
     const matchesSearch = workflow.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -169,7 +238,7 @@ const Dashboard = () => {
     if (workflow.versions && workflow.versions.length > 0) {
       const latestVersion = workflow.versions[0];
       try {
-        return new Date(latestVersion.createdAt).toLocaleString();
+      return new Date(latestVersion.createdAt).toLocaleString();
       } catch (err) {
         console.error('Error parsing date:', err);
         return "Invalid date";
@@ -219,29 +288,51 @@ const Dashboard = () => {
   
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    
     setActionLoading(true);
-    try {
-      // In production, this would call an API to delete workflows
-      setWorkflows(workflows.filter(w => !selectedIds.includes(w.id)));
-      setSelectedIds([]);
+    let successCount = 0;
+    let failedCount = 0;
+    const failedNames: string[] = [];
+    const newWorkflows = [...workflows];
+    await Promise.all(selectedIds.map(async (id) => {
+      try {
+        await apiService.deleteWorkflow(id);
+        // Remove from local state
+        const idx = newWorkflows.findIndex(w => w.id === id);
+        if (idx !== -1) newWorkflows.splice(idx, 1);
+        successCount++;
+      } catch (err: any) {
+        failedCount++;
+        const wf = workflows.find(w => w.id === id);
+        failedNames.push(wf?.name || id);
+      }
+    }));
+    setWorkflows(newWorkflows);
+    setSelectedIds([]);
+    if (successCount > 0) {
       toast({
         title: "Workflows Deleted",
-        description: `${selectedIds.length} workflow(s) have been deleted.`,
+        description: `${successCount} workflow(s) have been deleted.`,
       });
-    } catch (err: any) {
+    }
+    if (failedCount > 0) {
       toast({
-        title: "Error",
-        description: "Failed to delete workflows. Please try again.",
+        title: "Delete Failed",
+        description: `Failed to delete: ${failedNames.join(", ")}`,
         variant: "destructive",
       });
-    } finally {
-      setActionLoading(false);
     }
+    setActionLoading(false);
   };
 
   const handleAddWorkflow = () => {
-    setShowCreateModal(true);
+    console.log('Dashboard Add Workflow clicked, navigating to /select-workflows');
+    try {
+      navigate('/select-workflows');
+    } catch (e) {
+      console.error('navigate() failed, falling back to <Navigate>', e);
+      setRedirect(true);
+    }
+    setTimeout(() => setRedirect(true), 200);
   };
 
   const handleExport = async () => {
@@ -284,48 +375,56 @@ const Dashboard = () => {
   // Handler for rollback logic
   const handleConfirmRollback = async () => {
     if (!rollbackWorkflow) return;
-    // TODO: Replace with real API call
-    toast({
-      title: "Rollback Triggered",
-      description: `Workflow '${rollbackWorkflow.name}' will be rolled back to the latest snapshot.`,
-    });
-    // Optionally update state/UI here
-    setRollbackWorkflow(null);
-    setShowRollbackModal(false);
+    setActionLoading(true);
+    try {
+      await apiService.rollbackWorkflow(rollbackWorkflow.id);
+      setBanner({ type: 'success', message: `Workflow '${rollbackWorkflow.name}' was rolled back to the latest version.` });
+      fetchWorkflows();
+    } catch (err: any) {
+      setBanner({ type: 'error', message: err?.message || 'Failed to rollback workflow.' });
+    } finally {
+      setRollbackWorkflow(null);
+      setShowRollbackModal(false);
+      setActionLoading(false);
+    }
   };
 
-  if (loading || workflowsLoading) {
+  if (workflowsLoading || analyticsLoading) {
     return (
       <div className="min-h-screen bg-white">
         <TopNavigation />
         <main className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-center min-h-[60vh]">
-          <LoadingSpinner />
-        </main>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white">
-        <TopNavigation />
-        <main className="max-w-7xl mx-auto px-6 py-8">
-          <div className="text-center py-12">
-            <p className="text-red-500 mb-4">{error}</p>
-            <Button onClick={fetchWorkflows} variant="outline">
-              Try Again
-            </Button>
+          <div aria-live="polite" aria-busy="true">
+            <LoadingSpinner role="status" data-testid="loading-spinner" />
           </div>
         </main>
       </div>
     );
   }
 
-  if (!loading && !error && workflows.length === 0) {
-    return <EmptyDashboard />;
+  if (error) {
+    // Suppress error banners for 401 errors if user is not authenticated
+    if (error.toLowerCase().includes('unauthorized') && !user) {
+      return null;
+    }
+    return (
+      <div className="min-h-screen bg-white">
+        <TopNavigation />
+        <main className="max-w-7xl mx-auto px-6 py-8">
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4" aria-live="assertive">{error}</p>
+            <Button onClick={fetchWorkflows} variant="outline">
+              Try Again
+          </Button>
+          </div>
+        </main>
+      </div>
+    );
   }
 
-  const isAtLimit = plan && plan.maxWorkflows !== null && plan.workflowsMonitoredCount >= plan.maxWorkflows;
+  if (!plan && !error && workflows.length === 0) {
+    return <EmptyDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -360,14 +459,13 @@ const Dashboard = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{workflows.length}</div>
-              <div className="text-sm text-gray-600">Active Workflows</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.activeUsers ?? workflows.length}</div>
+              <div className="text-sm text-gray-600">Active Users</div>
               <div className="text-xs text-gray-500 mt-1">
-                Monitored workflows
+                Users with at least one workflow
               </div>
             </div>
           </div>
-
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -375,12 +473,11 @@ const Dashboard = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">99.9%</div>
-              <div className="text-sm text-gray-600">Total Uptime</div>
-              <div className="text-xs text-gray-500 mt-1">Last 30 days</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.conversionRate != null ? `${analytics.overview.conversionRate}%` : 'N/A'}</div>
+              <div className="text-sm text-gray-600">Conversion Rate</div>
+              <div className="text-xs text-gray-500 mt-1">Users with overages / total users</div>
             </div>
           </div>
-
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -388,10 +485,10 @@ const Dashboard = () => {
               </div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{plan?.maxWorkflows || 500}</div>
-              <div className="text-sm text-gray-600">Monitored Services</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{analytics?.overview?.totalUsers ?? 500}</div>
+              <div className="text-sm text-gray-600">Total Users</div>
               <div className="text-xs text-gray-500 mt-1">
-                Max. plan capacity
+                Registered users
               </div>
             </div>
           </div>
@@ -403,20 +500,20 @@ const Dashboard = () => {
               All Protected Workflows
             </h2>
             <div className="flex items-center gap-3">
-              <RoleGuard roles={['admin', 'restorer']}>
-                <Button
-                  onClick={isAtLimit ? () => setShowUpgradeModal(true) : handleAddWorkflow}
-                  disabled={isAtLimit || actionLoading}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Workflow
-                </Button>
-              </RoleGuard>
+              <Button
+                onClick={canAddMoreWorkflows ? handleAddWorkflow : () => setShowUpgradeModal(true)}
+                disabled={!canAddMoreWorkflows || actionLoading || !isAdminOrRestorer}
+                title={!isAdminOrRestorer ? 'You do not have permission to add workflows.' : ''}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Workflow
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleExport}
-                disabled={actionLoading || workflows.length === 0}
+                disabled={actionLoading || workflows.length === 0 || !isAdminOrRestorer}
+                title={!isAdminOrRestorer ? 'You do not have permission to export workflows.' : ''}
               >
                 {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                 Export
@@ -456,16 +553,15 @@ const Dashboard = () => {
               <span className="text-sm text-blue-900" aria-live="polite">
                 {selectedIds.length} selected
               </span>
-              <RoleGuard roles={['admin', 'restorer']}>
-                <Button 
-                  onClick={handleBulkDelete} 
-                  disabled={selectedIds.length === 0 || actionLoading} 
-                  className="text-red-600 border-red-200"
-                >
-                  {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Delete
-                </Button>
-              </RoleGuard>
+              <Button 
+                onClick={handleBulkDelete} 
+                disabled={selectedIds.length === 0 || actionLoading || !isAdminOrRestorer}
+                className="text-red-600 border-red-200"
+                title={!isAdminOrRestorer ? 'You do not have permission to delete workflows.' : ''}
+              >
+                {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Delete
+              </Button>
             </div>
           )}
 
@@ -510,9 +606,15 @@ const Dashboard = () => {
                         <div className="text-gray-500 mb-6">
                           Try adjusting your search or filters.
                         </div>
-                        <Button variant="default" size="lg" onClick={handleAddWorkflow}>
+                        <Button 
+                          onClick={handleAddWorkflow} 
+                          aria-label="Add Workflow"
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
+                          size="lg"
+                        >
                           + Add Workflow
                         </Button>
+                        {redirect && <Navigate to="/select-workflows" replace />}
                       </div>
                     </td>
                   </tr>
@@ -520,13 +622,16 @@ const Dashboard = () => {
                   paginatedWorkflows.map((workflow, idx) => {
                     const lastModifiedBy = getLastModifiedBy(workflow);
                     return (
-                      <tr key={workflow.id} className="hover:bg-gray-50" tabIndex={0} aria-rowindex={idx + 2}>
+                      <tr key={workflow.id} className="hover:bg-gray-50" tabIndex={0} aria-rowindex={idx + 2}
+                          aria-label={`Workflow row for ${workflow.name}`}
+                      >
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(workflow.id)}
                             onChange={() => handleSelectOne(workflow.id)}
                             aria-label={`Select workflow ${workflow.name}`}
+                            tabIndex={0}
                           />
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
@@ -563,11 +668,16 @@ const Dashboard = () => {
                             <Button variant="ghost" size="sm" aria-label={`View details for ${workflow.name}`} onClick={() => navigate(`/workflow-history/${workflow.id}`)}>
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <RoleGuard roles={['admin', 'restorer']}>
-                              <Button variant="ghost" size="sm" aria-label={`Rollback ${workflow.name}`} onClick={() => { setRollbackWorkflow(workflow); setShowRollbackModal(true); }}>
-                                <RotateCcw className="w-4 h-4" />
-                              </Button>
-                            </RoleGuard>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label={`Rollback ${workflow.name}`}
+                              onClick={() => { setRollbackWorkflow(workflow); setShowRollbackModal(true); }}
+                              disabled={!isAdminOrRestorer}
+                              title={!isAdminOrRestorer ? 'You do not have permission to rollback workflows.' : ''}
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -609,6 +719,10 @@ const Dashboard = () => {
         <UpgradeRequiredModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
+          feature="more workflows"
+          isTrialing={isTrialing()}
+          planId={plan?.planId}
+          trialPlanId={plan?.trialPlanId}
         />
 
         <CreateNewWorkflowModal
@@ -624,6 +738,11 @@ const Dashboard = () => {
           onConfirm={handleConfirmRollback}
           workflowName={rollbackWorkflow?.name}
         />
+        {banner && (
+          <div className="max-w-6xl mx-auto px-6 pt-6">
+            <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+          </div>
+        )}
       </main>
     </div>
   );

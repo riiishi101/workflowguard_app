@@ -28,7 +28,7 @@ interface HubSpotUsageUpdate {
 export class HubSpotBillingService {
   private readonly logger = new Logger(HubSpotBillingService.name);
   private readonly HUBSPOT_API_BASE = 'https://api.hubapi.com';
-  private readonly UNIT_PRICE = 1.00; // $1 per overage unit
+  private readonly UNIT_PRICE = 1.0; // $1 per overage unit
 
   constructor(
     private prisma: PrismaService,
@@ -40,7 +40,7 @@ export class HubSpotBillingService {
    */
   async reportOveragesToHubSpot(overageIds: string[]): Promise<any[]> {
     const results = [];
-    
+
     for (const overageId of overageIds) {
       try {
         const result = await this.reportSingleOverage(overageId);
@@ -94,7 +94,8 @@ export class HubSpotBillingService {
     };
 
     // Report to HubSpot billing API
-    const hubspotResponse = await this.createHubSpotBillingRecord(billingRecord);
+    const hubspotResponse =
+      await this.createHubSpotBillingRecord(billingRecord);
 
     // Mark overage as billed in our system
     await this.prisma.overage.update({
@@ -111,7 +112,9 @@ export class HubSpotBillingService {
       hubspotReference: hubspotResponse.referenceId,
     });
 
-    this.logger.log(`Successfully reported overage ${overageId} to HubSpot: $${billingRecord.totalAmount}`);
+    this.logger.log(
+      `Successfully reported overage ${overageId} to HubSpot: $${billingRecord.totalAmount}`,
+    );
 
     return {
       overageId,
@@ -124,10 +127,12 @@ export class HubSpotBillingService {
   /**
    * Create billing record in HubSpot
    */
-  private async createHubSpotBillingRecord(billingRecord: HubSpotBillingRecord): Promise<any> {
+  private async createHubSpotBillingRecord(
+    billingRecord: HubSpotBillingRecord,
+  ): Promise<any> {
     // In a real implementation, you would make an actual API call to HubSpot
     // For now, we'll simulate the response
-    
+
     const hubspotPayload = {
       portalId: billingRecord.hubspotPortalId,
       userId: billingRecord.userId,
@@ -150,10 +155,13 @@ export class HubSpotBillingService {
       },
     };
 
-    this.logger.log('Sending to HubSpot billing API:', JSON.stringify(hubspotPayload, null, 2));
+    this.logger.log(
+      'Sending to HubSpot billing API:',
+      JSON.stringify(hubspotPayload, null, 2),
+    );
 
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Simulate HubSpot response
     const mockResponse = {
@@ -182,10 +190,13 @@ export class HubSpotBillingService {
       },
     };
 
-    this.logger.log('Updating HubSpot usage:', JSON.stringify(payload, null, 2));
+    this.logger.log(
+      'Updating HubSpot usage:',
+      JSON.stringify(payload, null, 2),
+    );
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     return {
       success: true,
@@ -217,12 +228,12 @@ export class HubSpotBillingService {
     });
 
     const totalBilled = overages
-      .filter(o => o.billed)
-      .reduce((sum, o) => sum + (o.amount * this.UNIT_PRICE), 0);
+      .filter((o) => o.billed)
+      .reduce((sum, o) => sum + o.amount * this.UNIT_PRICE, 0);
 
     const totalUnbilled = overages
-      .filter(o => !o.billed)
-      .reduce((sum, o) => sum + (o.amount * this.UNIT_PRICE), 0);
+      .filter((o) => !o.billed)
+      .reduce((sum, o) => sum + o.amount * this.UNIT_PRICE, 0);
 
     return {
       userId: user.id,
@@ -230,8 +241,8 @@ export class HubSpotBillingService {
       totalBilled,
       totalUnbilled,
       overageCount: overages.length,
-      billedCount: overages.filter(o => o.billed).length,
-      unbilledCount: overages.filter(o => !o.billed).length,
+      billedCount: overages.filter((o) => o.billed).length,
+      unbilledCount: overages.filter((o) => !o.billed).length,
     };
   }
 
@@ -255,13 +266,15 @@ export class HubSpotBillingService {
     this.logger.log(`Processing ${unbilledOverages.length} unbilled overages`);
 
     const results = await this.reportOveragesToHubSpot(
-      unbilledOverages.map(o => o.id)
+      unbilledOverages.map((o) => o.id),
     );
 
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
 
-    this.logger.log(`Billing processing complete: ${successCount} successful, ${failureCount} failed`);
+    this.logger.log(
+      `Billing processing complete: ${successCount} successful, ${failureCount} failed`,
+    );
 
     return {
       totalProcessed: unbilledOverages.length,
@@ -278,21 +291,42 @@ export class HubSpotBillingService {
     try {
       // In a real implementation, you would validate the portal ID with HubSpot
       // For now, we'll simulate a validation check
-      
+
       this.logger.log(`Validating HubSpot portal: ${portalId}`);
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       // Simulate validation (assume valid if it's a non-empty string)
       const isValid = Boolean(portalId && portalId.length > 0);
-      
-      this.logger.log(`HubSpot portal validation: ${isValid ? 'SUCCESS' : 'FAILED'}`);
-      
+
+      this.logger.log(
+        `HubSpot portal validation: ${isValid ? 'SUCCESS' : 'FAILED'}`,
+      );
+
       return isValid;
     } catch (error) {
       this.logger.error(`HubSpot portal validation failed:`, error);
       return false;
     }
   }
-} 
+
+  async updateUserPlansForPortal(
+    portalId: string,
+    newPlanId: string,
+  ): Promise<void> {
+    // Find all users with this portalId
+    const users = await this.prisma.user.findMany({
+      where: { hubspotPortalId: portalId },
+    });
+    for (const user of users) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { planId: newPlanId, isTrialActive: false } as any, // End trial if upgrading/downgrading
+      });
+      this.logger.log(
+        `Updated user ${user.email} (${user.id}) to plan ${newPlanId} via HubSpot webhook.`,
+      );
+    }
+  }
+}

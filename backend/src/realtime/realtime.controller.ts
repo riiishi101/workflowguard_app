@@ -1,4 +1,11 @@
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Get,
+} from '@nestjs/common';
 import { RealtimeService } from '../services/realtime.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -16,7 +23,13 @@ interface RequestWithUser extends Request {
 interface SendNotificationDto {
   userId?: string;
   room?: string;
-  type: 'overage_alert' | 'billing_update' | 'system_alert' | 'usage_warning' | 'workflow_update' | 'audit_log';
+  type:
+    | 'overage_alert'
+    | 'billing_update'
+    | 'system_alert'
+    | 'usage_warning'
+    | 'workflow_update'
+    | 'audit_log';
   title: string;
   message: string;
   data?: any;
@@ -26,7 +39,13 @@ interface SendNotificationDto {
 interface SendUpdateDto {
   userId?: string;
   room?: string;
-  type: 'workflow_created' | 'workflow_updated' | 'workflow_deleted' | 'overage_detected' | 'billing_updated' | 'user_activity';
+  type:
+    | 'workflow_created'
+    | 'workflow_updated'
+    | 'workflow_deleted'
+    | 'overage_detected'
+    | 'billing_updated'
+    | 'user_activity';
   data: any;
 }
 
@@ -48,7 +67,7 @@ export class RealtimeController {
   async getConnectionStatus(@Request() req: RequestWithUser) {
     const isConnected = this.realtimeService.isUserConnected(req.user.id);
     const connectedUsersCount = this.realtimeService.getConnectedUsersCount();
-    
+
     return {
       isConnected,
       connectedUsersCount,
@@ -72,13 +91,13 @@ export class RealtimeController {
       adminUsers: adminUsers.length,
       regularUsers: regularUsers.length,
       users: {
-        admins: adminUsers.map(user => ({
+        admins: adminUsers.map((user) => ({
           id: user.userId,
           email: user.userEmail,
           name: user.userName,
           connectedAt: user.connectedAt,
         })),
-        regular: regularUsers.map(user => ({
+        regular: regularUsers.map((user) => ({
           id: user.userId,
           email: user.userEmail,
           name: user.userName,
@@ -107,8 +126,11 @@ export class RealtimeController {
       priority: data.priority,
     };
 
-    await this.realtimeService.sendNotificationToUser(data.userId, notification);
-    
+    await this.realtimeService.sendNotificationToUser(
+      data.userId,
+      notification,
+    );
+
     return {
       success: true,
       message: `Notification sent to user ${data.userId}`,
@@ -136,7 +158,7 @@ export class RealtimeController {
     };
 
     await this.realtimeService.sendNotificationToRoom(data.room, notification);
-    
+
     return {
       success: true,
       message: `Notification sent to room ${data.room}`,
@@ -160,7 +182,7 @@ export class RealtimeController {
     };
 
     await this.realtimeService.sendNotificationToAll(notification);
-    
+
     return {
       success: true,
       message: 'Notification sent to all users',
@@ -185,7 +207,7 @@ export class RealtimeController {
     };
 
     await this.realtimeService.sendUpdateToUser(data.userId, update);
-    
+
     return {
       success: true,
       message: `Update sent to user ${data.userId}`,
@@ -210,7 +232,7 @@ export class RealtimeController {
     };
 
     await this.realtimeService.sendUpdateToRoom(data.room, update);
-    
+
     return {
       success: true,
       message: `Update sent to room ${data.room}`,
@@ -231,7 +253,7 @@ export class RealtimeController {
     };
 
     await this.realtimeService.sendUpdateToAll(update);
-    
+
     return {
       success: true,
       message: 'Update sent to all users',
@@ -246,7 +268,7 @@ export class RealtimeController {
   @Roles('admin')
   async sendOverageAlert(@Body() data: { userId: string; overageData: any }) {
     await this.realtimeService.sendOverageAlert(data.userId, data.overageData);
-    
+
     return {
       success: true,
       message: `Overage alert sent to user ${data.userId}`,
@@ -260,7 +282,7 @@ export class RealtimeController {
   @Roles('admin')
   async sendBillingUpdate(@Body() data: { userId: string; billingData: any }) {
     await this.realtimeService.sendBillingUpdate(data.userId, data.billingData);
-    
+
     return {
       success: true,
       message: `Billing update sent to user ${data.userId}`,
@@ -274,7 +296,7 @@ export class RealtimeController {
   @Roles('admin')
   async sendSystemAlert(@Body() data: { userId: string; alertData: any }) {
     await this.realtimeService.sendSystemAlert(data.userId, data.alertData);
-    
+
     return {
       success: true,
       message: `System alert sent to user ${data.userId}`,
@@ -288,7 +310,7 @@ export class RealtimeController {
   @Roles('admin')
   async sendUsageWarning(@Body() data: { userId: string; usageData: any }) {
     await this.realtimeService.sendUsageWarning(data.userId, data.usageData);
-    
+
     return {
       success: true,
       message: `Usage warning sent to user ${data.userId}`,
@@ -300,9 +322,14 @@ export class RealtimeController {
    */
   @Post('workflow-update')
   @Roles('admin')
-  async sendWorkflowUpdate(@Body() data: { userId: string; workflowData: any }) {
-    await this.realtimeService.sendWorkflowUpdate(data.userId, data.workflowData);
-    
+  async sendWorkflowUpdate(
+    @Body() data: { userId: string; workflowData: any },
+  ) {
+    await this.realtimeService.sendWorkflowUpdate(
+      data.userId,
+      data.workflowData,
+    );
+
     return {
       success: true,
       message: `Workflow update sent to user ${data.userId}`,
@@ -316,7 +343,7 @@ export class RealtimeController {
   @Roles('admin')
   async sendAuditLogUpdate(@Body() data: { auditData: any }) {
     await this.realtimeService.sendAuditLogUpdate(data.auditData);
-    
+
     return {
       success: true,
       message: 'Audit log update sent to admin room',
@@ -330,7 +357,7 @@ export class RealtimeController {
   @Roles('admin')
   async broadcastAdminMessage(@Body() data: BroadcastMessageDto) {
     await this.realtimeService.broadcastAdminMessage(data.message, data.data);
-    
+
     return {
       success: true,
       message: 'Admin message broadcasted',
@@ -343,8 +370,11 @@ export class RealtimeController {
   @Post('broadcast/maintenance')
   @Roles('admin')
   async broadcastSystemMaintenance(@Body() data: BroadcastMessageDto) {
-    await this.realtimeService.broadcastSystemMaintenance(data.message, data.scheduledTime);
-    
+    await this.realtimeService.broadcastSystemMaintenance(
+      data.message,
+      data.scheduledTime,
+    );
+
     return {
       success: true,
       message: 'System maintenance broadcasted to all users',
@@ -357,7 +387,7 @@ export class RealtimeController {
   @Post('test')
   async testConnection(@Request() req: RequestWithUser) {
     const isConnected = this.realtimeService.isUserConnected(req.user.id);
-    
+
     if (isConnected) {
       // Send a test notification to the user
       await this.realtimeService.sendNotificationToUser(req.user.id, {
@@ -367,7 +397,7 @@ export class RealtimeController {
         timestamp: new Date(),
         priority: 'low',
       });
-      
+
       return {
         success: true,
         message: 'Test notification sent successfully',
@@ -388,7 +418,7 @@ export class RealtimeController {
   @Get('rooms')
   async getUserRooms(@Request() req: RequestWithUser) {
     const isConnected = this.realtimeService.isUserConnected(req.user.id);
-    
+
     if (!isConnected) {
       return {
         success: false,
@@ -397,10 +427,7 @@ export class RealtimeController {
       };
     }
 
-    const rooms = [
-      `user:${req.user.id}`,
-      `role:${req.user.role}`,
-    ];
+    const rooms = [`user:${req.user.id}`, `role:${req.user.role}`];
 
     if (req.user.role === 'admin') {
       rooms.push('admin');
@@ -412,4 +439,4 @@ export class RealtimeController {
       isConnected: true,
     };
   }
-} 
+}

@@ -16,6 +16,8 @@ import { Search, Info, Loader2 } from "lucide-react";
 import apiService from "@/services/api";
 import { useRequireAuth } from '../components/AuthContext';
 import { useToast } from "@/hooks/use-toast";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
+import { useAuth } from '@/components/AuthContext';
 
 // Define the workflow type
 interface Workflow {
@@ -33,9 +35,9 @@ interface Workflow {
 function isValidWorkflow(obj: any): obj is Workflow {
   return (
     obj &&
-    typeof obj.id === 'string' &&
     typeof obj.name === 'string' &&
-    typeof obj.hubspotId === 'string' &&
+    obj.name.trim() !== '' && // Ensure name is not empty
+    (typeof obj.id === 'string' || typeof obj.hubspotId === 'string') && // Either id or hubspotId must be present
     typeof obj.ownerId === 'string'
   );
 }
@@ -46,6 +48,7 @@ const WorkflowSelection = () => {
   useRequireAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -54,36 +57,53 @@ const WorkflowSelection = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     const fetchWorkflows = async () => {
       try {
         setLoading(true);
         setError(null);
+        // Fetch live workflows from HubSpot for the connected user
         const workflowsData = await apiService.getWorkflows();
-        // Defensive: Validate and filter out malformed data
-        const validWorkflows = Array.isArray(workflowsData)
-          ? workflowsData.filter(isValidWorkflow)
+        // Use backend structure directly; fallback for legacy/edge cases
+        const normalized = Array.isArray(workflowsData)
+          ? workflowsData.map((w: any) => {
+              // Ensure we have a valid ID - prefer hubspotId over id
+              const workflowId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined);
+              const hubspotId = w.hubspotId ? String(w.hubspotId) : (w.id ? String(w.id) : undefined);
+              
+              return {
+              ...w,
+                id: workflowId,
+                hubspotId: hubspotId,
+                name: w.name || 'Unnamed Workflow',
+              ownerId: w.ownerId || (user?.id || ""),
+              };
+            })
           : [];
+        const validWorkflows = normalized.filter(isValidWorkflow);
         if (Array.isArray(workflowsData) && validWorkflows.length !== workflowsData.length) {
-          toast({
-            title: "Warning",
-            description: "Some workflows were ignored due to invalid data.",
-            variant: "destructive",
-          });
+          setBanner({ type: 'error', message: 'Some workflows were ignored due to invalid data.' });
         }
         setWorkflows(validWorkflows);
       } catch (err: any) {
-        // Improved error handling
+        // Improved error handling - don't block the UI if workflows fail to load
         const apiError = err?.response?.data?.message || err?.message || String(err);
-        setError(`Failed to fetch workflows: ${apiError}`);
-        console.error("Error fetching workflows:", err);
+        setError("Failed to fetch workflows");
+        setWorkflows([]);
+        // Show a warning toast instead of blocking the UI
+        toast({
+          title: "Workflows Unavailable",
+          description: "Unable to load workflows from HubSpot. You can still proceed and select workflows later from the dashboard.",
+          variant: "default",
+        });
       } finally {
         setLoading(false);
       }
     };
     fetchWorkflows();
-  }, [toast]);
+  }, [toast, user]);
 
   // Filtering logic
   const filteredWorkflows = workflows.filter((workflow) => {
@@ -110,11 +130,7 @@ const WorkflowSelection = () => {
         .filter(id => !selectedWorkflows.includes(id));
       const newSelection = [...selectedWorkflows, ...toAdd];
       if (newSelection.length > MAX_SELECTION) {
-        toast({
-          title: "Selection Limit Reached",
-          description: `You can select up to ${MAX_SELECTION} workflows in your trial.`,
-          variant: "destructive",
-        });
+        setBanner({ type: 'error', message: `You can select up to ${MAX_SELECTION} workflows in your trial.` });
         setSelectedWorkflows(newSelection.slice(0, MAX_SELECTION));
       } else {
         setSelectedWorkflows(newSelection);
@@ -128,11 +144,7 @@ const WorkflowSelection = () => {
         return prev.filter((id) => id !== workflowId);
       } else {
         if (prev.length >= MAX_SELECTION) {
-          toast({
-            title: "Selection Limit Reached",
-            description: `You can select up to ${MAX_SELECTION} workflows in your trial.`,
-            variant: "destructive",
-          });
+          setBanner({ type: 'error', message: `You can select up to ${MAX_SELECTION} workflows in your trial.` });
           return prev;
         }
         return [...prev, workflowId];
@@ -143,18 +155,21 @@ const WorkflowSelection = () => {
   const handleStartProtecting = async () => {
     setActionLoading(true);
     try {
-      localStorage.setItem('selectedWorkflows', JSON.stringify(selectedWorkflows));
-      toast({
-        title: "Workflows Protected!",
-        description: `${selectedWorkflows.length} workflows are now being monitored.`,
-      });
+      // Save selected workflows to localStorage for dashboard access
+      const selectedWorkflowData = workflows.filter(w => selectedWorkflows.includes(w.id || w.hubspotId));
+      localStorage.setItem('selectedWorkflows', JSON.stringify(selectedWorkflowData));
+      
+      // Try to save to backend if available
+      try {
+        await apiService.setMonitoredWorkflows(selectedWorkflows);
+      } catch (backendError) {
+        console.log('Backend not available, using localStorage fallback');
+      }
+      
+      setBanner({ type: 'success', message: `${selectedWorkflows.length} workflows are now being monitored.` });
       navigate("/dashboard");
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to save your selection. Please try again.",
-        variant: "destructive",
-      });
+      setBanner({ type: 'error', message: 'Failed to save your selection. Please try again.' });
     } finally {
       setActionLoading(false);
     }
@@ -163,18 +178,10 @@ const WorkflowSelection = () => {
   const handleSkip = async () => {
     setActionLoading(true);
     try {
-      localStorage.setItem('selectedWorkflows', '[]');
-      toast({
-        title: "Skipped",
-        description: "You can select workflows to protect later from the dashboard.",
-      });
+      setBanner({ type: 'success', message: 'You can select workflows to protect later from the dashboard.' });
       navigate('/dashboard');
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to skip. Please try again.",
-        variant: "destructive",
-      });
+      setBanner({ type: 'error', message: 'Failed to skip. Please try again.' });
     } finally {
       setActionLoading(false);
     }
@@ -202,7 +209,9 @@ const WorkflowSelection = () => {
         <TopNavigation minimal />
         <main className="max-w-6xl mx-auto px-6 py-8">
           <div className="text-center py-12">
-            <p className="text-red-500 mb-4">{error}</p>
+            <p className="text-red-500 mb-4">
+              Failed to fetch workflows
+            </p>
             <Button onClick={() => window.location.reload()} variant="outline">
               Try Again
             </Button>
@@ -215,6 +224,11 @@ const WorkflowSelection = () => {
   return (
     <div className="min-h-screen bg-white">
       <TopNavigation minimal />
+      {banner && (
+        <div className="max-w-6xl mx-auto px-6 pt-6">
+          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+        </div>
+      )}
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
@@ -280,17 +294,39 @@ const WorkflowSelection = () => {
           </div>
 
           <div className="overflow-hidden">
+            {filteredWorkflows.length === 0 && (
+              <div className="text-center text-gray-500 py-8" data-testid="no-workflows">
+                No workflows found
+              </div>
+            )}
             {filteredWorkflows.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No workflows found matching your filters.</p>
-                <div className="flex justify-center gap-2">
-                  <Button onClick={() => { setSearchTerm(""); setStatusFilter("all"); setFolderFilter("all"); }} variant="outline" size="sm">
-                    Clear Filters
-                  </Button>
-                  <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
-                    Go to Dashboard
-                  </Button>
-                </div>
+                {workflows.length === 0 ? (
+                  <>
+                    <p className="text-gray-500 mb-4">No workflows are currently available from your HubSpot account.</p>
+                    <p className="text-gray-400 text-sm mb-6">This might be due to a temporary connection issue or because your HubSpot account doesn't have any workflows yet.</p>
+                    <div className="flex justify-center gap-2">
+                      <Button onClick={() => window.location.reload()} variant="outline" size="sm">
+                        Try Again
+                      </Button>
+                      <Button onClick={() => navigate('/dashboard')} variant="default" size="sm">
+                        Continue to Dashboard
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-gray-500 mb-4">No workflows found matching your filters.</p>
+                    <div className="flex justify-center gap-2">
+                      <Button onClick={() => { setSearchTerm(""); setStatusFilter("all"); setFolderFilter("all"); }} variant="outline" size="sm">
+                        Clear Filters
+                      </Button>
+                      <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
+                        Go to Dashboard
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <table className="w-full">
