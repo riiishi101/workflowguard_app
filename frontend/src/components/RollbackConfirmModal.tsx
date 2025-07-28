@@ -1,8 +1,7 @@
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import RoleGuard from './RoleGuard';
 
 interface RollbackConfirmModalProps {
   open: boolean;
@@ -23,11 +22,13 @@ const RollbackConfirmModal = ({
   };
 
   return (
-    <RoleGuard roles={['admin', 'restorer']}>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-lg p-0">
           <VisuallyHidden>
             <DialogTitle>Confirm Rollback to Latest Snapshot</DialogTitle>
+            <DialogDescription>
+              Confirm rollback of workflow '{workflowName}' to its latest saved snapshot. This action cannot be undone.
+            </DialogDescription>
           </VisuallyHidden>
 
           {/* Header */}
@@ -73,7 +74,6 @@ const RollbackConfirmModal = ({
           </div>
         </DialogContent>
       </Dialog>
-    </RoleGuard>
   );
 };
 

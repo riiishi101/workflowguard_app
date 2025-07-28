@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -16,243 +16,223 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, Calendar, Lock } from "lucide-react";
-import apiService from "@/services/api";
-import PremiumModal from "@/components/UpgradeRequiredModal";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Download, Calendar } from "lucide-react";
+import { useAuth } from "@/components/AuthContext";
+import apiService from '@/services/api';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { usePlan } from "@/components/AuthContext";
+import { format } from 'date-fns';
+import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
 
-// Define the audit log type
-interface AuditLog {
-  id: string;
-  userId?: string;
-  user?: { name: string };
-  action: string;
-  entityType: string;
-  entityId: string;
-  oldValue?: any;
-  newValue?: any;
-  ipAddress?: string;
-  timestamp?: string;
-  createdAt?: string;
-}
+const dateRanges = [
+  { value: "all", label: "All Time" },
+  { value: "today", label: "Today" },
+  { value: "week", label: "Last 7 days" },
+  { value: "month", label: "Last 30 days" },
+];
+
+const actionOptions = [
+  { value: "all", label: "All Actions" },
+  { value: "create", label: "Created" },
+  { value: "update", label: "Updated" },
+  { value: "delete", label: "Deleted" },
+  { value: "restore", label: "Restored" },
+];
 
 const AuditLogTab = () => {
+  const { user } = useAuth();
+  const { plan, hasFeature, isTrialing } = usePlan();
   const [dateRange, setDateRange] = useState("all");
   const [userFilter, setUserFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
-  const [plan, setPlan] = useState<any>(null);
-  const [planChecked, setPlanChecked] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
 
+  // Fetch users for filter dropdown
   useEffect(() => {
-    const fetchAuditLogs = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // For now, only userId and entityType filters are supported by backend
-        const userId = userFilter !== "all" ? userFilter : undefined;
-        const entityType = undefined; // Could be set from actionFilter if backend supports
-        const logs = await apiService.getAuditLogs(userId, entityType);
-        setAuditLogs(logs as AuditLog[]);
-        setShowUpgradeBanner(false);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch audit logs");
-        if (
-          err.message === "Unauthorized" ||
-          (typeof err.message === "string" &&
-            (err.message.toLowerCase().includes("plan") ||
-             err.message.toLowerCase().includes("upgrade")))
-        ) {
-          setShowUpgradeBanner(true);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAuditLogs();
-  }, [userFilter]);
-
-  useEffect(() => {
-    apiService.getMyPlan()
-      .then((data) => setPlan(data))
-      .finally(() => setPlanChecked(true));
+    apiService.getUsers().then(setUsers).catch(() => setUsers([]));
   }, []);
+
+  // Fetch audit logs
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    // Build filter params
+    let userId = userFilter !== "all" ? userFilter : undefined;
+    // Only userId, entityType, entityId are supported by getAuditLogs
+    apiService.getAuditLogs(userId)
+      .then(setLogs)
+      .catch((e) => setError(e.message || 'Failed to load audit logs'))
+      .finally(() => setLoading(false));
+  }, [dateRange, userFilter, actionFilter]);
+
+  // Export logs as CSV
+  const handleExport = () => {
+    const csvRows = [
+      [
+        'Timestamp',
+        'User',
+        'Action',
+        'Entity Type',
+        'Entity ID',
+        'Old Value',
+        'New Value',
+        'IP Address',
+      ],
+      ...logs.map((log) => [
+        log.timestamp ? new Date(log.timestamp).toISOString() : '',
+        log.user?.name || log.user?.email || '-',
+        log.action,
+        log.entityType,
+        log.entityId,
+        JSON.stringify(log.oldValue ?? ''),
+        JSON.stringify(log.newValue ?? ''),
+        log.ipAddress || '-',
+      ]),
+    ];
+    const csvContent = csvRows.map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'audit-logs.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // User options for filter
+  const userOptions = useMemo(() => [
+    { value: "all", label: "All Users" },
+    ...users.map((u) => ({ value: u.id, label: u.name || u.email })),
+  ], [users]);
+
+  // Gating: show upgrade prompt if plan does not include audit_logs
+  if (!hasFeature('audit_logs')) {
+    return (
+      <UpgradeRequiredModal
+        isOpen={true}
+        onClose={() => {}}
+        feature="audit logs"
+        isTrialing={isTrialing()}
+        planId={plan?.planId}
+        trialPlanId={plan?.trialPlanId}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {showUpgradeBanner && (
-        <div className="bg-orange-50 border border-orange-200 text-orange-800 rounded p-4 flex items-center gap-2">
-          <Lock className="w-4 h-4 mr-2" />
-          <span>Upgrade to Enterprise Plan to access audit logs</span>
-        </div>
-      )}
-      {/* Upgrade Banner */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Upgrade to Enterprise Plan
-          </h3>
-          <p className="text-gray-600 text-sm">
-            Get access to comprehensive audit logs and advanced security
-            features
-          </p>
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => {
-                  const url = plan?.hubspotPortalId
-                    ? `https://app.hubspot.com/ecosystem/${plan.hubspotPortalId}/marketplace/apps`
-                    : 'https://app.hubspot.com/ecosystem/marketplace/apps';
-                  window.open(url, '_blank');
-                }}
-                disabled={!planChecked}
-              >
-                Upgrade Now
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              All plan upgrades are managed in your HubSpot account. Clicking this button will open HubSpot's subscription management page.
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      {/* Audit Log Content */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Comprehensive App Activity Log
-        </h3>
-        <p className="text-gray-600 text-sm mb-6">
-          Track all changes and actions performed in your workflows
-        </p>
-
-        {/* Filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-gray-500" />
-            <Select value={dateRange} onValueChange={setDateRange}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Comprehensive App Activity Log</CardTitle>
+          <CardDescription>Track all changes and actions performed in your workflows.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Date Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dateRanges.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Select value={userFilter} onValueChange={setUserFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Date Range" />
+                <SelectValue placeholder="All Users" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">Last 7 days</SelectItem>
-                <SelectItem value="month">Last 30 days</SelectItem>
+                {userOptions.map((u) => (
+                  <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <Select value={actionFilter} onValueChange={setActionFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Actions" />
+              </SelectTrigger>
+              <SelectContent>
+                {actionOptions.map((a) => (
+                  <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="text-blue-600" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Log
+            </Button>
           </div>
 
-          <Select value={userFilter} onValueChange={setUserFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Users" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
-              {/* TODO: Populate user list dynamically if needed */}
-              {/* <SelectItem value="userId1">User 1</SelectItem> */}
-            </SelectContent>
-          </Select>
-
-          <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Actions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Actions</SelectItem>
-              {/* <SelectItem value="created">Created</SelectItem>
-              <SelectItem value="updated">Updated</SelectItem>
-              <SelectItem value="deleted">Deleted</SelectItem> */}
-            </SelectContent>
-          </Select>
-
-          <Button variant="outline" className="text-blue-600">
-            <Download className="w-4 h-4 mr-2" />
-            Export Log
-          </Button>
-        </div>
-
-        {/* Loading/Error States */}
-        {loading && <div className="text-center py-8">Loading audit logs...</div>}
-        {error && !showUpgradeBanner && (
-          <div className="text-center text-red-500 py-8">{error}</div>
-        )}
-
-        {/* Audit Log Table */}
-        {!loading && !error && (
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead>TIMESTAMP</TableHead>
-                  <TableHead>USER</TableHead>
-                  <TableHead>ACTION</TableHead>
-                  <TableHead>ENTITY TYPE</TableHead>
-                  <TableHead>ENTITY ID</TableHead>
-                  <TableHead>OLD VALUE</TableHead>
-                  <TableHead>NEW VALUE</TableHead>
-                  <TableHead>IP ADDRESS</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {auditLogs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center text-gray-500">
-                      No audit logs found.
-                    </TableCell>
+          {/* Table */}
+          {loading ? (
+            <div className="py-8 text-center text-gray-500">Loading audit logs...</div>
+          ) : error ? (
+            <div className="py-8 text-center text-red-500">{error}</div>
+          ) : logs.length === 0 ? (
+            <div className="py-8 text-center text-gray-500">No audit log entries found for the selected filters.</div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg overflow-x-auto bg-white">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead>TIMESTAMP</TableHead>
+                    <TableHead>USER</TableHead>
+                    <TableHead>ACTION</TableHead>
+                    <TableHead>ENTITY TYPE</TableHead>
+                    <TableHead>ENTITY ID</TableHead>
+                    <TableHead>OLD VALUE</TableHead>
+                    <TableHead>NEW VALUE</TableHead>
+                    <TableHead>IP ADDRESS</TableHead>
                   </TableRow>
-                ) : (
-                  auditLogs.map((log: any) => (
-                    <TableRow key={log.id} className="hover:bg-gray-50">
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log) => (
+                    <TableRow key={log.id} className="hover:bg-gray-50 focus:bg-blue-50 transition-colors">
                       <TableCell className="font-mono text-sm text-gray-600">
-                        {log.timestamp || log.createdAt}
+                        {log.timestamp ? new Date(log.timestamp).toLocaleString() : ''}
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {log.user?.name || log.userId || "-"}
-                      </TableCell>
+                      <TableCell className="font-medium">{log.user?.name || log.user?.email || '-'}</TableCell>
                       <TableCell>
                         <Badge
                           variant="secondary"
                           className={
-                            log.action?.toLowerCase().includes("delete")
-                              ? "bg-red-100 text-red-800"
-                              : log.action?.toLowerCase().includes("create")
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
+                            log.action === 'delete'
+                              ? 'bg-red-100 text-red-800'
+                              : log.action === 'create'
+                              ? 'bg-green-100 text-green-800'
+                              : log.action === 'restore'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
                           }
                         >
-                          {log.action}
+                          {log.action.charAt(0).toUpperCase() + log.action.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{log.entityType || "-"}</TableCell>
-                      <TableCell>{log.entityId || "-"}</TableCell>
-                      <TableCell className="text-gray-600">
-                        {typeof log.oldValue === "object"
-                          ? JSON.stringify(log.oldValue)
-                          : log.oldValue || "-"}
+                      <TableCell className="text-blue-700 font-medium">{log.entityType || '-'}</TableCell>
+                      <TableCell className="font-mono text-xs">{log.entityId || '-'}</TableCell>
+                      <TableCell className="text-gray-600 max-w-xs truncate" title={JSON.stringify(log.oldValue)}>
+                        {log.oldValue ? JSON.stringify(log.oldValue) : '-'}
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {typeof log.newValue === "object"
-                          ? JSON.stringify(log.newValue)
-                          : log.newValue || "-"}
+                      <TableCell className="font-medium max-w-xs truncate" title={JSON.stringify(log.newValue)}>
+                        {log.newValue ? JSON.stringify(log.newValue) : '-'}
                       </TableCell>
-                      <TableCell className="font-mono text-sm text-gray-600">
-                        {log.ipAddress || "-"}
-                      </TableCell>
+                      <TableCell className="font-mono text-sm text-gray-600">{log.ipAddress || '-'}</TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

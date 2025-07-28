@@ -38,7 +38,11 @@ interface SendBillingUpdateDto {
 interface SendSystemAlertDto {
   userEmail: string;
   userName: string;
-  alertType: 'plan_upgrade' | 'plan_downgrade' | 'usage_warning' | 'system_maintenance';
+  alertType:
+    | 'plan_upgrade'
+    | 'plan_downgrade'
+    | 'usage_warning'
+    | 'system_maintenance';
   message: string;
   actionRequired?: boolean;
 }
@@ -75,6 +79,13 @@ interface SendBulkNotificationDto {
   isHtml?: boolean;
 }
 
+interface ContactFormDto {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
 @Controller('email')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmailController {
@@ -90,7 +101,9 @@ export class EmailController {
     const success = await this.emailService.sendOverageAlert(data);
     return {
       success,
-      message: success ? 'Overage alert sent successfully' : 'Failed to send overage alert',
+      message: success
+        ? 'Overage alert sent successfully'
+        : 'Failed to send overage alert',
     };
   }
 
@@ -104,7 +117,9 @@ export class EmailController {
     const success = await this.emailService.sendBillingUpdate(data);
     return {
       success,
-      message: success ? 'Billing update sent successfully' : 'Failed to send billing update',
+      message: success
+        ? 'Billing update sent successfully'
+        : 'Failed to send billing update',
     };
   }
 
@@ -118,7 +133,9 @@ export class EmailController {
     const success = await this.emailService.sendSystemAlert(data);
     return {
       success,
-      message: success ? 'System alert sent successfully' : 'Failed to send system alert',
+      message: success
+        ? 'System alert sent successfully'
+        : 'Failed to send system alert',
     };
   }
 
@@ -132,7 +149,9 @@ export class EmailController {
     const success = await this.emailService.sendWelcomeEmail(data);
     return {
       success,
-      message: success ? 'Welcome email sent successfully' : 'Failed to send welcome email',
+      message: success
+        ? 'Welcome email sent successfully'
+        : 'Failed to send welcome email',
     };
   }
 
@@ -148,11 +167,13 @@ export class EmailController {
       data.userName,
       data.currentPlan,
       data.recommendedPlan,
-      data.reason
+      data.reason,
     );
     return {
       success,
-      message: success ? 'Upgrade recommendation sent successfully' : 'Failed to send upgrade recommendation',
+      message: success
+        ? 'Upgrade recommendation sent successfully'
+        : 'Failed to send upgrade recommendation',
     };
   }
 
@@ -169,11 +190,13 @@ export class EmailController {
       data.planId,
       data.currentUsage,
       data.limit,
-      data.percentageUsed
+      data.percentageUsed,
     );
     return {
       success,
-      message: success ? 'Usage warning sent successfully' : 'Failed to send usage warning',
+      message: success
+        ? 'Usage warning sent successfully'
+        : 'Failed to send usage warning',
     };
   }
 
@@ -188,7 +211,7 @@ export class EmailController {
       data.userEmails,
       data.subject,
       data.message,
-      data.isHtml ?? true
+      data.isHtml ?? true,
     );
     return {
       success: result.success,
@@ -196,6 +219,29 @@ export class EmailController {
       total: data.userEmails.length,
       message: `Bulk notification completed: ${result.success} successful, ${result.failed} failed`,
     };
+  }
+
+  /**
+   * Public endpoint for contact form submissions
+   */
+  @Post('contact')
+  async sendContactForm(@Body() data: ContactFormDto) {
+    const { name, email, subject, message } = data;
+    try {
+      await this.emailService.sendEmail({
+        to: 'contact@workflowguard.pro',
+        subject: `[Contact Form] ${subject}`,
+        html: `<p><strong>Name:</strong> ${name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Message:</strong><br/>${message}</p>`,
+        text: `Name: ${name}\nEmail: ${email}\nMessage:\n${message}`,
+      });
+      return { success: true, message: 'Message sent successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to send message',
+        error: error.message,
+      };
+    }
   }
 
   /**
@@ -208,14 +254,17 @@ export class EmailController {
       userEmail: req.user.email,
       userName: req.user.name || req.user.email,
       alertType: 'system_maintenance' as const,
-      message: 'This is a test email from WorkflowGuard to verify email functionality.',
+      message:
+        'This is a test email from WorkflowGuard to verify email functionality.',
       actionRequired: false,
     };
 
     const success = await this.emailService.sendSystemAlert(testData);
     return {
       success,
-      message: success ? 'Test email sent successfully' : 'Failed to send test email',
+      message: success
+        ? 'Test email sent successfully'
+        : 'Failed to send test email',
     };
   }
 
@@ -224,7 +273,10 @@ export class EmailController {
    * Users can request welcome email
    */
   @Post('welcome-self')
-  async sendWelcomeEmailToSelf(@Request() req: RequestWithUser, @Body() data: { planId: string; workflowLimit: number; features: string[] }) {
+  async sendWelcomeEmailToSelf(
+    @Request() req: RequestWithUser,
+    @Body() data: { planId: string; workflowLimit: number; features: string[] },
+  ) {
     const welcomeData = {
       userEmail: req.user.email,
       userName: req.user.name || req.user.email,
@@ -236,7 +288,9 @@ export class EmailController {
     const success = await this.emailService.sendWelcomeEmail(welcomeData);
     return {
       success,
-      message: success ? 'Welcome email sent successfully' : 'Failed to send welcome email',
+      message: success
+        ? 'Welcome email sent successfully'
+        : 'Failed to send welcome email',
     };
   }
 
@@ -247,7 +301,13 @@ export class EmailController {
   @Post('usage-warning-self')
   async sendUsageWarningToSelf(
     @Request() req: RequestWithUser,
-    @Body() data: { planId: string; currentUsage: number; limit: number; percentageUsed: number }
+    @Body()
+    data: {
+      planId: string;
+      currentUsage: number;
+      limit: number;
+      percentageUsed: number;
+    },
   ) {
     const warningData = {
       userEmail: req.user.email,
@@ -264,11 +324,13 @@ export class EmailController {
       warningData.planId,
       warningData.currentUsage,
       warningData.limit,
-      warningData.percentageUsed
+      warningData.percentageUsed,
     );
     return {
       success,
-      message: success ? 'Usage warning sent successfully' : 'Failed to send usage warning',
+      message: success
+        ? 'Usage warning sent successfully'
+        : 'Failed to send usage warning',
     };
   }
-} 
+}

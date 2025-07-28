@@ -4,24 +4,37 @@ import { User, Prisma } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { NotificationService } from '../notification/notification.service';
-import { PLAN_CONFIG } from '../plan-config';
+import { PLAN_CONFIG, PlanId } from '../plan-config';
 import { randomBytes, createHash } from 'crypto';
+import { EmailService } from '../services/email.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
+  private userCache = new Map<string, { data: any, expires: number }>();
+
   constructor(
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
     private notificationService: NotificationService,
+    private emailService: EmailService,
   ) {}
 
-  async create(data: CreateUserDto): Promise<User> {
-    return this.prisma.user.create({
+  async create(data: CreateUserDto, actorUserId?: string): Promise<User> {
+    const user = await this.prisma.user.create({
       data: {
         ...data,
         role: data.role ?? 'viewer',
       },
     });
+    await this.auditLogService.create({
+      userId: actorUserId,
+      action: 'create',
+      entityType: 'user',
+      entityId: user.id,
+      newValue: user,
+    });
+    return user;
   }
 
   async findAll(): Promise<User[]> {
@@ -29,9 +42,88 @@ export class UserService {
   }
 
   async findOne(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        password: true,
+        jobTitle: true,
+        timezone: true,
+        language: true,
+        createdAt: true,
+        updatedAt: true,
+        firstInstalledAt: true,
+        lastActiveAt: true,
+        hubspotPortalId: true,
+        hubspotAccessToken: true,
+        hubspotRefreshToken: true,
+        hubspotTokenExpiresAt: true,
+        resetToken: true,
+        resetTokenExpires: true,
+        planId: true,
+        trialStartDate: true,
+        trialEndDate: true,
+        isTrialActive: true,
+        trialPlanId: true,
+      },
     });
+
+    // If user exists but plan fields are null or incomplete, set defaults
+    if (
+      user &&
+      (user.isTrialActive === null ||
+        user.trialEndDate === null ||
+        user.trialPlanId === null)
+    ) {
+      const now = new Date();
+      const trialDays = 21;
+      const trialEnd = new Date(
+        now.getTime() + trialDays * 24 * 60 * 60 * 1000,
+      );
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id },
+        data: {
+          planId: user.planId || 'trial',
+          trialStartDate: user.trialStartDate || now,
+          trialEndDate: user.trialEndDate || trialEnd,
+          isTrialActive:
+            user.isTrialActive !== null ? user.isTrialActive : true,
+          trialPlanId: user.trialPlanId || 'professional',
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          password: true,
+          jobTitle: true,
+          timezone: true,
+          language: true,
+          createdAt: true,
+          updatedAt: true,
+          firstInstalledAt: true,
+          lastActiveAt: true,
+          hubspotPortalId: true,
+          hubspotAccessToken: true,
+          hubspotRefreshToken: true,
+          hubspotTokenExpiresAt: true,
+          resetToken: true,
+          resetTokenExpires: true,
+          planId: true,
+          trialStartDate: true,
+          trialEndDate: true,
+          isTrialActive: true,
+          trialPlanId: true,
+        },
+      });
+      return updatedUser;
+    }
+
+    return user;
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -40,24 +132,48 @@ export class UserService {
     });
   }
 
-  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
-    return this.prisma.user.update({
+  async update(
+    id: string,
+    data: Prisma.UserUpdateInput & { updatedBy?: string },
+  ): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.update({
       where: { id },
       data,
     });
+    await this.auditLogService.create({
+      userId: (data as any).updatedBy,
+      action: 'update',
+      entityType: 'user',
+      entityId: user.id,
+      oldValue: oldUser,
+      newValue: user,
+    });
+    return user;
   }
 
-  async remove(id: string): Promise<User> {
-    return this.prisma.user.delete({
-      where: { id },
+  async remove(id: string, actorUserId?: string): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.delete({ where: { id } });
+    await this.auditLogService.create({
+      userId: actorUserId,
+      action: 'delete',
+      entityType: 'user',
+      entityId: id,
+      oldValue: oldUser,
     });
+    return user;
   }
 
   async getWorkflowCountByOwner(ownerId: string): Promise<number> {
     return this.prisma.workflow.count({ where: { ownerId } });
   }
 
-  async findOneWithSubscription(id: string): Promise<(User & { subscription: any; hubspotPortalId: string | null }) | null> {
+  async findOneWithSubscription(
+    id: string,
+  ): Promise<
+    (User & { subscription: any; hubspotPortalId: string | null }) | null
+  > {
     return this.prisma.user.findUnique({
       where: { id },
       include: { subscription: true },
@@ -65,29 +181,25 @@ export class UserService {
   }
 
   async getPlanById(planId: string) {
-    return (this.prisma as any).plan.findUnique({ where: { id: planId } });
+    return PLAN_CONFIG[planId as PlanId] || PLAN_CONFIG.trial;
   }
 
-  async updateUserPlan(userId: string, newPlanId: string, actorUserId: string) {
-    // Find the user's current subscription
-    const subscription = await this.prisma.subscription.findUnique({ where: { userId } });
-    if (!subscription) throw new Error('Subscription not found');
-    const oldValue = { ...subscription };
-    // Update the planId
-    const updated = await this.prisma.subscription.update({
-      where: { userId },
+  async updateUserPlan(userId: string, newPlanId: string) {
+    // Update the planId field on the user
+    const user = await this.prisma.user.update({
+      where: { id: userId },
       data: { planId: newPlanId },
     });
-    // Log the change
+    // Optionally, log the change
     await this.auditLogService.create({
-      userId: actorUserId,
+      userId,
       action: 'plan_change',
-      entityType: 'subscription',
-      entityId: updated.id,
-      oldValue,
-      newValue: updated,
+      entityType: 'user',
+      entityId: userId,
+      oldValue: undefined, // You can fetch and pass the old value if needed
+      newValue: user,
     });
-    return updated;
+    return user;
   }
 
   async getUserOverages(userId: string, periodStart?: Date, periodEnd?: Date) {
@@ -107,20 +219,24 @@ export class UserService {
       where: { userId },
       orderBy: { periodStart: 'desc' },
     });
-    
-    const totalOverages = overages.reduce((sum, overage) => sum + overage.amount, 0);
+
+    const totalOverages = overages.reduce(
+      (sum, overage) => sum + overage.amount,
+      0,
+    );
     const unbilledOverages = overages
-      .filter(overage => !overage.billed)
+      .filter((overage) => !overage.billed)
       .reduce((sum, overage) => sum + overage.amount, 0);
-    
+
     return {
       totalOverages,
       unbilledOverages,
       overagePeriods: overages.length,
-      currentPeriodOverages: overages.find(o => {
-        const now = new Date();
-        return o.periodStart <= now && o.periodEnd >= now;
-      })?.amount || 0,
+      currentPeriodOverages:
+        overages.find((o) => {
+          const now = new Date();
+          return o.periodStart <= now && o.periodEnd >= now;
+        })?.amount || 0,
     };
   }
 
@@ -131,7 +247,13 @@ export class UserService {
     return subscription;
   }
 
-  async trackOverage(userId: string, type: string, amount: number, periodStart: Date, periodEnd: Date) {
+  async trackOverage(
+    userId: string,
+    type: string,
+    amount: number,
+    periodStart: Date,
+    periodEnd: Date,
+  ) {
     const overage = await this.prisma.overage.create({
       data: {
         userId,
@@ -159,11 +281,23 @@ export class UserService {
   }
 
   async updateNotificationSettings(userId: string, dto: any) {
-    return this.prisma.notificationSettings.upsert({
+    const oldSettings = await this.prisma.notificationSettings.findUnique({
+      where: { userId },
+    });
+    const settings = await this.prisma.notificationSettings.upsert({
       where: { userId },
       update: dto,
       create: { userId, ...dto },
     });
+    await this.auditLogService.create({
+      userId,
+      action: 'update',
+      entityType: 'notification_settings',
+      entityId: userId,
+      oldValue: oldSettings,
+      newValue: settings,
+    });
+    return settings;
   }
 
   async getApiKeys(userId: string) {
@@ -194,7 +328,12 @@ export class UserService {
       },
     });
     // Return the raw key only once
-    return { id: apiKey.id, description: apiKey.description, createdAt: apiKey.createdAt, key: rawKey };
+    return {
+      id: apiKey.id,
+      description: apiKey.description,
+      createdAt: apiKey.createdAt,
+      key: rawKey,
+    };
   }
 
   async deleteApiKey(userId: string, id: string) {
@@ -206,7 +345,12 @@ export class UserService {
   }
 
   async getMe(userId: string) {
-    return this.prisma.user.findUnique({
+    const now = Date.now();
+    const cached = this.userCache.get(userId);
+    if (cached && cached.expires > now) {
+      return cached.data;
+    }
+    const data = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -220,18 +364,170 @@ export class UserService {
         updatedAt: true,
       },
     });
+    this.userCache.set(userId, { data, expires: now + 30 * 1000 }); // cache for 30 seconds
+    return data;
   }
 
-  async updateMe(userId: string, dto: any) {
-    return this.prisma.user.update({
+  async updateMe(userId: string, dto: any): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    const user = await this.prisma.user.update({
       where: { id: userId },
       data: dto,
     });
+    await this.auditLogService.create({
+      userId,
+      action: 'update',
+      entityType: 'user',
+      entityId: userId,
+      oldValue: oldUser,
+      newValue: user,
+    });
+    return user;
   }
 
-  async deleteMe(userId: string) {
-    return this.prisma.user.delete({
+  async deleteMe(userId: string): Promise<User> {
+    const oldUser = await this.prisma.user.findUnique({
       where: { id: userId },
     });
+    const user = await this.prisma.user.delete({ where: { id: userId } });
+    await this.auditLogService.create({
+      userId,
+      action: 'delete',
+      entityType: 'user',
+      entityId: userId,
+      oldValue: oldUser,
+    });
+    return user;
+  }
+
+  async findAllWithHubSpotTokens() {
+    return this.prisma.user.findMany({
+      where: {
+        hubspotAccessToken: { not: null },
+        hubspotTokenExpiresAt: { gt: new Date() },
+      },
+    });
+  }
+
+  async resetPassword(userId: string) {
+    // Generate a reset token
+    const token = randomBytes(32).toString('hex');
+    // Store the token and expiry (e.g., 1 hour) in the user record or a separate table
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        resetToken: token,
+        resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000),
+      } as any, // Add these fields to your schema if not present
+    });
+    // Send email with reset link
+    await this.emailService.sendPasswordResetEmail({
+      userEmail: user.email,
+      userName: user.name || user.email,
+      resetToken: token,
+    });
+    // Log the token for debugging (should be removed in production)
+    console.log(`Password reset token for user ${userId}: ${token}`);
+    return token;
+  }
+
+  async resetPasswordWithToken(
+    token: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message: string }> {
+    // Find user by token and check expiry
+    const user = await this.prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpires: { gt: new Date() },
+      },
+    });
+    if (!user) {
+      return { success: false, message: 'Invalid or expired token.' };
+    }
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Update user password and clear resetToken fields
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpires: null,
+      } as any,
+    });
+    return { success: true, message: 'Password reset successful.' };
+  }
+
+  async countActiveInstalls(since: Date): Promise<number> {
+    return this.prisma.user.count({
+      where: {
+        hubspotPortalId: { not: null },
+        lastActiveAt: { gte: since },
+      },
+    });
+  }
+
+  async findByHubspotPortalId(portalId: string): Promise<User | null> {
+    return this.prisma.user.findFirst({ where: { hubspotPortalId: portalId } });
+  }
+
+  async exportUserData(userId: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const workflows = await this.prisma.workflow.findMany({
+      where: { ownerId: userId },
+    });
+    const workflowIds = workflows.map((w) => w.id);
+    const workflowVersions = await this.prisma.workflowVersion.findMany({
+      where: { workflowId: { in: workflowIds } },
+    });
+    const auditLogs = await this.prisma.auditLog.findMany({
+      where: { userId },
+    });
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
+    const webhooks = await this.prisma.webhook.findMany({ where: { userId } });
+    const overages = await this.prisma.overage.findMany({ where: { userId } });
+    const notificationSettings =
+      await this.prisma.notificationSettings.findUnique({ where: { userId } });
+    const apiKeys = await this.prisma.apiKey.findMany({ where: { userId } });
+    return {
+      user,
+      workflows,
+      workflowVersions,
+      auditLogs,
+      subscription,
+      webhooks,
+      overages,
+      notificationSettings,
+      apiKeys,
+    };
+  }
+
+  async disconnectHubspot(userId: string) {
+    const oldUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        hubspotAccessToken: null,
+        hubspotRefreshToken: null,
+        hubspotTokenExpiresAt: null,
+        hubspotPortalId: null,
+      },
+    });
+    await this.auditLogService.create({
+      userId,
+      action: 'disconnect',
+      entityType: 'hubspot',
+      entityId: userId,
+      oldValue: oldUser,
+      newValue: user,
+    });
+    return user;
   }
 }
