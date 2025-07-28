@@ -149,13 +149,16 @@ export class ReportingService {
     // Calculate metrics
     const totalWorkflows = workflows.length;
     const totalOverages = overages.length;
-    const totalOverageAmount = overages.reduce((sum, overage) => sum + overage.amount, 0);
+    const totalOverageAmount = overages.reduce(
+      (sum, overage) => sum + overage.amount,
+      0,
+    );
 
     // Group by user
     const userWorkflows = this.groupBy(workflows, 'userId');
     const userOverages = this.groupBy(overages, 'userId');
 
-    const userBreakdown = Object.keys(userWorkflows).map(userId => {
+    const userBreakdown = Object.keys(userWorkflows).map((userId) => {
       const userWorkflowList = userWorkflows[userId];
       const userOverageList = userOverages[userId] || [];
       const user = userWorkflowList[0]?.owner;
@@ -166,13 +169,16 @@ export class ReportingService {
         userEmail: user?.email || 'Unknown',
         workflows: userWorkflowList.length,
         overages: userOverageList.length,
-        overageAmount: userOverageList.reduce((sum, overage) => sum + overage.amount, 0),
+        overageAmount: userOverageList.reduce(
+          (sum, overage) => sum + overage.amount,
+          0,
+        ),
       };
     });
 
     // Calculate averages
     const averageUsage = totalWorkflows / Math.max(userBreakdown.length, 1);
-    const peakUsage = Math.max(...userBreakdown.map(u => u.workflows), 0);
+    const peakUsage = Math.max(...userBreakdown.map((u) => u.workflows), 0);
 
     return {
       period: this.getPeriodString(startDate, endDate),
@@ -235,15 +241,21 @@ export class ReportingService {
     });
 
     // Calculate metrics
-    const totalOverageAmount = overages.reduce((sum, overage) => sum + overage.amount, 0);
+    const totalOverageAmount = overages.reduce(
+      (sum, overage) => sum + overage.amount,
+      0,
+    );
     const totalRevenue = totalOverageAmount; // In HubSpot Marketplace, this is the overage revenue
 
     // Group by plan
     const planGroups = this.groupBy(users, 'subscription.planId');
-    const planBreakdown = Object.keys(planGroups).map(planId => {
+    const planBreakdown = Object.keys(planGroups).map((planId) => {
       const planUsers = planGroups[planId];
-      const planOverages = planUsers.flatMap(user => user.overages);
-      const planRevenue = planOverages.reduce((sum, overage) => sum + overage.amount, 0);
+      const planOverages = planUsers.flatMap((user) => user.overages);
+      const planRevenue = planOverages.reduce(
+        (sum, overage) => sum + overage.amount,
+        0,
+      );
 
       return {
         planId,
@@ -254,9 +266,12 @@ export class ReportingService {
     });
 
     // User breakdown
-    const userBreakdown = users.map(user => {
+    const userBreakdown = users.map((user) => {
       const userOverages = user.overages;
-      const overageAmount = userOverages.reduce((sum, overage) => sum + overage.amount, 0);
+      const overageAmount = userOverages.reduce(
+        (sum, overage) => sum + overage.amount,
+        0,
+      );
       const baseAmount = 0; // Base subscription is handled by HubSpot
 
       return {
@@ -314,7 +329,7 @@ export class ReportingService {
 
     // Action breakdown
     const actionGroups = this.groupBy(auditLogs, 'action');
-    const actionBreakdown = Object.keys(actionGroups).map(action => {
+    const actionBreakdown = Object.keys(actionGroups).map((action) => {
       const count = actionGroups[action].length;
       const percentage = (count / totalActions) * 100;
 
@@ -327,7 +342,7 @@ export class ReportingService {
 
     // User breakdown
     const userGroups = this.groupBy(auditLogs, 'userId');
-    const userBreakdown = Object.keys(userGroups).map(userId => {
+    const userBreakdown = Object.keys(userGroups).map((userId) => {
       const userLogs = userGroups[userId];
       const user = userLogs[0]?.user;
       const lastAction = userLogs[0]?.timestamp;
@@ -342,7 +357,7 @@ export class ReportingService {
     });
 
     // Recent actions
-    const recentActions = auditLogs.slice(0, 50).map(log => ({
+    const recentActions = auditLogs.slice(0, 50).map((log) => ({
       id: log.id,
       userId: log.userId || 'unknown',
       userName: log.user?.name || log.user?.email || 'Unknown',
@@ -363,7 +378,9 @@ export class ReportingService {
   /**
    * Generate analytics report
    */
-  async generateAnalyticsReport(filters: ReportFilters): Promise<AnalyticsReport> {
+  async generateAnalyticsReport(
+    filters: ReportFilters,
+  ): Promise<AnalyticsReport> {
     const { startDate, endDate } = filters;
 
     // Get all users
@@ -372,53 +389,89 @@ export class ReportingService {
         subscription: true,
         workflows: true,
         overages: {
-          where: startDate && endDate ? {
-            createdAt: {
-              gte: startDate,
-              lte: endDate,
-            },
-          } : {},
+          where:
+            startDate && endDate
+              ? {
+                  createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                  },
+                }
+              : {},
         },
       },
     });
 
     // Get previous period for growth calculation
-    const previousStartDate = startDate ? new Date(startDate.getTime() - (endDate!.getTime() - startDate.getTime())) : null;
+    const previousStartDate = startDate
+      ? new Date(
+          startDate.getTime() - (endDate!.getTime() - startDate.getTime()),
+        )
+      : null;
     const previousEndDate = startDate ? new Date(startDate.getTime()) : null;
 
-    const previousUsers = previousStartDate && previousEndDate ? await this.prisma.user.findMany({
-      where: {
-        createdAt: {
-          gte: previousStartDate,
-          lte: previousEndDate,
-        },
-      },
-    }) : [];
+    const previousUsers =
+      previousStartDate && previousEndDate
+        ? await this.prisma.user.findMany({
+            where: {
+              createdAt: {
+                gte: previousStartDate,
+                lte: previousEndDate,
+              },
+            },
+          })
+        : [];
 
     // Calculate metrics
     const totalUsers = allUsers.length;
-    const newUsers = startDate && endDate ? allUsers.filter(user => 
-      user.createdAt >= startDate && user.createdAt <= endDate
-    ).length : 0;
-    const activeUsers = allUsers.filter(user => user.workflows.length > 0).length;
+    const newUsers =
+      startDate && endDate
+        ? allUsers.filter(
+            (user) => user.createdAt >= startDate && user.createdAt <= endDate,
+          ).length
+        : 0;
+    const activeUsers = allUsers.filter(
+      (user) => user.workflows.length > 0,
+    ).length;
     const previousTotalUsers = previousUsers.length;
-    const churnRate = previousTotalUsers > 0 ? ((previousTotalUsers - totalUsers) / previousTotalUsers) * 100 : 0;
+    const churnRate =
+      previousTotalUsers > 0
+        ? ((previousTotalUsers - totalUsers) / previousTotalUsers) * 100
+        : 0;
 
-    const totalWorkflows = allUsers.reduce((sum, user) => sum + user.workflows.length, 0);
-    const averageWorkflowsPerUser = totalUsers > 0 ? totalWorkflows / totalUsers : 0;
-    const totalOverages = allUsers.reduce((sum, user) => sum + user.overages.length, 0);
-    const averageOveragesPerUser = totalUsers > 0 ? totalOverages / totalUsers : 0;
-
-    const totalRevenue = allUsers.reduce((sum, user) => 
-      sum + user.overages.reduce((overageSum, overage) => overageSum + overage.amount, 0), 0
+    const totalWorkflows = allUsers.reduce(
+      (sum, user) => sum + user.workflows.length,
+      0,
     );
-    const averageRevenuePerUser = totalUsers > 0 ? totalRevenue / totalUsers : 0;
+    const averageWorkflowsPerUser =
+      totalUsers > 0 ? totalWorkflows / totalUsers : 0;
+    const totalOverages = allUsers.reduce(
+      (sum, user) => sum + user.overages.length,
+      0,
+    );
+    const averageOveragesPerUser =
+      totalUsers > 0 ? totalOverages / totalUsers : 0;
+
+    const totalRevenue = allUsers.reduce(
+      (sum, user) =>
+        sum +
+        user.overages.reduce(
+          (overageSum, overage) => overageSum + overage.amount,
+          0,
+        ),
+      0,
+    );
+    const averageRevenuePerUser =
+      totalUsers > 0 ? totalRevenue / totalUsers : 0;
     const previousRevenue = previousUsers.length > 0 ? 0 : 0; // Simplified for demo
-    const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+    const revenueGrowth =
+      previousRevenue > 0
+        ? ((totalRevenue - previousRevenue) / previousRevenue) * 100
+        : 0;
 
     // Plan distribution
     const planGroups = this.groupBy(allUsers, 'subscription.planId');
-    const planDistribution = Object.keys(planGroups).map(planId => {
+    const planDistribution = Object.keys(planGroups).map((planId) => {
       const userCount = planGroups[planId].length;
       const percentage = (userCount / totalUsers) * 100;
 
@@ -439,7 +492,8 @@ export class ReportingService {
       },
       usageMetrics: {
         totalWorkflows,
-        averageWorkflowsPerUser: Math.round(averageWorkflowsPerUser * 100) / 100,
+        averageWorkflowsPerUser:
+          Math.round(averageWorkflowsPerUser * 100) / 100,
         totalOverages,
         averageOveragesPerUser: Math.round(averageOveragesPerUser * 100) / 100,
       },
@@ -458,8 +512,11 @@ export class ReportingService {
   async exportToCSV(report: any, reportType: string): Promise<string> {
     const headers = this.getCSVHeaders(reportType);
     const rows = this.convertToCSVRows(report, reportType);
-    
-    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.join(',')),
+    ].join('\n');
     return csvContent;
   }
 
@@ -492,12 +549,13 @@ export class ReportingService {
       userId,
     };
 
-    const [usageReport, billingReport, auditReport, analyticsReport] = await Promise.all([
-      this.generateUsageReport(filters),
-      this.generateBillingReport(filters),
-      this.generateAuditReport(filters),
-      this.generateAnalyticsReport(filters),
-    ]);
+    const [usageReport, billingReport, auditReport, analyticsReport] =
+      await Promise.all([
+        this.generateUsageReport(filters),
+        this.generateBillingReport(filters),
+        this.generateAuditReport(filters),
+        this.generateAnalyticsReport(filters),
+      ]);
 
     return {
       usageReport,
@@ -513,9 +571,9 @@ export class ReportingService {
    */
   private groupBy(array: any[], key: string): Record<string, any[]> {
     return array.reduce((groups, item) => {
-      const groupKey = key.includes('.') ? 
-        key.split('.').reduce((obj, k) => obj?.[k], item) : 
-        item[key];
+      const groupKey = key.includes('.')
+        ? key.split('.').reduce((obj, k) => obj?.[k], item)
+        : item[key];
       const group = groupKey || 'unknown';
       groups[group] = groups[group] || [];
       groups[group].push(item);
@@ -533,13 +591,34 @@ export class ReportingService {
   private getCSVHeaders(reportType: string): string[] {
     switch (reportType) {
       case 'usage':
-        return ['Period', 'Total Workflows', 'Total Overages', 'Total Overage Amount', 'Average Usage', 'Peak Usage'];
+        return [
+          'Period',
+          'Total Workflows',
+          'Total Overages',
+          'Total Overage Amount',
+          'Average Usage',
+          'Peak Usage',
+        ];
       case 'billing':
-        return ['Period', 'Total Revenue', 'Total Overages', 'Total Overage Amount'];
+        return [
+          'Period',
+          'Total Revenue',
+          'Total Overages',
+          'Total Overage Amount',
+        ];
       case 'audit':
         return ['Period', 'Total Actions'];
       case 'analytics':
-        return ['Period', 'Total Users', 'New Users', 'Active Users', 'Churn Rate', 'Total Workflows', 'Total Overages', 'Total Revenue'];
+        return [
+          'Period',
+          'Total Users',
+          'New Users',
+          'Active Users',
+          'Churn Rate',
+          'Total Workflows',
+          'Total Overages',
+          'Total Revenue',
+        ];
       default:
         return [];
     }
@@ -548,39 +627,42 @@ export class ReportingService {
   private convertToCSVRows(report: any, reportType: string): string[][] {
     switch (reportType) {
       case 'usage':
-        return [[
-          report.period,
-          report.totalWorkflows.toString(),
-          report.totalOverages.toString(),
-          report.totalOverageAmount.toString(),
-          report.averageUsage.toString(),
-          report.peakUsage.toString(),
-        ]];
+        return [
+          [
+            report.period,
+            report.totalWorkflows.toString(),
+            report.totalOverages.toString(),
+            report.totalOverageAmount.toString(),
+            report.averageUsage.toString(),
+            report.peakUsage.toString(),
+          ],
+        ];
       case 'billing':
-        return [[
-          report.period,
-          report.totalRevenue.toString(),
-          report.totalOverages.toString(),
-          report.totalOverageAmount.toString(),
-        ]];
+        return [
+          [
+            report.period,
+            report.totalRevenue.toString(),
+            report.totalOverages.toString(),
+            report.totalOverageAmount.toString(),
+          ],
+        ];
       case 'audit':
-        return [[
-          report.period,
-          report.totalActions.toString(),
-        ]];
+        return [[report.period, report.totalActions.toString()]];
       case 'analytics':
-        return [[
-          report.period,
-          report.userGrowth.totalUsers.toString(),
-          report.userGrowth.newUsers.toString(),
-          report.userGrowth.activeUsers.toString(),
-          report.userGrowth.churnRate.toString(),
-          report.usageMetrics.totalWorkflows.toString(),
-          report.usageMetrics.totalOverages.toString(),
-          report.revenueMetrics.totalRevenue.toString(),
-        ]];
+        return [
+          [
+            report.period,
+            report.userGrowth.totalUsers.toString(),
+            report.userGrowth.newUsers.toString(),
+            report.userGrowth.activeUsers.toString(),
+            report.userGrowth.churnRate.toString(),
+            report.usageMetrics.totalWorkflows.toString(),
+            report.usageMetrics.totalOverages.toString(),
+            report.revenueMetrics.totalRevenue.toString(),
+          ],
+        ];
       default:
         return [];
     }
   }
-} 
+}

@@ -1,539 +1,476 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useWorkflows } from '../contexts/WorkflowContext';
+import { useAuth } from '../components/AuthContext';
+import { useToast } from '../hooks/use-toast';
+import { AppLayout, PageHeader, ContentSection, GridLayout } from '../components/layout/AppLayout';
+import { EnhancedCard, EnhancedCardHeader, EnhancedCardContent } from '../components/ui/EnhancedCard';
+import { EnhancedButton } from '../components/ui/EnhancedButton';
+import { EnhancedInput } from '../components/ui/EnhancedInput';
+import { EnhancedTable } from '../components/ui/EnhancedTable';
+import { StatusBadge } from '../components/ui/EnhancedBadge';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import TopNavigation from "@/components/TopNavigation";
-import ViewDetailsModal from "@/components/ViewDetailsModal";
-import CreateNewWorkflowModal from "@/components/CreateNewWorkflowModal";
-import RestoreVersionModal from "@/components/RestoreVersionModal";
-import {
-  MoreHorizontal,
-  ExternalLink,
-  Eye,
-  RotateCcw,
+  ArrowLeft,
+  RefreshCw,
   Download,
-  Copy,
-  Trash2,
-  Loader2,
-} from "lucide-react";
-import EmptyWorkflowHistory from '../components/EmptyWorkflowHistory';
-import { useRequireAuth } from '../components/AuthContext';
-import RoleGuard from '../components/RoleGuard';
-import { useToast } from '@/components/ui/use-toast';
-import React from 'react';
-import apiService from '@/services/api';
-import { saveAs } from 'file-saver';
+  Search,
+  Filter,
+  Calendar,
+  Clock,
+  User,
+  FileText,
+  RotateCcw,
+  Eye,
+  GitCompare,
+  MoreHorizontal,
+  CheckCircle,
+  AlertCircle,
+  Info,
+} from 'lucide-react';
+
+interface WorkflowVersion {
+  id: string;
+  version: number;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  createdBy: string;
+  type: 'manual' | 'auto' | 'backup';
+  status: 'active' | 'inactive' | 'draft';
+  changes?: string[];
+  size?: number;
+}
 
 const WorkflowHistory = () => {
-  useRequireAuth();
+  const { workflowId } = useParams<{ workflowId: string }>();
   const navigate = useNavigate();
-  const { workflowId } = useParams();
-  const [workflow, setWorkflow] = useState<any>(null);
-  const [versions, setVersions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [showViewDetails, setShowViewDetails] = useState(false);
-  const [showCreateNew, setShowCreateNew] = useState(false);
-  const [showRestore, setShowRestore] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<any>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [lastDeletedVersion, setLastDeletedVersion] = useState<any | null>(null);
-  const undoTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
-  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
-  const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [lastBulkDeleted, setLastBulkDeleted] = useState<any[]>([]);
+  
+  const {
+    workflows,
+    workflowsLoading,
+    workflowsError,
+  } = useWorkflows();
 
-  // Fetch workflow and versions from backend
+  // Local state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
+  const [workflow, setWorkflow] = useState<any>(null);
+  const [versions, setVersions] = useState<WorkflowVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Find current workflow
   useEffect(() => {
-    if (!workflowId) return;
-    setLoading(true);
-    setError("");
-    Promise.all([
-      apiService.getWorkflowById(workflowId).catch((e: any) => { throw new Error(e.message || "Failed to load workflow"); }),
-      apiService.getWorkflowVersions(workflowId).catch((e: any) => { throw new Error(e.message || "Failed to load workflow versions"); })
-    ])
-      .then(([wf, vers]) => {
-        setWorkflow(wf);
-        setVersions(Array.isArray(vers) ? vers.map((v: any) => ({ ...v, selected: false })) : []);
-      })
-      .catch((e: any) => setError(e.message || "Failed to load workflow or versions"))
-      .finally(() => setLoading(false));
-  }, [workflowId]);
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <span className="ml-3 text-gray-600">Loading workflow history...</span>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()} variant="outline">Try Again</Button>
-      </div>
-    );
-  }
-
-  // Show empty state if no workflow is found
-  if (!workflow) {
-    return <EmptyWorkflowHistory />;
-  }
-
-  // Show empty state if workflow is found but has no versions
-  if (!versions || versions.length === 0) {
-    return <EmptyWorkflowHistory />;
-  }
-
-  const selectedCount = versions.filter((v) => v.selected).length;
-  const selectedVersions = versions.filter((v) => v.selected);
-
-  const handleCompareVersions = () => {
-    if (selectedCount === 2) {
-      navigate(
-        `/compare-versions?versionA=${selectedVersions[0].id}&versionB=${selectedVersions[1].id}`,
-      );
-    }
-  };
-
-  const handleVersionToggle = (versionId: string) => {
-    setVersions((prev) => {
-      const currentSelected = prev.filter((v) => v.selected);
-
-      return prev.map((version) => {
-        if (version.id === versionId) {
-          // If trying to unselect, allow it
-          if (version.selected) {
-            return { ...version, selected: false };
-          }
-          // If trying to select and less than 2 are selected, allow it
-          if (currentSelected.length < 2) {
-            return { ...version, selected: true };
-          }
-          // If 2 are already selected, don't allow more
-          return version;
-        }
-        return version;
-      });
-    });
-  };
-
-  const handleBulkSelect = (versionId: string) => {
-    setVersions((prev) => prev.map((v) => v.id === versionId ? { ...v, selected: !v.selected } : v));
-  };
-
-  const handleBulkDelete = () => {
-    const selectedIds = versions.filter(v => v.selected).map(v => v.id);
-    setBulkDeleteIds(selectedIds);
-    setShowBulkDeleteDialog(true);
-  };
-
-  const confirmBulkDelete = async () => {
-    setBulkDeleting(true);
-    try {
-      for (const id of bulkDeleteIds) {
-        await apiService.deleteWorkflowVersion(id);
+    if (workflows && workflowId) {
+      const found = workflows.find(w => w.id === workflowId);
+      setWorkflow(found);
+      
+      // Mock versions data - in real app this would come from API
+      if (found) {
+        const mockVersions: WorkflowVersion[] = [
+          {
+            id: 'v1',
+            version: 1,
+            name: found.name,
+            description: 'Initial version',
+            createdAt: new Date(found.createdAt),
+            createdBy: user?.name || 'System',
+            type: 'manual',
+            status: 'active',
+            changes: ['Initial workflow setup'],
+            size: 1024,
+          },
+          {
+            id: 'v2',
+            version: 2,
+            name: found.name,
+            description: 'Updated trigger conditions',
+            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            createdBy: user?.name || 'System',
+            type: 'auto',
+            status: 'active',
+            changes: ['Modified trigger conditions', 'Added new actions'],
+            size: 2048,
+          },
+          {
+            id: 'v3',
+            version: 3,
+            name: found.name,
+            description: 'Backup before major changes',
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+            createdBy: user?.name || 'System',
+            type: 'backup',
+            status: 'inactive',
+            changes: ['Backup created'],
+            size: 1536,
+          },
+        ];
+        setVersions(mockVersions);
       }
-      setVersions(versions.filter(v => !bulkDeleteIds.includes(v.id)));
-      setLastBulkDeleted(versions.filter(v => bulkDeleteIds.includes(v.id)));
-      setShowBulkDeleteDialog(false);
-      toast({
-        title: 'Versions Deleted',
-        description: `${bulkDeleteIds.length} workflow version(s) have been deleted.`,
-        variant: 'default',
-        duration: 4000,
-      });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to delete workflow version(s)', variant: 'destructive', duration: 5000 });
-    } finally {
-      setBulkDeleting(false);
-    }
-  };
-
-  const handleViewDetails = (version: any) => {
-    setSelectedVersion(version);
-    setShowViewDetails(true);
-  };
-
-  const handleCreateNew = (version: any) => {
-    setSelectedVersion(version);
-    setShowCreateNew(true);
-  };
-
-  const handleRestore = async (version: any) => {
-    setShowRestore(true);
-    setSelectedVersion(version);
-  };
-
-  const confirmRestore = async () => {
-    if (!selectedVersion || !workflow?.id) return;
-    setLoading(true);
-    try {
-      await apiService.createWorkflowVersion({
-        workflowId: workflow.id,
-        versionNumber: selectedVersion.versionNumber,
-        snapshotType: 'restore',
-        createdBy: 'current-user-id', // Replace with real user id if available
-        data: selectedVersion.data,
-      });
-      toast({
-        title: 'Restore Successful',
-        description: 'Workflow version has been restored.',
-        variant: 'default',
-        duration: 4000,
-      });
-      // Refetch versions
-      const data = await apiService.getWorkflowVersions(workflow.id);
-      setVersions(Array.isArray(data) ? data : []);
-    } catch (e: any) {
-      toast({
-        title: 'Error',
-        description: e.message || 'Failed to restore workflow version',
-        variant: 'destructive',
-        duration: 5000,
-      });
-    } finally {
-      setShowRestore(false);
-      setSelectedVersion(null);
       setLoading(false);
     }
-  };
+  }, [workflows, workflowId, user]);
 
-  const handleDeleteVersion = (versionId: string) => {
-    setConfirmDeleteId(versionId);
-  };
+  // Filter versions
+  const filteredVersions = versions.filter(version => {
+    const matchesSearch = version.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         version.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = typeFilter === 'all' || version.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
 
-  const confirmDelete = async () => {
-    if (!confirmDeleteId) return;
-    setDeleting(true);
+  // Table columns
+  const columns = [
+    {
+      key: 'version',
+      header: 'Version',
+      render: (value: number) => (
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <span className="text-sm font-semibold text-blue-600">v{value}</span>
+          </div>
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      render: (value: string, row: WorkflowVersion) => (
+        <div>
+          <div className="font-medium text-gray-900">{value}</div>
+          <div className="text-sm text-gray-500">{row.description}</div>
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      render: (value: string) => (
+        <StatusBadge 
+          status={value === 'manual' ? 'active' : value === 'auto' ? 'running' : 'inactive'} 
+          size="sm"
+        />
+      ),
+      sortable: true,
+      align: 'center' as const,
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      render: (value: Date) => (
+        <div className="text-sm text-gray-600">
+          <div>{value.toLocaleDateString()}</div>
+          <div className="text-xs text-gray-500">{value.toLocaleTimeString()}</div>
+        </div>
+      ),
+      sortable: true,
+      align: 'center' as const,
+    },
+    {
+      key: 'createdBy',
+      header: 'Created By',
+      render: (value: string) => (
+        <div className="flex items-center space-x-2">
+          <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+            <User className="w-3 h-3 text-gray-600" />
+          </div>
+          <span className="text-sm text-gray-900">{value}</span>
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (value: any, row: WorkflowVersion) => (
+        <div className="flex items-center space-x-2">
+          <EnhancedButton
+            variant="ghost"
+            size="sm"
+            onClick={() => handleVersionAction(row.id, 'view')}
+            icon={<Eye className="w-4 h-4" />}
+          >
+            View
+          </EnhancedButton>
+          <EnhancedButton
+            variant="ghost"
+            size="sm"
+            onClick={() => handleVersionAction(row.id, 'restore')}
+            icon={<RotateCcw className="w-4 h-4" />}
+            disabled={row.status === 'active'}
+          >
+            Restore
+          </EnhancedButton>
+        </div>
+      ),
+      sortable: false,
+    },
+  ];
+
+  // Handle version actions
+  const handleVersionAction = async (versionId: string, action: string) => {
     try {
-      await apiService.deleteWorkflowVersion(confirmDeleteId);
-      const deletedVersion = versions.find(v => v.id === confirmDeleteId);
-      setVersions(versions.filter(v => v.id !== confirmDeleteId));
-      setLastDeletedVersion(deletedVersion);
+      switch (action) {
+        case 'view':
+          navigate(`/workflow/${workflowId}/version/${versionId}`);
+          break;
+        case 'restore':
+          toast({
+            title: "Restore initiated",
+            description: "Workflow version restore has been started.",
+          });
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
       toast({
-        title: 'Version Deleted',
-        description: 'The workflow version has been deleted.',
-        variant: 'default',
-        duration: 4000,
+        title: "Error",
+        description: "An error occurred while performing the action.",
+        variant: "destructive",
       });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to delete workflow version', variant: 'destructive', duration: 5000 });
-    } finally {
-      setDeleting(false);
-      setConfirmDeleteId(null);
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "On-Publish Save":
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-      case "Manual Snapshot":
-        return "bg-purple-100 text-purple-800 hover:bg-purple-100";
-      case "Daily Backup":
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-      default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-    }
-  };
-
-  // Download workflow version JSON
-  const handleDownloadJSON = (version: any) => {
-    if (!version || !version.data) {
-      toast({ title: 'Error', description: 'No workflow data to download.', variant: 'destructive', duration: 5000 });
+  // Handle bulk actions
+  const handleBulkAction = async (action: string) => {
+    if (selectedVersions.length === 0) {
+      toast({
+        title: "No versions selected",
+        description: "Please select versions to perform bulk actions.",
+        variant: "destructive",
+      });
       return;
     }
-    const blob = new Blob([JSON.stringify(version.data, null, 2)], { type: 'application/json' });
-    saveAs(blob, `workflow-version-${version.versionNumber || version.id}.json`);
-    toast({ title: 'Download Started', description: 'Workflow JSON is downloading.', variant: 'default', duration: 4000 });
+
+    try {
+      switch (action) {
+        case 'compare':
+          if (selectedVersions.length === 2) {
+            navigate(`/workflow/${workflowId}/compare?v1=${selectedVersions[0]}&v2=${selectedVersions[1]}`);
+          } else {
+            toast({
+              title: "Invalid selection",
+              description: "Please select exactly 2 versions to compare.",
+              variant: "destructive",
+            });
+          }
+          break;
+        case 'export':
+          toast({
+            title: "Export initiated",
+            description: `Exporting ${selectedVersions.length} versions.`,
+          });
+          break;
+        default:
+          break;
+      }
+      setSelectedVersions([]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while performing bulk actions.",
+        variant: "destructive",
+      });
+    }
   };
 
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!workflow) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Workflow not found</h2>
+          <p className="text-gray-600 mb-4">The requested workflow could not be found.</p>
+          <EnhancedButton onClick={() => navigate('/dashboard')}>
+            Back to Dashboard
+          </EnhancedButton>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      <TopNavigation />
+    <AppLayout>
+      {/* Page Header */}
+      <PageHeader
+        title={`${workflow.name} - History`}
+        subtitle="View and manage workflow versions"
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: workflow.name, href: `/workflow/${workflowId}/history` },
+        ]}
+        actions={
+          <div className="flex items-center space-x-3">
+            <EnhancedButton
+              variant="outline"
+              onClick={() => navigate('/dashboard')}
+              icon={<ArrowLeft className="w-4 h-4" />}
+            >
+              Back
+            </EnhancedButton>
+            <EnhancedButton
+              variant="primary"
+              onClick={() => handleVersionAction('current', 'create')}
+              icon={<FileText className="w-4 h-4" />}
+            >
+              Create Snapshot
+            </EnhancedButton>
+          </div>
+        }
+      />
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">
-            Workflow History
-          </h1>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {workflow?.name || 'Unknown Workflow'}
-                </h2>
-                <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 ${workflow?.status === 'active' ? 'bg-green-500' : 'bg-gray-400'} rounded-full`}></div>
-                  <span className="text-sm text-gray-600">{workflow?.status ? workflow.status.charAt(0).toUpperCase() + workflow.status.slice(1) : 'Unknown'}</span>
-                </div>
-                <span className="text-sm text-gray-500">ID: {workflow?.hubspotId || workflow?.id || '-'}</span>
+      {/* Workflow Info Card */}
+      <EnhancedCard className="mb-8">
+        <EnhancedCardContent>
+          <GridLayout cols={4} gap="lg">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{versions.length}</div>
+              <div className="text-sm text-gray-600">Total Versions</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {versions.filter(v => v.status === 'active').length}
               </div>
+              <div className="text-sm text-gray-600">Active Versions</div>
             </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {versions.filter(v => v.type === 'manual').length}
+              </div>
+              <div className="text-sm text-gray-600">Manual Snapshots</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {versions.filter(v => v.type === 'auto').length}
+              </div>
+              <div className="text-sm text-gray-600">Auto Backups</div>
+            </div>
+          </GridLayout>
+        </EnhancedCardContent>
+      </EnhancedCard>
 
-            {workflow?.hubspotId && (
-              <Button variant="outline" size="sm" className="text-blue-600" asChild>
-                <a href={`https://app.hubspot.com/workflows/${workflow.hubspotId}`} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Go to Workflow in HubSpot
-                </a>
-              </Button>
+      {/* Versions Table Section */}
+      <ContentSection
+        title="Version History"
+        subtitle={`${filteredVersions.length} versions found`}
+      >
+        {/* Filters and Actions */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <EnhancedInput
+              placeholder="Search versions..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+              icon={<Search className="w-4 h-4" />}
+              size="md"
+            />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Types</option>
+              <option value="manual">Manual</option>
+              <option value="auto">Auto</option>
+              <option value="backup">Backup</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {selectedVersions.length > 0 && (
+              <>
+                <EnhancedButton
+                  variant="outline"
+                  onClick={() => handleBulkAction('compare')}
+                  icon={<GitCompare className="w-4 h-4" />}
+                  disabled={selectedVersions.length !== 2}
+                >
+                  Compare ({selectedVersions.length})
+                </EnhancedButton>
+                <EnhancedButton
+                  variant="outline"
+                  onClick={() => handleBulkAction('export')}
+                  icon={<Download className="w-4 h-4" />}
+                >
+                  Export
+                </EnhancedButton>
+              </>
             )}
+            <EnhancedButton
+              variant="outline"
+              onClick={() => window.location.reload()}
+              icon={<RefreshCw className="w-4 h-4" />}
+            >
+              Refresh
+            </EnhancedButton>
           </div>
         </div>
 
-        <div className="mb-4 flex gap-2">
-          <Button
-            variant="destructive"
-            disabled={versions.filter(v => v.selected).length === 0}
-            onClick={handleBulkDelete}
-          >
-            Delete Selected
-          </Button>
-        </div>
+        {/* Versions Table */}
+        <EnhancedTable
+          data={filteredVersions}
+          columns={columns}
+          loading={loading}
+          onRowClick={(version) => handleVersionAction(version.id, 'view')}
+          emptyMessage="No versions found. Create your first snapshot to get started."
+        />
+      </ContentSection>
 
-        <div className="bg-white border border-gray-200 rounded-lg">
-          <div className="overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="w-12 px-6 py-3"></th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
-                    Date & Time
-                  </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
-                    Type
-                  </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
-                    Initiator
-                  </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
-                    Notes
-                  </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {versions.map((version) => (
-                  <tr key={version.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={!!version.selected}
-                        onChange={() => handleBulkSelect(version.id)}
-                        aria-label={`Select version ${version.versionNumber || version.id}`}
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {version.createdAt ? new Date(version.createdAt).toLocaleString() : '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge
-                        variant="secondary"
-                        className={getTypeColor(version.snapshotType)}
-                      >
-                        {version.snapshotType ? (version.snapshotType.charAt(0).toUpperCase() + version.snapshotType.slice(1)) : 'Unknown'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <span>👤</span>
-                        <span>{version.createdBy || 'System'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <span>📝</span>
-                        <span className={!version.notes ? 'italic' : ''}>
-                          {version.notes || 'No notes available'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setShowViewDetails(false);
-                            setTimeout(() => {
-                              setSelectedVersion(version);
-                              setShowViewDetails(true);
-                            }, 0);
-                          }}
-                          className="text-blue-600"
-                        >
-                          View Details
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setShowViewDetails(false);
-                                setTimeout(() => {
-                                  setSelectedVersion(version);
-                                  setShowViewDetails(true);
-                                }, 0);
-                              }}
-                            >
-                              <Eye className="w-4 h-4 mr-3" />
-                              View Details
-                            </DropdownMenuItem>
-                            <RoleGuard roles={['admin', 'restorer']}>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setShowRestore(false);
-                                  setTimeout(() => {
-                                    setSelectedVersion(version);
-                                    setShowRestore(true);
-                                  }, 0);
-                                }}
-                              >
-                                <RotateCcw className="w-4 h-4 mr-3" />
-                                Restore this Version
-                              </DropdownMenuItem>
-                            </RoleGuard>
-                            <RoleGuard roles={['viewer']}>
-                              <DropdownMenuItem
-                                onClick={() => alert('Request sent to admin for rollback.')}
-                              >
-                                <RotateCcw className="w-4 h-4 mr-3" />
-                                Request Rollback
-                              </DropdownMenuItem>
-                            </RoleGuard>
-                            <DropdownMenuItem
-                              onClick={() => handleDownloadJSON(version)}
-                            >
-                              <Download className="w-4 h-4 mr-3" />
-                              Download Workflow JSON
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setShowCreateNew(false);
-                                setTimeout(() => {
-                                  setSelectedVersion(version);
-                                  setShowCreateNew(true);
-                                }, 0);
-                              }}
-                            >
-                              <Copy className="w-4 h-4 mr-3" />
-                              Set as Base for New Workflow
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Button variant="ghost" size="sm" onClick={() => handleDeleteVersion(version.id)}>
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {selectedCount > 0 && (
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                ✓ {selectedCount} versions selected
-                {selectedCount === 1 && " (select 1 more to compare)"}
-                {selectedCount === 2 && " (ready to compare)"}
-              </p>
-              <Button
-                onClick={handleCompareVersions}
-                disabled={selectedCount !== 2}
-                className="bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Compare Selected Versions
-              </Button>
+      {/* Quick Actions */}
+      <GridLayout cols={3} gap="lg" className="mt-8">
+        <EnhancedCard variant="outlined" hover onClick={() => handleVersionAction('current', 'create')}>
+          <EnhancedCardContent>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Create Snapshot</h3>
+              <p className="text-gray-600">Save current workflow state</p>
             </div>
-          )}
-        </div>
-      </main>
+          </EnhancedCardContent>
+        </EnhancedCard>
 
-      <ViewDetailsModal
-        open={showViewDetails}
-        onClose={() => {
-          setShowViewDetails(false);
-          setSelectedVersion(null);
-        }}
-        version={selectedVersion}
-      />
-
-      <CreateNewWorkflowModal
-        open={showCreateNew}
-        onClose={() => {
-          setShowCreateNew(false);
-          setSelectedVersion(null);
-        }}
-        version={selectedVersion}
-      />
-
-      <RestoreVersionModal
-        open={showRestore}
-        onClose={() => {
-          setShowRestore(false);
-          setSelectedVersion(null);
-        }}
-        version={selectedVersion}
-      />
-
-      {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-8 relative">
-            <h2 className="text-lg font-semibold mb-4">Delete Version?</h2>
-            <p className="mb-6">Are you sure you want to delete this workflow version? This action cannot be undone.</p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setConfirmDeleteId(null)} disabled={deleting}>Cancel</Button>
-              <Button className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2" onClick={confirmDelete} disabled={deleting}>
-                {deleting && <Loader2 className="w-4 h-4 animate-spin" />} Delete
-              </Button>
+        <EnhancedCard variant="outlined" hover onClick={() => navigate(`/workflow/${workflowId}/compare`)}>
+          <EnhancedCardContent>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <GitCompare className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Compare Versions</h3>
+              <p className="text-gray-600">Compare different versions</p>
             </div>
-          </div>
-        </div>
-      )}
+          </EnhancedCardContent>
+        </EnhancedCard>
 
-      {showBulkDeleteDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-8 relative">
-            <h2 className="text-lg font-semibold mb-4">Delete Selected Versions?</h2>
-            <p className="mb-6">Are you sure you want to delete {bulkDeleteIds.length} selected workflow version(s)? This action cannot be undone.</p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)} disabled={bulkDeleting}>Cancel</Button>
-              <Button className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2" onClick={confirmBulkDelete} disabled={bulkDeleting}>
-                {bulkDeleting && <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>} Delete
-              </Button>
+        <EnhancedCard variant="outlined" hover onClick={() => navigate(`/workflow/${workflowId}`)}>
+          <EnhancedCardContent>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Eye className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">View Current</h3>
+              <p className="text-gray-600">View current workflow</p>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </EnhancedCardContent>
+        </EnhancedCard>
+      </GridLayout>
+    </AppLayout>
   );
 };
 

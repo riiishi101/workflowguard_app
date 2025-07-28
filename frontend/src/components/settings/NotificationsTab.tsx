@@ -6,9 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock } from "lucide-react";
-import UpgradeRequiredModal from '../UpgradeRequiredModal';
 import apiService from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { usePlan } from "@/components/AuthContext";
+import UpgradeRequiredModal from "@/components/UpgradeRequiredModal";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 interface NotificationSettings {
   notificationsEnabled: boolean;
@@ -19,8 +22,9 @@ interface NotificationSettings {
   criticalActionModified: boolean;
 }
 
-const NotificationsTab = () => {
+const NotificationsTab = ({ setActiveTab }) => {
   const { toast } = useToast();
+  const { plan, hasFeature, isTrialing } = usePlan();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationEmail, setNotificationEmail] = useState("");
   const [notifications, setNotifications] = useState({
@@ -33,6 +37,7 @@ const NotificationsTab = () => {
   const [planChecked, setPlanChecked] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     async function checkPlan() {
@@ -80,13 +85,33 @@ const NotificationsTab = () => {
     // Optionally, navigate back to settings or another tab
   };
 
+  const handleGoToPlan = () => setActiveTab && setActiveTab('plan-billing');
+
   if (!planChecked || loading) return null;
 
   if (showUpgradeModal) {
     return (
+      <Card className="p-8 flex flex-col items-center justify-center text-center">
+        <CardHeader>
+          <CardTitle>Upgrade to Enterprise Plan</CardTitle>
+          <CardDescription>Get access to advanced notifications and custom integrations.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setActiveTab && setActiveTab('plan-billing')}>Upgrade Now</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasFeature('custom_notifications')) {
+    return (
       <UpgradeRequiredModal
-        isOpen={showUpgradeModal}
-        onClose={handleCloseModal}
+        isOpen={true}
+        onClose={() => setActiveTab && setActiveTab('plan-billing')}
+        feature="custom notifications"
+        isTrialing={isTrialing()}
+        planId={plan?.planId}
+        trialPlanId={plan?.trialPlanId}
       />
     );
   }
@@ -108,21 +133,17 @@ const NotificationsTab = () => {
         workflowRolledBack: notifications.workflowRolledBack,
         criticalActionModified: notifications.criticalActionModified,
       });
-      toast({
-        title: 'Notification settings saved',
-        description: 'Your notification preferences have been updated.',
-      });
+      setBanner({ type: 'success', message: 'Notification settings have been updated.' });
     } catch (e: any) {
-      toast({
-        title: 'Error',
-        description: e.message || 'Failed to save notification settings',
-        variant: 'destructive',
-      });
+      setBanner({ type: 'error', message: e.message || 'Failed to update notification settings' });
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {banner && (
+        <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+      )}
       {/* Upgrade Banner */}
       <Alert className="border-orange-200 bg-orange-50">
         <Lock className="h-4 w-4 text-orange-600" />

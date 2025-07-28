@@ -51,14 +51,17 @@ export class OverageService {
     }
 
     const overages = await this.prisma.overage.findMany({ where });
-    
-    const totalOverages = overages.reduce((sum, overage) => sum + overage.amount, 0);
+
+    const totalOverages = overages.reduce(
+      (sum, overage) => sum + overage.amount,
+      0,
+    );
     const unbilledOverages = overages
-      .filter(overage => !overage.billed)
+      .filter((overage) => !overage.billed)
       .reduce((sum, overage) => sum + overage.amount, 0);
-    
-    const usersWithOverages = new Set(overages.map(o => o.userId)).size;
-    
+
+    const usersWithOverages = new Set(overages.map((o) => o.userId)).size;
+
     return {
       totalOverages,
       unbilledOverages,
@@ -83,4 +86,4 @@ export class OverageService {
       orderBy: { periodStart: 'desc' },
     });
   }
-} 
+}

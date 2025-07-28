@@ -9,4 +9,4 @@ import { EmailService } from '../services/email.service';
   providers: [EmailService],
   exports: [EmailService],
 })
-export class EmailModule {} 
+export class EmailModule {}

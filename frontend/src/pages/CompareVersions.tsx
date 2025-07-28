@@ -20,56 +20,13 @@ import {
   Calendar,
   RotateCcw,
 } from "lucide-react";
-import { useRequireAuth } from '../components/AuthContext';
-import RoleGuard from '../components/RoleGuard';
+
 import apiService from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data for versions
-const allVersions = [
-  {
-    id: "1",
-    date: "June 15, 2025, 2:30 PM",
-    creator: "John Smith",
-    type: "Manual Snapshot",
-  },
-  {
-    id: "2",
-    date: "June 20, 2025, 3:45 PM",
-    creator: "Sarah Johnson",
-    type: "Current Version",
-  },
-  {
-    id: "3",
-    date: "June 19, 2025, 1:30 PM",
-    creator: "Mike Wilson",
-    type: "On-Publish Save",
-  },
-];
-
-// Mock workflow data for comparison
-const workflowVersionsData = {
-  "1": {
-    steps: [
-      { type: "email", title: "Send Welcome Email", icon: Mail },
-      { type: "delay", title: "Wait 5 days", icon: Clock },
-      { type: "email", title: "Send Follow-up Email", icon: Mail },
-      { type: "meeting", title: "Schedule Meeting", icon: Calendar },
-    ],
-  },
-  "2": {
-    steps: [
-      { type: "email", title: "Send Welcome Email", icon: Mail },
-      { type: "delay", title: "Wait 7 days", icon: Clock },
-      { type: "email", title: "Send Follow-up Email", icon: Mail },
-      { type: "meeting", title: "Schedule Meeting", icon: Calendar },
-      { type: "email", title: "Send Thank You Email", icon: Mail, isNew: true },
-    ],
-  },
-};
+import { useAuth } from '../components/AuthContext';
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 const CompareVersions = () => {
-  useRequireAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [versionA, setVersionA] = useState(searchParams.get("versionA") || "");
@@ -83,6 +40,8 @@ const CompareVersions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Fetch version details from backend
   useEffect(() => {
@@ -141,23 +100,16 @@ const CompareVersions = () => {
         workflowId: version.workflowId,
         versionNumber: version.versionNumber,
         snapshotType: "restore",
-        createdBy: "current-user-id", // Replace with real user id
+        createdBy: user?.id || '',
         data: version.data,
       });
-      toast({ title: 'Restore Successful', description: 'Workflow version has been restored.', variant: 'default', duration: 4000 });
+      setBanner({ type: 'success', message: 'Workflow version has been restored.' });
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to restore workflow version', variant: 'destructive', duration: 5000 });
+      setBanner({ type: 'error', message: e.message || 'Failed to restore workflow version' });
     } finally {
       setLoading(false);
     }
   };
-
-  const versionASteps =
-    workflowVersionsData[versionA as keyof typeof workflowVersionsData] ||
-    workflowVersionsData["1"];
-  const versionBSteps =
-    workflowVersionsData[versionB as keyof typeof workflowVersionsData] ||
-    workflowVersionsData["2"];
 
   const handleBackToHistory = () => {
     navigate("/workflow-history");
@@ -182,6 +134,11 @@ const CompareVersions = () => {
   return (
     <div className="min-h-screen bg-white">
       <TopNavigation />
+      {banner && (
+        <div className="max-w-7xl mx-auto px-6 pt-6">
+          <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-6 py-6">
         {/* Breadcrumb */}
@@ -215,7 +172,7 @@ const CompareVersions = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {allVersions.map((version) => (
+                  {versionAData && versionAData.map((version: any) => (
                     <SelectItem key={version.id} value={version.id}>
                       {version.date}
                     </SelectItem>
@@ -233,7 +190,7 @@ const CompareVersions = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {allVersions.map((version) => (
+                  {versionBData && versionBData.map((version: any) => (
                     <SelectItem key={version.id} value={version.id}>
                       {version.date}
                     </SelectItem>
@@ -271,17 +228,17 @@ const CompareVersions = () => {
         ) : error ? (
           <div className="text-center text-red-600 py-12">{error}</div>
         ) : (
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            {/* Version A */}
-            <div className="border border-gray-200 rounded-lg">
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="font-semibold text-gray-900">
+        <div className="grid grid-cols-2 gap-6 mb-8">
+          {/* Version A */}
+          <div className="border border-gray-200 rounded-lg">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <h3 className="font-semibold text-gray-900">
                   Version A - {versionAData?.createdAt ? new Date(versionAData.createdAt).toLocaleString() : ""}
-                </h3>
-                <p className="text-sm text-gray-600">
+              </h3>
+              <p className="text-sm text-gray-600">
                   Created by {versionAData?.createdBy || "-"}
-                </p>
-              </div>
+              </p>
+            </div>
               <div
                 className="p-4 space-y-3 max-h-96 overflow-y-auto"
                 ref={panelARef}
@@ -292,19 +249,19 @@ const CompareVersions = () => {
                     <span className="font-medium text-gray-800">{step.title}</span>
                   </div>
                 )) : <div className="text-gray-400">No steps</div>}
-              </div>
             </div>
+          </div>
 
-            {/* Version B */}
-            <div className="border border-gray-200 rounded-lg">
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="font-semibold text-gray-900">
+          {/* Version B */}
+          <div className="border border-gray-200 rounded-lg">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <h3 className="font-semibold text-gray-900">
                   Version B - {versionBData?.createdAt ? new Date(versionBData.createdAt).toLocaleString() : ""}
-                </h3>
-                <p className="text-sm text-gray-600">
+              </h3>
+              <p className="text-sm text-gray-600">
                   Created by {versionBData?.createdBy || "-"}
-                </p>
-              </div>
+              </p>
+            </div>
               <div
                 className="p-4 space-y-3 max-h-96 overflow-y-auto"
                 ref={panelBRef}
@@ -326,7 +283,7 @@ const CompareVersions = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Version History
           </Button>
-          <RoleGuard roles={['admin', 'restorer']}>
+          {user?.role === 'admin' && (
             <div className="flex items-center space-x-3">
               <Button variant="outline" className="text-blue-600" onClick={() => handleRestore(versionAData)} disabled={loading}>
                 <RotateCcw className="w-4 h-4 mr-2" />
@@ -337,7 +294,12 @@ const CompareVersions = () => {
                 Restore Version B
               </Button>
             </div>
-          </RoleGuard>
+          )}
+          {user?.role !== 'admin' && (
+            <div className="text-gray-500 text-sm">
+              You do not have permission to restore versions.
+            </div>
+          )}
         </div>
       </main>
     </div>

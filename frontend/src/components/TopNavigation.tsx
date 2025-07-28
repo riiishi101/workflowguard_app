@@ -4,6 +4,7 @@ import WorkflowGuardLogo from "./WorkflowGuardLogo";
 import { cn } from "@/lib/utils";
 import { HelpCircle, Settings, AlertTriangle } from "lucide-react";
 import { useAuth } from './AuthContext';
+import { useEffect, useState } from 'react';
 
 interface TopNavigationProps {
   minimal?: boolean;
@@ -39,9 +40,9 @@ const TopNavigation = ({ minimal = false }: TopNavigationProps) => {
     { label: "Dashboard", path: "/dashboard" },
     { label: "Workflow History", path: "/workflow-history" },
     ...(user?.role === 'admin' ? [
-      { label: "Overage Dashboard", path: "/overages" },
+      { label: "Overage Dashboard", path: "/overage" },
       { label: "Analytics", path: "/analytics" },
-      { label: "Real-time Dashboard", path: "/realtime-dashboard" },
+      { label: "Real-time Dashboard", path: "/realtime" },
     ] : []),
     { label: "Settings", path: "/settings" },
     { label: "Help & Support", path: "/help" },

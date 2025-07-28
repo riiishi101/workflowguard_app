@@ -9,6 +9,7 @@ import { Upload, Copy, Lock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import apiService from '@/services/api';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import SuccessErrorBanner from '@/components/ui/SuccessErrorBanner';
 
 const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
   const { toast } = useToast();
@@ -24,6 +25,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -45,9 +47,9 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
         metadata,
         enabled: ssoEnabled,
       });
-      toast({ title: 'SSO config updated', description: 'Your SSO configuration has been updated.' });
+      setBanner({ type: 'success', message: 'Your SSO configuration has been updated.' });
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to update SSO config', variant: 'destructive' });
+      setBanner({ type: 'error', message: e.message || 'Failed to update SSO config' });
     } finally {
       setSaving(false);
     }
@@ -62,6 +64,9 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
 
   return (
     <div className="space-y-12">
+      {banner && (
+        <SuccessErrorBanner type={banner.type} message={banner.message} onClose={() => setBanner(null)} />
+      )}
       {!canEdit && (
         <Alert className="border-orange-200 bg-orange-50 flex items-center gap-2">
           <Lock className="h-4 w-4 text-orange-600" />
@@ -358,7 +363,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                 </Label>
                 <div className="flex items-center space-x-3">
                   <Input
-                    value="https://app.workflowguard.ai/saml/metadata"
+                    value="https://www.workflowguard.pro/saml/metadata"
                     readOnly
                     className="bg-gray-50"
                     disabled={!canEdit}
@@ -368,7 +373,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                     size="sm"
                     onClick={() =>
                       copyToClipboard(
-                        "https://app.workflowguard.ai/saml/metadata",
+                        "https://www.workflowguard.pro/saml/metadata",
                       )
                     }
                     disabled={!canEdit}
@@ -383,7 +388,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                 </Label>
                 <div className="flex items-center space-x-3">
                   <Input
-                    value="https://app.workflowguard.ai/saml/acs"
+                    value="https://www.workflowguard.pro/saml/acs"
                     readOnly
                     className="bg-gray-50"
                     disabled={!canEdit}
@@ -392,7 +397,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      copyToClipboard("https://app.workflowguard.ai/saml/acs")
+                      copyToClipboard("https://www.workflowguard.pro/saml/acs")
                     }
                     disabled={!canEdit}
                   >
@@ -406,7 +411,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                 </Label>
                 <div className="flex items-center space-x-3">
                   <Input
-                    value="https://app.workflowguard.ai/saml/slo"
+                    value="https://www.workflowguard.pro/saml/slo"
                     readOnly
                     className="bg-gray-50"
                     disabled={!canEdit}
@@ -415,7 +420,7 @@ const SsoConfiguration = ({ canEdit = true, planChecked = true }) => {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      copyToClipboard("https://app.workflowguard.ai/saml/slo")
+                      copyToClipboard("https://www.workflowguard.pro/saml/slo")
                     }
                     disabled={!canEdit}
                   >
