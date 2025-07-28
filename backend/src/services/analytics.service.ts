@@ -99,7 +99,10 @@ export class AnalyticsService {
         },
       });
 
-      const revenue = overages.reduce((sum, overage) => sum + (overage.amount * 1.00), 0);
+      const revenue = overages.reduce(
+        (sum, overage) => sum + overage.amount * 1.0,
+        0,
+      );
 
       trends.push({
         period,
@@ -125,14 +128,20 @@ export class AnalyticsService {
       },
     });
 
-    return users.map(user => {
+    return users.map((user) => {
       const totalWorkflows = user.workflows.length;
       const totalOverages = user.overages.length;
-      const totalRevenue = user.overages.reduce((sum, o) => sum + (o.amount * 1.00), 0);
+      const totalRevenue = user.overages.reduce(
+        (sum, o) => sum + o.amount * 1.0,
+        0,
+      );
 
       // Calculate overage frequency
       const overageFrequency = totalOverages;
-      const monthsSinceCreation = Math.max(1, this.getMonthsBetween(user.createdAt, new Date()));
+      const monthsSinceCreation = Math.max(
+        1,
+        this.getMonthsBetween(user.createdAt, new Date()),
+      );
       const avgOveragesPerMonth = totalOverages / monthsSinceCreation;
 
       // Determine risk level
@@ -140,9 +149,14 @@ export class AnalyticsService {
       if (avgOveragesPerMonth > 2) riskLevel = 'high';
       else if (avgOveragesPerMonth > 0.5) riskLevel = 'medium';
 
-      const lastOverage = user.overages.length > 0 
-        ? user.overages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-        : null;
+      const lastOverage =
+        user.overages.length > 0
+          ? user.overages.sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime(),
+            )[0]
+          : null;
 
       return {
         userId: user.id,
@@ -173,41 +187,48 @@ export class AnalyticsService {
       },
     });
 
-    const totalRevenue = overages.reduce((sum, o) => sum + (o.amount * 1.00), 0);
+    const totalRevenue = overages.reduce((sum, o) => sum + o.amount * 1.0, 0);
 
     // Calculate monthly revenue (current month)
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const monthlyOverages = overages.filter(o => 
-      o.periodStart >= monthStart && o.periodStart <= monthEnd
+    const monthlyOverages = overages.filter(
+      (o) => o.periodStart >= monthStart && o.periodStart <= monthEnd,
     );
-    const monthlyRevenue = monthlyOverages.reduce((sum, o) => sum + (o.amount * 1.00), 0);
+    const monthlyRevenue = monthlyOverages.reduce(
+      (sum, o) => sum + o.amount * 1.0,
+      0,
+    );
 
     // Calculate revenue growth (compare with previous month)
     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
-    const prevMonthOverages = overages.filter(o => 
-      o.periodStart >= prevMonthStart && o.periodStart <= prevMonthEnd
+    const prevMonthOverages = overages.filter(
+      (o) => o.periodStart >= prevMonthStart && o.periodStart <= prevMonthEnd,
     );
-    const prevMonthRevenue = prevMonthOverages.reduce((sum, o) => sum + (o.amount * 1.00), 0);
+    const prevMonthRevenue = prevMonthOverages.reduce(
+      (sum, o) => sum + o.amount * 1.0,
+      0,
+    );
 
-    const revenueGrowth = prevMonthRevenue > 0 
-      ? ((monthlyRevenue - prevMonthRevenue) / prevMonthRevenue) * 100 
-      : 0;
+    const revenueGrowth =
+      prevMonthRevenue > 0
+        ? ((monthlyRevenue - prevMonthRevenue) / prevMonthRevenue) * 100
+        : 0;
 
     // Top revenue users
     const userRevenue = new Map<string, number>();
-    overages.forEach(overage => {
+    overages.forEach((overage) => {
       const current = userRevenue.get(overage.userId) || 0;
-      userRevenue.set(overage.userId, current + (overage.amount * 1.00));
+      userRevenue.set(overage.userId, current + overage.amount * 1.0);
     });
 
     const topRevenueUsers = Array.from(userRevenue.entries())
       .map(([userId, revenue]) => {
-        const user = overages.find(o => o.userId === userId)?.user;
+        const user = overages.find((o) => o.userId === userId)?.user;
         return {
           userId,
           email: user?.email || 'Unknown',
@@ -218,11 +239,14 @@ export class AnalyticsService {
       .slice(0, 10);
 
     // Revenue by plan
-    const planRevenue = new Map<string, { revenue: number; userCount: number }>();
-    overages.forEach(overage => {
+    const planRevenue = new Map<
+      string,
+      { revenue: number; userCount: number }
+    >();
+    overages.forEach((overage) => {
       const planId = overage.user.subscription?.planId || 'unknown';
       const current = planRevenue.get(planId) || { revenue: 0, userCount: 0 };
-      current.revenue += overage.amount * 1.00;
+      current.revenue += overage.amount * 1.0;
       current.userCount = 1; // Will be recalculated
       planRevenue.set(planId, current);
     });
@@ -231,7 +255,7 @@ export class AnalyticsService {
     const users = await this.prisma.user.findMany({
       include: { subscription: true },
     });
-    users.forEach(user => {
+    users.forEach((user) => {
       const planId = user.subscription?.planId || 'unknown';
       const current = planRevenue.get(planId);
       if (current) {
@@ -240,11 +264,13 @@ export class AnalyticsService {
       }
     });
 
-    const revenueByPlan = Array.from(planRevenue.entries()).map(([planId, data]) => ({
-      planId,
-      revenue: data.revenue,
-      userCount: data.userCount,
-    }));
+    const revenueByPlan = Array.from(planRevenue.entries()).map(
+      ([planId, data]) => ({
+        planId,
+        revenue: data.revenue,
+        userCount: data.userCount,
+      }),
+    );
 
     return {
       totalRevenue,
@@ -263,7 +289,7 @@ export class AnalyticsService {
     const overages = await this.prisma.overage.findMany();
 
     // Predict overages based on historical patterns
-    const recentOverages = overages.filter(o => {
+    const recentOverages = overages.filter((o) => {
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       return o.createdAt >= threeMonthsAgo;
@@ -271,31 +297,31 @@ export class AnalyticsService {
 
     const avgMonthlyOverages = recentOverages.length / 3;
     const predictedOverages = Math.round(avgMonthlyOverages * 1.2); // 20% growth assumption
-    const predictedRevenue = predictedOverages * 1.00; // $1 per overage
+    const predictedRevenue = predictedOverages * 1.0; // $1 per overage
 
     // Identify high-risk users
     const highRiskUsers = users
-      .filter(user => user.riskLevel === 'high')
-      .map(user => user.userId);
+      .filter((user) => user.riskLevel === 'high')
+      .map((user) => user.userId);
 
     // Recommend plan upgrades
     const recommendedUpgrades = users
-      .filter(user => {
+      .filter((user) => {
         const avgOverages = user.avgOveragesPerMonth;
         const currentPlan = user.planId;
-        
+
         // Recommend upgrade if user has frequent overages
-        if (currentPlan === 'starter' && avgOverages > 1) return true;
+        if (currentPlan === 'trial' && avgOverages > 1) return true;
         if (currentPlan === 'professional' && avgOverages > 3) return true;
-        
+
         return false;
       })
-      .map(user => {
+      .map((user) => {
         const currentPlan = user.planId;
         let recommendedPlan = 'professional';
         let reason = 'Frequent overages detected';
 
-        if (currentPlan === 'starter') {
+        if (currentPlan === 'trial') {
           recommendedPlan = 'professional';
           reason = 'High overage frequency - upgrade recommended';
         } else if (currentPlan === 'professional') {
@@ -324,24 +350,33 @@ export class AnalyticsService {
    * Get business intelligence dashboard data
    */
   async getBusinessIntelligence() {
-    const [usageTrends, userAnalytics, revenueAnalytics, predictiveAnalytics] = await Promise.all([
-      this.getUsageAnalytics(6), // Last 6 months
-      this.getUserAnalytics(),
-      this.getRevenueAnalytics(),
-      this.getPredictiveAnalytics(),
-    ]);
+    const [usageTrends, userAnalytics, revenueAnalytics, predictiveAnalytics] =
+      await Promise.all([
+        this.getUsageAnalytics(6), // Last 6 months
+        this.getUserAnalytics(),
+        this.getRevenueAnalytics(),
+        this.getPredictiveAnalytics(),
+      ]);
 
     // Calculate key metrics
     const totalUsers = userAnalytics.length;
-    const activeUsers = userAnalytics.filter(u => u.totalWorkflows > 0).length;
-    const usersWithOverages = userAnalytics.filter(u => u.totalOverages > 0).length;
-    const conversionRate = totalUsers > 0 ? (usersWithOverages / totalUsers) * 100 : 0;
+    const activeUsers = userAnalytics.filter(
+      (u) => u.totalWorkflows > 0,
+    ).length;
+    const usersWithOverages = userAnalytics.filter(
+      (u) => u.totalOverages > 0,
+    ).length;
+    const conversionRate =
+      totalUsers > 0 ? (usersWithOverages / totalUsers) * 100 : 0;
 
     // Plan distribution
-    const planDistribution = userAnalytics.reduce((acc, user) => {
-      acc[user.planId] = (acc[user.planId] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const planDistribution = userAnalytics.reduce(
+      (acc, user) => {
+        acc[user.planId] = (acc[user.planId] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
       overview: {
@@ -360,9 +395,11 @@ export class AnalyticsService {
       planDistribution,
       topPerformers: revenueAnalytics.topRevenueUsers.slice(0, 5),
       riskAssessment: {
-        highRiskUsers: userAnalytics.filter(u => u.riskLevel === 'high').length,
-        mediumRiskUsers: userAnalytics.filter(u => u.riskLevel === 'medium').length,
-        lowRiskUsers: userAnalytics.filter(u => u.riskLevel === 'low').length,
+        highRiskUsers: userAnalytics.filter((u) => u.riskLevel === 'high')
+          .length,
+        mediumRiskUsers: userAnalytics.filter((u) => u.riskLevel === 'medium')
+          .length,
+        lowRiskUsers: userAnalytics.filter((u) => u.riskLevel === 'low').length,
       },
     };
   }
@@ -396,8 +433,8 @@ export class AnalyticsService {
       },
     });
 
-    const totalRevenue = overages.reduce((sum, o) => sum + (o.amount * 1.00), 0);
-    const uniqueUsers = new Set(overages.map(o => o.userId)).size;
+    const totalRevenue = overages.reduce((sum, o) => sum + o.amount * 1.0, 0);
+    const uniqueUsers = new Set(overages.map((o) => o.userId)).size;
 
     return {
       period: {
@@ -417,7 +454,9 @@ export class AnalyticsService {
   }
 
   private getMonthsBetween(startDate: Date, endDate: Date): number {
-    return (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
-           (endDate.getMonth() - startDate.getMonth());
+    return (
+      (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+      (endDate.getMonth() - startDate.getMonth())
+    );
   }
-} 
+}
