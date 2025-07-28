@@ -238,16 +238,22 @@ export class WorkflowController {
     }
   }
 
-  @Get('sync-status/:id?')
+  @Get('sync-status')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get workflow sync status' })
-  @ApiResponse({ status: 200, description: 'Sync status retrieved successfully.' })
-  async getSyncStatus(@Param('id') workflowId?: string, @Req() req?: Request) {
+  @ApiOperation({ summary: 'Get all workflow sync status' })
+  @ApiResponse({ status: 200, description: 'All sync status retrieved successfully.' })
+  async getAllSyncStatus(@Req() req: Request) {
     const userId = (req as any).user?.id || (req as any).user?.sub;
-    if (workflowId) {
-      return await this.workflowService.getWorkflowSyncStatus(workflowId, userId);
-    }
     return await this.workflowService.getAllWorkflowSyncStatus(userId);
+  }
+
+  @Get('sync-status/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get specific workflow sync status' })
+  @ApiResponse({ status: 200, description: 'Sync status retrieved successfully.' })
+  async getSyncStatus(@Param('id') workflowId: string, @Req() req: Request) {
+    const userId = (req as any).user?.id || (req as any).user?.sub;
+    return await this.workflowService.getWorkflowSyncStatus(workflowId, userId);
   }
 
   @Post('compare-versions')
