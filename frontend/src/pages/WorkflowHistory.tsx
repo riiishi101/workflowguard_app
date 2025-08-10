@@ -129,7 +129,7 @@ const WorkflowHistory = () => {
             status: workflow.status || 'active',
             protectionStatus: workflow.protectionStatus || 'protected',
             lastModified: workflow.lastModified || workflow.updatedAt || new Date().toLocaleDateString(),
-            versions: workflow.versions?.length || 0,
+            versions: workflow.versions?.length || 1,
             lastModifiedBy: {
               name: workflow.owner?.name || 'Unknown User',
               initials: workflow.owner?.name ? workflow.owner.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'UU',
