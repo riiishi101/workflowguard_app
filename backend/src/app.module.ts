@@ -15,6 +15,8 @@ import { MetricsModule } from './metrics/metrics.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
 import { AppCacheModule } from './cache/cache.module';
 import { HubSpotMarketplaceController } from './controllers/hubspot-marketplace.controller';
 import { HubSpotMarketplaceBillingService } from './services/hubspot-marketplace-billing.service';
@@ -38,6 +40,8 @@ import { HubSpotBillingController } from './controllers/hubspot-billing.controll
     SubscriptionModule,
     DashboardModule,
     AnalyticsModule,
+    NotificationsModule,
+    AdminModule,
     AppCacheModule,
   ],
   controllers: [AppController, HubSpotMarketplaceController, HubSpotBillingController],

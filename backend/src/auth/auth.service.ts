@@ -1,16 +1,18 @@
-import { Injectable, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from '../user/dto/create-user.dto';
+import { UserSignupService } from '../notifications/user-signup.service';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService, 
     private userService: UserService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private userSignupService: UserSignupService
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -71,6 +73,9 @@ export class AuthService {
 
       // Automatically create trial subscription for HubSpot users
       await this.userService.createTrialSubscription(user.id);
+      
+      // Notify about new user signup
+      await this.userSignupService.notifyNewUserSignup(user, 'oauth');
     } else {
       // Update existing user's HubSpot tokens
       await this.prisma.user.update({
