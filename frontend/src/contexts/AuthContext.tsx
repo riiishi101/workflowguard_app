@@ -38,19 +38,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Debug logging helper
-  const logAuth = (message: string, data?: any) => {
-    console.log(`🔐 AuthContext - ${message}`, data ? data : '');
-  };
-
   useEffect(() => {
     if (hasInitialized) {
-      logAuth('Auth already initialized, skipping');
       return;
     }
 
     const initializeAuth = async () => {
-      logAuth('Starting auth initialization');
       try {
         // Check for token in URL after OAuth callback
         const urlParams = new URLSearchParams(window.location.search);
@@ -58,73 +51,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const tokenParam = urlParams.get('token');
         const isMarketplace = urlParams.get('marketplace') === 'true';
 
-        logAuth('URL parameters', { success: successParam, hasToken: !!tokenParam, isMarketplace });
-
         // Handle OAuth callback
         if (successParam === 'true' && tokenParam) {
-          logAuth('Processing OAuth callback');
           localStorage.setItem('authToken', tokenParam);
           
           // Clean up URL without triggering a navigation
           const newUrl = window.location.pathname + 
             (urlParams.get('marketplace') === 'true' ? '?source=marketplace' : '');
           window.history.replaceState({}, document.title, newUrl);
-          logAuth('Updated URL after OAuth', { newUrl });
         }
 
         const token = localStorage.getItem('authToken');
-        logAuth('Checking token', { hasToken: !!token });
 
         if (token) {
-          logAuth('Validating token with API');
           try {
             const response = await ApiService.getCurrentUser();
-            logAuth('API response received', { success: response.success });
 
             if (response.success && response.data) {
-              logAuth('User validation successful', {
-                userId: response.data.id,
-                email: response.data.email,
-                portalId: response.data.hubspotPortalId
-              });
               setUser(response.data);
 
               // Don't redirect here - let the OnboardingFlow handle navigation
               if (successParam === 'true' && tokenParam) {
-                logAuth('Fresh OAuth success, user authenticated');
               }
             } else {
-              logAuth('Token validation failed', { response });
               localStorage.removeItem('authToken');
               setUser(null);
             }
           } catch (error) {
-            logAuth('Token validation error', { error });
             localStorage.removeItem('authToken');
             setUser(null);
           }
         } else {
-          logAuth('No token found, user remains unauthenticated');
           setUser(null);
         }
       } catch (error) {
-        logAuth('Auth initialization error', { 
-          error,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        });
         localStorage.removeItem('authToken');
         setUser(null);
       } finally {
         setLoading(false);
         setHasInitialized(true);
-        // Log after state is set
         setTimeout(() => {
-          logAuth('Auth initialization complete', { 
-            isAuthenticated: !!localStorage.getItem('authToken'),
-            hasToken: !!localStorage.getItem('authToken'),
-            userSet: !!user
-          });
         }, 0);
       }
     };
@@ -133,32 +99,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [hasInitialized]);
 
   const connectHubSpot = () => {
-    logAuth('Initiating HubSpot connection');
     const currentUrl = window.location.href;
-    logAuth('Connection context', { currentUrl });
     window.location.href = '/api/auth/hubspot';
   };
 
   const testAuthentication = async () => {
-    logAuth('Testing authentication');
     const token = localStorage.getItem('authToken');
-    logAuth('Auth test state', { 
-      hasToken: !!token,
-      isAuthenticated: !!user,
-      currentUrl: window.location.href
-    });
     return;
   };
 
   const logout = async () => {
-    logAuth('Logout initiated');
     try {
       // Clear auth state
       setUser(null);
       localStorage.removeItem('authToken');
-      logAuth('Logout completed successfully');
     } catch (error) {
-      logAuth('Logout error', { error });
       // Force logout even on error
       setUser(null);
       localStorage.removeItem('authToken');

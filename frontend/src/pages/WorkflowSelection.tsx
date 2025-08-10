@@ -75,7 +75,7 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
   const fetchWorkflows = async () => {
     // Check if user is authenticated before making API call
     if (!isAuthenticated) {
-      console.log('WorkflowSelection - User not authenticated, skipping workflow fetch');
+
       setError('Please connect your HubSpot account first to view workflows.');
       setWorkflows([]);
       setLoading(false);
@@ -98,18 +98,18 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
       setLoading(true);
       setError(null);
       
-      console.log('WorkflowSelection - Starting to fetch workflows from HubSpot');
+
       
       // Try to get real data from HubSpot API
-      console.log('WorkflowSelection - Making API call to fetch workflows...');
+
       const apiStartTime = Date.now();
       
       const response = await ApiService.getHubSpotWorkflows();
       
       const apiEndTime = Date.now();
-      console.log(`WorkflowSelection - API call completed in ${apiEndTime - apiStartTime}ms`);
-      console.log('WorkflowSelection - HubSpot API response:', response);
-      console.log('WorkflowSelection - Response type:', typeof response);
+
+
+
       console.log('WorkflowSelection - Response structure:', {
         success: response.success,
         hasData: !!response.data,
@@ -125,15 +125,15 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
       
       // Extract workflows from the response data
       const workflows = response.data || [];
-      console.log('WorkflowSelection - Extracted workflows:', workflows.length);
+
       
       if (workflows.length > 0) {
-        console.log('WorkflowSelection - Found workflows:', workflows.length);
-        console.log('WorkflowSelection - Sample workflow:', workflows[0]);
+
+
         
         // Validate workflow structure
         const validWorkflows = workflows.map(workflow => {
-          console.log('Workflow before filtering:', workflow);
+
           return {
             ...workflow,
             isProtected: workflow.isProtected ?? false, // Default to false if undefined
@@ -152,7 +152,7 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
         });
       } else {
         // No workflows found in HubSpot
-        console.log('WorkflowSelection - No workflows found in HubSpot');
+
         setWorkflows([]);
         toast({
           title: "No Workflows Found",
