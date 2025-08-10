@@ -295,20 +295,32 @@ const HelpSupport = () => {
                     <Mail className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
-                  <p className="text-blue-600 font-medium mb-2">support@workflowguard.pro</p>
+                  <a 
+                    href="mailto:contact@workflowguard.pro" 
+                    className="text-blue-600 font-medium mb-2 hover:underline block"
+                  >
+                    contact@workflowguard.pro
+                  </a>
                   <p className="text-sm text-gray-600">Available 24/7 for all users</p>
                 </CardContent>
               </Card>
 
-              {/* WhatsApp Support */}
+              {/* Live Chat Support */}
               <Card className="hover:shadow-md transition-all duration-200">
                 <CardContent className="p-6">
-                  <div className="bg-blue-600 p-3 rounded-lg w-fit mb-4">
+                  <div className="bg-green-600 p-3 rounded-lg w-fit mb-4">
                     <MessageSquare className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">WhatsApp Support</h3>
-                  <p className="text-blue-600 font-medium mb-2">+1 (555) 123-4567</p>
-                  <p className="text-sm text-gray-600">Professional & Enterprise plans only</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
+                  <a 
+                    href="https://wa.me/message/R74K5JOOYVURD1" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium"
+                  >
+                    Start Live Chat
+                  </a>
+                  <p className="text-sm text-gray-600 mt-2">Professional & Enterprise plans only</p>
                 </CardContent>
               </Card>
             </div>
