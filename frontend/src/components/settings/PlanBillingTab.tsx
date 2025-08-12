@@ -516,15 +516,7 @@ const PlanBillingTab = () => {
                   Advanced Security Features
                 </li>
                 {/* Advanced Analytics removed as not available */}
-                <li className="flex items-center text-sm">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Unlimited Team Members
-                </li>
-                <li className="flex items-center text-sm">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  White-label Options
-                </li>
-                <li className="flex items-center text-sm">
+                                <li className="flex items-center text-sm">
                   <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
                   24/7 WhatsApp Support
                 </li>
