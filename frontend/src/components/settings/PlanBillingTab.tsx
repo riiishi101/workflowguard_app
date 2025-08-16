@@ -550,25 +550,13 @@ const PlanBillingTab = () => {
           details, you will be redirected to your HubSpot account billing
           section.
         </p>
-        <div className="flex space-x-4">
+        <div className="flex">
           <Button 
             className="bg-blue-600 hover:bg-blue-700"
             onClick={handleManageSubscription}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
-            Manage Subscription in HubSpot
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleUpdatePayment}
-          >
-            Update Payment Methods
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleViewBillingHistory}
-          >
-            View Billing History
+            Manage Subscription
           </Button>
         </div>
       </div>

@@ -21,6 +21,7 @@ import { AppCacheModule } from './cache/cache.module';
 import { HubSpotMarketplaceController } from './controllers/hubspot-marketplace.controller';
 import { HubSpotMarketplaceBillingService } from './services/hubspot-marketplace-billing.service';
 import { HubSpotBillingController } from './controllers/hubspot-billing.controller';
+import { RazorpayModule } from './razorpay/razorpay.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { HubSpotBillingController } from './controllers/hubspot-billing.controll
     NotificationsModule,
     AdminModule,
     AppCacheModule,
+    RazorpayModule,
   ],
   controllers: [AppController, HubSpotMarketplaceController, HubSpotBillingController],
   providers: [AppService, HubSpotMarketplaceBillingService],
