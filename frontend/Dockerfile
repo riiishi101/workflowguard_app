@@ -1,31 +1,32 @@
-# Build stage
+# Stage 1: Build the React application
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+# This layer is cached unless package*.json changes
+RUN npm install
 
-# Copy source code
+# Copy the rest of the application source code
 COPY . .
 
-# Build the application
+# Build the application for production
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+# Stage 2: Serve the application with Nginx
+FROM nginx:1.25-alpine AS production
 
-# Copy built assets from builder stage
+# Copy the built assets from the builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy the custom Nginx configuration for the frontend
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
+# Expose port 80 to the outside world
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# Start Nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]
