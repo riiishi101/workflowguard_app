@@ -19,6 +19,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { AppCacheModule } from './cache/cache.module';
 import { RazorpayModule } from './razorpay/razorpay.module';
+import { ActionsModule } from './actions/actions.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { RazorpayModule } from './razorpay/razorpay.module';
     AdminModule,
     AppCacheModule,
     RazorpayModule,
+    ActionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

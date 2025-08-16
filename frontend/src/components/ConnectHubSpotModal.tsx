@@ -1,19 +1,21 @@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import WorkflowGuardLogo from "./WorkflowGuardLogo";
-import { Lock, Info } from "lucide-react";
+import { Lock, Info, Loader2 } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface ConnectHubSpotModalProps {
   open: boolean;
   onClose: () => void;
   onConnect: () => void;
+  isConnecting: boolean;
 }
 
 const ConnectHubSpotModal = ({
   open,
   onClose,
   onConnect,
+  isConnecting,
 }: ConnectHubSpotModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -76,16 +78,26 @@ const ConnectHubSpotModal = ({
             </div>
           </div>
 
-          <Button
+                    <Button
             onClick={onConnect}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+            disabled={isConnecting}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-opacity"
           >
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets%2Ffae26f580f3f4b359fc5216711c44c53%2F2384bbe9d45a43a4b222a18fb4a481ac?format=webp&width=800"
-              alt="HubSpot Logo"
-              className="w-5 h-5 brightness-0 invert"
-            />
-            Connect to HubSpot
+            {isConnecting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Connecting...</span>
+              </>
+            ) : (
+              <>
+                <img
+                  src="https://cdn.builder.io/api/v1/image/assets%2Ffae26f580f3f4b359fc5216711c44c53%2F2384bbe9d45a43a4b222a18fb4a481ac?format=webp&width=800"
+                  alt="HubSpot Logo"
+                  className="w-5 h-5 brightness-0 invert"
+                />
+                Connect to HubSpot
+              </>
+            )}
           </Button>
 
           <div className="flex items-center justify-center gap-6 text-xs">

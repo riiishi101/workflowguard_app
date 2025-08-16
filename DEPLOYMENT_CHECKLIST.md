@@ -48,9 +48,11 @@ git push -u origin main
    - Port: `4000`
 6. Add Environment Variables:
    ```
-   DATABASE_URL=postgresql://neondb_owner:npg_oPpKhNtTR20d@ep-dry-resonance-afgqyybz-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-   DIRECT_URL=postgresql://neondb_owner:npg_oPpKhNtTR20d@ep-dry-resonance-afgqyybz-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-   JWT_SECRET=dDjMTsWdYi+VBy4J5+ocmBbazSM+NJgunjbgBggZPOu8HNzXoUijNXiRbvHZ7JWcFfkHDDEbdeYwzFb9HvqDMw==
+   # WARNING: Do not commit secrets to your repository.
+   # Use your hosting provider's secret management solution.
+   DATABASE_URL=YOUR_DATABASE_URL
+   DIRECT_URL=YOUR_DIRECT_DATABASE_URL
+   JWT_SECRET=YOUR_JWT_SECRET
    PORT=4000
    NODE_ENV=production
    ```

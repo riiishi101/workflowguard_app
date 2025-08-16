@@ -263,4 +263,27 @@ export class UserController {
       );
     }
   }
+
+  @Post('disconnect-hubspot')
+  @UseGuards(JwtAuthGuard)
+  async disconnectHubSpot(@Req() req: any) {
+    try {
+      const userId = req.user?.sub || req.user?.id || req.user?.userId;
+      if (!userId) {
+        throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
+      }
+
+      await this.userService.disconnectHubSpot(userId);
+
+      return {
+        success: true,
+        message: 'HubSpot connection has been successfully disconnected.',
+      };
+    } catch (error) {
+      throw new HttpException(
+        `Failed to disconnect HubSpot: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

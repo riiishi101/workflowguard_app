@@ -24,6 +24,7 @@
     "@types/helmet": "^0.0.48",
     "cypress": "^14.5.4",
     "cypress-plugin-tab": "^1.0.5",
+    "@cypress/sinon-chai": "^2.9.1",
     "start-server-and-test": "^2.0.13",
     "typescript": "^5.8.3"
   }

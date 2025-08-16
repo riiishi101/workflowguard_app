@@ -13,7 +13,9 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  connectHubSpot: () => void;
+  connectHubSpot: (isMarketplace?: boolean) => void;
+  isConnecting: boolean;
+  disconnectHubSpot: () => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   testAuthentication?: () => Promise<void>;
@@ -35,6 +37,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
 
@@ -98,9 +101,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, [hasInitialized]);
 
-  const connectHubSpot = () => {
-    const currentUrl = window.location.href;
-    window.location.href = '/api/auth/hubspot';
+  const connectHubSpot = async (isMarketplace: boolean = false) => {
+    setIsConnecting(true);
+    try {
+      const response = await ApiService.getHubSpotAuthUrl(isMarketplace);
+      if (response.success && response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        console.error('Failed to get HubSpot auth URL');
+      }
+    } catch (error) {
+      console.error('Error connecting to HubSpot:', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const disconnectHubSpot = async () => {
+    try {
+      const response = await ApiService.disconnectHubSpot();
+      if (response.success) {
+        setUser(prevUser => prevUser ? { ...prevUser, hubspotPortalId: undefined } : null);
+      } else {
+        console.error('Failed to disconnect HubSpot');
+      }
+    } catch (error) {
+      console.error('Error disconnecting from HubSpot:', error);
+    }
   };
 
   const testAuthentication = async () => {
@@ -124,6 +151,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     loading,
     connectHubSpot,
+    isConnecting,
+    disconnectHubSpot,
     logout,
     isAuthenticated: !!user,
     testAuthentication, // Add this for debugging

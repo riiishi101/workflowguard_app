@@ -14,8 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { ApiService } from "@/lib/api";
-import { AlertTriangle, CheckCircle, Loader2, Save, Mail, Camera, Upload, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, Loader2, Save, Mail, Camera, Upload, X, Link, Unlink } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -30,6 +31,7 @@ interface UserProfile {
 
 const ProfileTab = () => {
   const { toast } = useToast();
+  const { user, connectHubSpot, isConnecting, disconnectHubSpot } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -497,6 +499,47 @@ const ProfileTab = () => {
               placeholder="Enter your job title"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* HubSpot Connection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>HubSpot Connection</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {user?.hubspotPortalId ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-green-600">Connected</p>
+                <p className="text-sm text-gray-500">Portal ID: {user.hubspotPortalId}</p>
+              </div>
+              <Button variant="destructive" onClick={disconnectHubSpot}>
+                <Unlink className="w-4 h-4 mr-2" />
+                Disconnect
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-red-600">Not Connected</p>
+                <p className="text-sm text-gray-500">Connect your HubSpot account to get started.</p>
+              </div>
+              <Button onClick={() => connectHubSpot(false)} disabled={isConnecting}>
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Link className="w-4 h-4 mr-2" />
+                    Connect HubSpot
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

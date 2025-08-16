@@ -55,13 +55,15 @@ git push origin main
 
 5. **Add Environment Variables:**
    ```
+   # WARNING: Do not commit secrets to your repository.
+   # Use your hosting provider's secret management solution.
    NODE_ENV=production
-   DATABASE_URL=postgresql://neondb_owner:npg_oPpKhNtTR20d@ep-dry-resonance-afgqyybz-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-   DIRECT_URL=postgresql://neondb_owner:npg_oPpKhNtTR20d@ep-dry-resonance-afgqyybz.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-   JWT_SECRET=dDjMTsWdYi+VBy4J5+ocmBbazSM+NJgunjbgBggZPOu8HNzXoUijNXiRbvHZ7JWcFfkHDDEbdeYwzFb9HvqDMw==
+   DATABASE_URL=YOUR_DATABASE_URL
+   DIRECT_URL=YOUR_DIRECT_DATABASE_URL
+   JWT_SECRET=YOUR_JWT_SECRET
    JWT_EXPIRES_IN=7d
-   HUBSPOT_CLIENT_ID=6be1632d-8007-45e4-aecb-6ec93e6ff528
-   HUBSPOT_CLIENT_SECRET=20c00afe-2875-44a8-a6f6-0ad30b55cc40
+   HUBSPOT_CLIENT_ID=YOUR_HUBSPOT_CLIENT_ID
+   HUBSPOT_CLIENT_SECRET=YOUR_HUBSPOT_CLIENT_SECRET
    HUBSPOT_REDIRECT_URI=https://api.workflowguard.pro/api/auth/hubspot/callback
    VITE_API_URL=https://api.workflowguard.pro/api
    DOMAIN=www.workflowguard.pro

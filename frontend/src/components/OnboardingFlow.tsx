@@ -14,7 +14,7 @@ const OnboardingFlow = () => {
   const [hasProcessedOAuth, setHasProcessedOAuth] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
-  const { isAuthenticated, loading, user, connectHubSpot } = useAuth();
+  const { isAuthenticated, loading, user, connectHubSpot, isConnecting } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
@@ -166,7 +166,9 @@ const OnboardingFlow = () => {
     }));
 
     // Use the connectHubSpot function from AuthContext
-    connectHubSpot();
+    const urlParams = new URLSearchParams(window.location.search);
+    const isMarketplace = urlParams.get('marketplace') === 'true';
+    connectHubSpot(isMarketplace);
   };
 
   const handleWorkflowSelectionComplete = () => {
@@ -231,7 +233,7 @@ const OnboardingFlow = () => {
     return <WorkflowSelection onComplete={handleWorkflowSelectionComplete} />;
   }
 
-  // Force connect modal for authenticated users who need to reconnect
+    // Force connect modal for authenticated users who need to reconnect
   if (isAuthenticated && currentStep === 'connect') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -239,6 +241,7 @@ const OnboardingFlow = () => {
           open={showConnectModal}
           onClose={() => setShowConnectModal(false)}
           onConnect={handleConnectHubSpot}
+          isConnecting={isConnecting}
         />
       </div>
     );
@@ -249,7 +252,7 @@ const OnboardingFlow = () => {
     return <WorkflowSelection onComplete={handleWorkflowSelectionComplete} />;
   }
 
-  // If timeout reached but user is not authenticated, show connect modal
+    // If timeout reached but user is not authenticated, show connect modal
   if (timeoutReached && !isAuthenticated && currentStep === 'connect') {
     console.log('OnboardingFlow - Timeout reached but user not authenticated, showing connect modal');
     return (
@@ -258,6 +261,7 @@ const OnboardingFlow = () => {
           open={showConnectModal}
           onClose={() => setShowConnectModal(false)}
           onConnect={handleConnectHubSpot}
+          isConnecting={isConnecting}
         />
       </div>
     );
@@ -280,10 +284,11 @@ const OnboardingFlow = () => {
         />
 
         {/* Connect HubSpot Modal */}
-        <ConnectHubSpotModal
+                <ConnectHubSpotModal
           open={showConnectModal && currentStep === 'connect'}
           onClose={() => setShowConnectModal(false)}
           onConnect={handleConnectHubSpot}
+          isConnecting={isConnecting}
         />
       </div>
     );
@@ -298,9 +303,11 @@ const OnboardingFlow = () => {
         
         {/* Debug Button */}
         <button
-          onClick={() => {
+                    onClick={() => {
             console.log('Manual OAuth trigger');
-            connectHubSpot();
+            const urlParams = new URLSearchParams(window.location.search);
+            const isMarketplace = urlParams.get('marketplace') === 'true';
+            connectHubSpot(isMarketplace);
           }}
           className="mt-4 bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600"
         >

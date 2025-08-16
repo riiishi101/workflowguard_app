@@ -474,6 +474,19 @@ class ApiService {
     }
   }
 
+  static async getHubSpotAuthUrl(isMarketplace: boolean = false): Promise<ApiResponse<{ url: string }>> {
+    try {
+      const response = await apiClient.get('/auth/hubspot/url', {
+        params: {
+          marketplace: isMarketplace.toString(),
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getDashboardStats(): Promise<ApiResponse<any>> {
     try {
       const response = await apiClient.get('/dashboard/stats');

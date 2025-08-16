@@ -31,16 +31,20 @@
       }
     ]
   },
-  "webhooks": [
-    {
-      "subscriptionType": "contact.propertyChange",
-      "propertyName": "workflow_status"
-    },
-    {
-      "subscriptionType": "deal.propertyChange", 
-      "propertyName": "workflow_modified"
-    }
-  ],
+  "webhooks": {
+    "targetUrl": "https://api.workflowguard.pro/api/webhooks/hubspot",
+    "subscriptions": [
+      {
+        "subscriptionType": "workflow.creation"
+      },
+      {
+        "subscriptionType": "workflow.deletion"
+      },
+      {
+        "subscriptionType": "workflow.propertyChange"
+      }
+    ]
+  },
   "settings": {
     "installedAppId": "workflowguard",
     "name": "WorkflowGuard Settings",

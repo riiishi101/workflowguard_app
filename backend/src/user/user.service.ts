@@ -429,4 +429,15 @@ export class UserService {
     
     return subscription || { plan: null, status: 'no_subscription' };
   }
+
+  async disconnectHubSpot(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        hubspotAccessToken: null,
+        hubspotRefreshToken: null,
+        hubspotPortalId: null,
+      },
+    });
+  }
 }
