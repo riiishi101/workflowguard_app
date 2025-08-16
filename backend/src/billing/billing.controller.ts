@@ -1,12 +1,16 @@
 import { Controller, Get, Post, Query, Body, Inject } from '@nestjs/common';
 import Razorpay from 'razorpay';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../services/email.service';
+import { UserService } from '../user/user.service';
 
 @Controller('billing')
 export class BillingController {
   private razorpay: Razorpay;
   constructor(
     private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+    private readonly userService: UserService,
   ) {
     this.razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
@@ -48,11 +52,24 @@ export class BillingController {
     }
     // Cancel at end of period
     await this.razorpay.subscriptions.cancel(sub.razorpay_subscription_id, false);
+
     // Update DB
-    await this.prisma.subscription.updateMany({
-      where: { userId, status: 'active' },
+    const updatedSubscription = await this.prisma.subscription.update({
+      where: { id: sub.id },
       data: { status: 'cancelled' },
     });
+
+    // Send cancellation email
+    try {
+      const user = await this.userService.findOne(userId);
+      if (user) {
+        await this.emailService.sendSubscriptionCancellationEmail(user, updatedSubscription);
+      }
+    } catch (error) {
+      console.error(`Failed to send cancellation email for user ${userId}`, error);
+      // Do not block response for email failure
+    }
+
     return { success: true, message: 'Subscription cancellation scheduled.' };
   }
 }

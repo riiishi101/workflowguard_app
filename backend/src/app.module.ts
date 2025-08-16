@@ -18,9 +18,6 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { AppCacheModule } from './cache/cache.module';
-import { HubSpotMarketplaceController } from './controllers/hubspot-marketplace.controller';
-import { HubSpotMarketplaceBillingService } from './services/hubspot-marketplace-billing.service';
-import { HubSpotBillingController } from './controllers/hubspot-billing.controller';
 import { RazorpayModule } from './razorpay/razorpay.module';
 
 @Module({
@@ -46,7 +43,7 @@ import { RazorpayModule } from './razorpay/razorpay.module';
     AppCacheModule,
     RazorpayModule,
   ],
-  controllers: [AppController, HubSpotMarketplaceController, HubSpotBillingController],
-  providers: [AppService, HubSpotMarketplaceBillingService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

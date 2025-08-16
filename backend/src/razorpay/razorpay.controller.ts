@@ -3,6 +3,7 @@ import { RazorpayService } from './razorpay.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { Request, Response } from 'express';
 import { UserService } from '../user/user.service';
+import { EmailService } from '../services/email.service';
 
 @Controller('razorpay')
 export class RazorpayController {
@@ -11,6 +12,7 @@ export class RazorpayController {
     @Inject(UserService)
     private readonly userService: UserService,
     private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
   ) {}
 
   // ...existing endpoints
@@ -25,7 +27,7 @@ export class RazorpayController {
     @Body('planId') planId: string,
     @Body('currency') currency: string = 'USD'
   ) {
-    const planPrices = { starter: 19, professional: 49, enterprise: 99 };
+    const planPrices: Record<string, number> = { starter: 19, professional: 49, enterprise: 99 };
     const amount = planPrices[planId] || 49;
 
     // Robust plan_id lookup by plan and currency, ready for INR, USD, etc
@@ -47,7 +49,7 @@ export class RazorpayController {
     });
 
     // Save the subscription in DB
-    await this.prisma.subscription.create({
+    const newSubscription = await this.prisma.subscription.create({
       data: {
         userId,
         planId,
@@ -57,6 +59,17 @@ export class RazorpayController {
         nextBillingDate: rzSub.current_end ? new Date(rzSub.current_end * 1000) : new Date(),
       },
     });
+
+    // Send confirmation email
+    try {
+      const user = await this.userService.findOne(userId);
+      if (user) {
+        await this.emailService.sendSubscriptionConfirmationEmail(user, newSubscription);
+      }
+    } catch (error) {
+        console.error(`Failed to send subscription email for user ${userId}`, error);
+        // Do not block the response for email failure
+    }
 
     return { id: rzSub.id, short_url: rzSub.short_url, subscription: rzSub };
   }

@@ -12,6 +12,11 @@
     "helmet": "^8.1.0",
     "razorpay": "^2.9.6"
   },
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "cy:run": "cypress run",
+    "test:e2e": "start-server-and-test dev:frontend http://localhost:5173 cy:run"
+  },
   "devDependencies": {
     "@types/compression": "^1.8.1",
     "@types/cypress": "^0.1.6",
@@ -19,6 +24,7 @@
     "@types/helmet": "^0.0.48",
     "cypress": "^14.5.4",
     "cypress-plugin-tab": "^1.0.5",
+    "start-server-and-test": "^2.0.13",
     "typescript": "^5.8.3"
   }
 }

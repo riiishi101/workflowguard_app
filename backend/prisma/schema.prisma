@@ -84,6 +84,7 @@ model Subscription {
   id              String    @id @default(uuid())
   userId          String    @unique
   planId          String
+  razorpay_subscription_id String?   @unique
   status          String
   trialEndDate    DateTime?
   nextBillingDate DateTime?

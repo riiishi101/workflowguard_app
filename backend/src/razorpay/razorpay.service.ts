@@ -17,10 +17,14 @@ export class RazorpayService {
     return await this.razorpay.orders.create({
       amount: amount * 100, // in paise
       currency,
-      payment_capture: 1,
+      payment_capture: true,
       receipt,
       notes, // Custom metadata (userId, planId etc.)
     });
+  }
+
+  async createSubscription(params: any) {
+    return await this.razorpay.subscriptions.create(params);
   }
 
   // Razorpay signature verification for webhook (expects raw body as Buffer)

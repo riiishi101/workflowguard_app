@@ -26,9 +26,48 @@ export class EmailService {
     return true;
   }
 
-  async sendWelcomeEmail(data: any): Promise<boolean> {
-    console.log('Welcome email sent:', data);
-    return true;
+  async sendWelcomeEmail(user: any): Promise<boolean> {
+    const subject = `👋 Welcome to WorkflowGuard, ${user.name}!`;
+    const emailContent = `
+      <h2>Welcome to WorkflowGuard!</h2>
+      <p>Hi ${user.name},</p>
+      <p>Thank you for signing up. We're excited to have you on board.</p>
+      <p>You can now start protecting your HubSpot workflows.</p>
+      <p>
+        <a href="https://www.workflowguard.pro/dashboard"
+           style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+          Go to your Dashboard
+        </a>
+      </p>
+      <p>If you have any questions, feel free to contact our support team.</p>
+      <p>Best,<br/>The WorkflowGuard Team</p>
+    `;
+
+    try {
+      if (process.env.SENDGRID_API_KEY) {
+        const sgMail = await import('@sendgrid/mail');
+        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+
+        const msg = {
+          to: user.email,
+          from: 'noreply@workflowguard.pro',
+          subject: subject,
+          html: emailContent,
+        };
+
+        await sgMail.default.send(msg);
+        console.log(`✅ Welcome email sent to: ${user.email}`);
+        return true;
+      } else {
+        console.log('📧 WELCOME EMAIL (SendGrid not configured):');
+        console.log(`To: ${user.email}`);
+        console.log(`Subject: ${subject}`);
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Failed to send welcome email:', error);
+      return false;
+    }
   }
 
   async sendUpgradeRecommendation(
@@ -62,6 +101,92 @@ export class EmailService {
   ): Promise<any> {
     console.log('Bulk notification email sent:', { userEmails, subject, message, isHtml });
     return { success: true, sent: 1, failed: 0 };
+  }
+
+  async sendSubscriptionConfirmationEmail(user: any, subscription: any): Promise<boolean> {
+    const subject = `✅ Your Subscription to WorkflowGuard is Confirmed!`;
+    const planName = subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1);
+
+    const emailContent = `
+      <h2>Subscription Confirmed!</h2>
+      <p>Hi ${user.name},</p>
+      <p>Thank you for subscribing to the <strong>${planName}</strong> plan. Your subscription is now active.</p>
+      <p>You can manage your subscription and view your billing history from your dashboard.</p>
+      <p>
+        <a href="https://www.workflowguard.pro/settings/billing"
+           style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+          Go to Billing
+        </a>
+      </p>
+      <p>If you have any questions, feel free to contact our support team.</p>
+      <p>Best,<br/>The WorkflowGuard Team</p>
+    `;
+
+    try {
+      if (process.env.SENDGRID_API_KEY) {
+        const sgMail = await import('@sendgrid/mail');
+        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+
+        const msg = {
+          to: user.email,
+          from: 'noreply@workflowguard.pro',
+          subject: subject,
+          html: emailContent,
+        };
+
+        await sgMail.default.send(msg);
+        console.log(`✅ Subscription confirmation email sent to: ${user.email}`);
+        return true;
+      } else {
+        console.log('📧 SUBSCRIPTION CONFIRMATION (SendGrid not configured):');
+        console.log(`To: ${user.email}`);
+        console.log(`Subject: ${subject}`);
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Failed to send subscription confirmation email:', error);
+      return false;
+    }
+  }
+
+  async sendSubscriptionCancellationEmail(user: any, subscription: any): Promise<boolean> {
+    const subject = `🚫 Your WorkflowGuard Subscription Has Been Canceled`;
+    const planName = subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1);
+
+    const emailContent = `
+      <h2>Subscription Canceled</h2>
+      <p>Hi ${user.name},</p>
+      <p>Your subscription to the <strong>${planName}</strong> plan has been successfully canceled. You will no longer be billed.</p>
+      <p>Your access to premium features will continue until the end of your current billing period.</p>
+      <p>We're sorry to see you go. If you have a moment, we'd love to know why you canceled. Your feedback is important to us.</p>
+      <p>Best,<br/>The WorkflowGuard Team</p>
+    `;
+
+    try {
+      if (process.env.SENDGRID_API_KEY) {
+        const sgMail = await import('@sendgrid/mail');
+        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+
+        const msg = {
+          to: user.email,
+          from: 'noreply@workflowguard.pro',
+          subject: subject,
+          html: emailContent,
+        };
+
+        await sgMail.default.send(msg);
+        console.log(`✅ Subscription cancellation email sent to: ${user.email}`);
+        return true;
+      } else {
+        console.log('📧 SUBSCRIPTION CANCELLATION (SendGrid not configured):');
+        console.log(`To: ${user.email}`);
+        console.log(`Subject: ${subject}`);
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Failed to send subscription cancellation email:', error);
+      return false;
+    }
   }
 
   async sendAdminSignupNotification(user: any, signupSource: string): Promise<boolean> {

@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../services/email.service';
 
 @Injectable()
 export class UserSignupService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async notifyNewUserSignup(user: any, signupSource: 'oauth' | 'marketplace' | 'direct') {
     try {
@@ -36,28 +40,15 @@ export class UserSignupService {
         },
       });
 
-      // Send email notification to admin (you can configure this)
-      await this.sendAdminNotification(user, signupSource);
+      // Send email notification to admin
+      await this.emailService.sendAdminSignupNotification(user, signupSource);
 
-      // Optional: Send welcome email to user
-      await this.sendWelcomeEmail(user);
+      // Send welcome email to user
+      await this.emailService.sendWelcomeEmail(user);
 
     } catch (error) {
       console.error('Failed to process user signup notification:', error);
     }
-  }
-
-  private async sendAdminNotification(user: any, signupSource: string) {
-    // TODO: Implement email/Slack/Discord notification to admin
-    console.log('📬 ADMIN NOTIFICATION: New user signup requires attention');
-    console.log(`User: ${user.email} (${user.name})`);
-    console.log(`Source: ${signupSource}`);
-    console.log(`Portal ID: ${user.hubspotPortalId}`);
-  }
-
-  private async sendWelcomeEmail(user: any) {
-    // TODO: Implement welcome email to new user
-    console.log('📧 WELCOME EMAIL: Queued for', user.email);
   }
 
   async getUserSignupStats(days: number = 30): Promise<any> {
