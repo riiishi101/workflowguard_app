@@ -8,12 +8,18 @@ import {
   NextPaymentInfo,
 } from '../types/subscription.types';
 import { PLANS, DEFAULT_PLAN_ID } from './plan.config';
+import { CurrencyService } from '../currency/currency.service';
+import { RazorpayPlansService } from '../razorpay/razorpay-plans.service';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private currencyService: CurrencyService,
+    private razorpayPlansService: RazorpayPlansService
+  ) {}
 
-  async getUserSubscription(userId: string): Promise<UserSubscription> {
+  async getUserSubscription(userId: string, currency?: string): Promise<UserSubscription> {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -25,15 +31,24 @@ export class SubscriptionService {
       }
 
       const planId = user.subscription?.planId || DEFAULT_PLAN_ID;
+      const subscriptionCurrency = user.subscription?.currency || currency || 'USD';
+      
+      // Get plan with multi-currency pricing
+      const multiCurrencyPlan = this.razorpayPlansService.getAllPlans(subscriptionCurrency)
+        .find(p => p.id === planId) || this.razorpayPlansService.getAllPlans(subscriptionCurrency)[0];
+      
       const plan = PLANS[planId] || PLANS[DEFAULT_PLAN_ID];
-
       const workflowsUsed = user.workflows?.length || 0;
+      
+      // Get price in the requested currency
+      const priceInCurrency = multiCurrencyPlan.prices[subscriptionCurrency]?.amount || plan.price;
 
       return {
         id: user.subscription?.id || 'mock-subscription-id',
         planId: plan.id,
         planName: plan.name,
-        price: plan.price,
+        price: priceInCurrency,
+        currency: subscriptionCurrency,
         status: user.subscription?.status || 'active',
         currentPeriodStart:
           user.subscription?.createdAt || new Date(),
@@ -49,6 +64,7 @@ export class SubscriptionService {
           versionHistory: 0, // Placeholder
           teamMembers: 1, // Placeholder
         },
+        allCurrencyPrices: multiCurrencyPlan.prices,
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -184,8 +200,8 @@ export class SubscriptionService {
           date: subscription.nextBillingDate,
           daysUntil: daysUntilPayment,
           isOverdue: daysUntilPayment < 0,
-          amount: this.getPlanPrice(subscription.planId),
-          currency: 'USD',
+          amount: this.getPlanPrice(subscription.planId, subscription.currency || 'USD'),
+          currency: subscription.currency || 'USD',
         },
       };
     } catch (error: unknown) {
@@ -197,7 +213,39 @@ export class SubscriptionService {
     }
   }
 
-  private getPlanPrice(planId: string): number {
-    return PLANS[planId]?.price || 0;
+  private getPlanPrice(planId: string, currency: string = 'USD'): number {
+    try {
+      return this.razorpayPlansService.getPlanPrice(planId, currency);
+    } catch {
+      return PLANS[planId]?.price || 0;
+    }
+  }
+
+  async createSubscriptionWithCurrency(userId: string, planId: string, options: {
+    cardNumber?: string;
+    ipAddress?: string;
+    countryCode?: string;
+    userPreference?: string;
+  }): Promise<{ subscription: any; detectedCurrency: string; confidence: number }> {
+    const detection = this.razorpayPlansService.detectCurrencyAndGetPlan(planId, options);
+    
+    // Create subscription with detected currency
+    const subscription = await this.prisma.subscription.create({
+      data: {
+        userId,
+        planId,
+        currency: detection.detectedCurrency,
+        status: 'active',
+        createdAt: new Date(),
+        trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14-day trial
+        nextBillingDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    return {
+      subscription,
+      detectedCurrency: detection.detectedCurrency,
+      confidence: detection.confidence
+    };
   }
 }

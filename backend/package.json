@@ -24,7 +24,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "setup:multi-currency": "ts-node src/scripts/setup-multi-currency.ts",
+    "migrate:currency": "npx prisma migrate dev --name add-currency-to-subscription && npx prisma generate"
   },
   "dependencies": {
     "@nestjs/cli": "^11.0.10",

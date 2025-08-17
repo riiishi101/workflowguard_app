@@ -23,6 +23,7 @@ export interface UserSubscription {
   planId: string;
   planName: string;
   price: number;
+  currency: string;
   status: string;
   currentPeriodStart: string | Date;
   currentPeriodEnd: string | Date;
@@ -31,6 +32,7 @@ export interface UserSubscription {
   features: string[];
   limits: PlanLimits;
   usage: SubscriptionUsage;
+  allCurrencyPrices?: Record<string, { amount: number; formatted: string }>;
 }
 
 export interface TrialStatus {

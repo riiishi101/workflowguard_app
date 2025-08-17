@@ -1,0 +1,69 @@
+// Add these models to your existing schema.prisma file
+
+model Payment {
+  id                   String   @id @default(cuid())
+  userId               String
+  amount               Int      // Amount in paise/cents
+  currency             String   @default("USD")
+  status               String   // captured, failed, refunded
+  razorpay_payment_id  String   @unique
+  razorpay_order_id    String?
+  description          String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Invoice {
+  id                    String   @id @default(cuid())
+  userId                String
+  subscriptionId        String?
+  amount                Int      // Amount in paise/cents
+  currency              String   @default("USD")
+  status                String   // paid, pending, failed
+  razorpay_invoice_id   String?  @unique
+  invoiceNumber         String   @unique
+  dueDate               DateTime
+  paidAt                DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@map("invoices")
+}
+
+model PaymentMethod {
+  id                      String   @id @default(cuid())
+  userId                  String
+  razorpay_customer_id    String?
+  razorpay_token_id       String?  @unique
+  cardLast4               String?
+  cardBrand               String?
+  cardType                String?
+  isDefault               Boolean  @default(false)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+}
+
+// Update existing Subscription model to include more fields
+model SubscriptionUpdate {
+  // Add these fields to your existing Subscription model
+  cancelledAt              DateTime?
+  cancelReason             String?
+  razorpay_customer_id     String?
+  currentPeriodStart       DateTime?
+  currentPeriodEnd         DateTime?
+  trialStart               DateTime?
+  trialEnd                 DateTime?
+  metadata                 Json?
+}

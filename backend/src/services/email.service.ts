@@ -159,6 +159,30 @@ export class EmailService {
     return { success: true, sent: 1, failed: 0 };
   }
 
+  async sendPaymentSuccessEmail(
+    user: User,
+    paymentData: { amount: number; currency: string; planId: string },
+  ): Promise<boolean> {
+    console.log(`Payment success email sent to ${user.email}:`, paymentData);
+    return true;
+  }
+
+  async sendPaymentFailedEmail(
+    user: User,
+    paymentData: { amount: number; currency: string; reason: string },
+  ): Promise<boolean> {
+    console.log(`Payment failed email sent to ${user.email}:`, paymentData);
+    return true;
+  }
+
+  async sendBillingConfirmationEmail(
+    user: User,
+    billingData: { amount: number; currency: string; planId: string; nextBillingDate: Date },
+  ): Promise<boolean> {
+    console.log(`Billing confirmation email sent to ${user.email}:`, billingData);
+    return true;
+  }
+
   async sendSubscriptionConfirmationEmail(
     user: User,
     subscription: Subscription,

@@ -79,7 +79,7 @@ const ManageSubscriptionTab = () => {
       if (!resp.id) throw new Error('Failed to create payment order');
       // Open Razorpay Checkout with order info
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || window.RAZORPAY_KEY_ID, // Show test/live key on UI
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || window.RAZORPAY_KEY_ID, // Live key from environment
         amount: resp.amount, // in paise (integer)
         currency: resp.currency,
         name: 'WorkflowGuard',
@@ -135,7 +135,7 @@ const ManageSubscriptionTab = () => {
       if (!resp.id && !resp.customer_id) throw new Error('Failed to create payment method order');
       // Open Razorpay Checkout in "token" or "payment_method" collect mode
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || window.RAZORPAY_KEY_ID,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || window.RAZORPAY_KEY_ID,
         customer_id: resp.customer_id, // Set by backend, must exist
         // Enable cards, UPI, wallets etc. as per Razorpay options
         method: 'card',
