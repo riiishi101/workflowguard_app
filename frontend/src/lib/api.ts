@@ -819,15 +819,7 @@ class ApiService {
       const response = await apiClient.get('/system/cache-stats');
       return response.data;
     } catch (error) {
-      // Return mock data for development
-      return {
-        success: true,
-        data: {
-          hitRate: 0.85,
-          totalRequests: 1000,
-          cacheSize: '50MB'
-        }
-      };
+      throw error;
     }
   }
 
