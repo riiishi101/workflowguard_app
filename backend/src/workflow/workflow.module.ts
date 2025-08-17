@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { WorkflowService } from './workflow.service';
 import { WorkflowController } from './workflow.controller';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -12,7 +12,7 @@ import { WorkflowVersionModule } from '../workflow-version/workflow-version.modu
     PrismaModule,
     UserModule,
     SubscriptionModule,
-    forwardRef(() => WorkflowVersionModule),
+    WorkflowVersionModule,
   ],
   controllers: [WorkflowController],
   providers: [WorkflowService, HubSpotService],
