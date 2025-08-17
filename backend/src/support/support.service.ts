@@ -1,296 +1,245 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  DiagnosisResult,
+  FixResult,
+  OptimizationResult,
+  IssueType,
+  Severity,
+  FixAction,
+  OptimizationAction,
+} from '../types/support.types';
 
 @Injectable()
 export class SupportService {
   constructor(private prisma: PrismaService) {}
 
-  async diagnoseIssue(description: string, userId: string): Promise<any> {
+  async diagnoseIssue(
+    description: string,
+    userId: string,
+  ): Promise<DiagnosisResult> {
     try {
       const issueType = this.classifyIssue(description);
-      const severity = this.determineSeverity(description, issueType);
+      const severity = this.determineSeverity(description);
       const automated = this.canAutoFix(issueType);
-      
-      const diagnosis = {
+
+      const diagnosis: DiagnosisResult = {
         type: issueType,
         severity,
         description: this.getIssueDescription(issueType),
         solution: this.getSolution(issueType),
         automated,
-        confidence: this.getConfidence(description, issueType)
+        confidence: this.getConfidence(description, issueType),
       };
 
       await this.logDiagnosis(userId, diagnosis);
 
       return diagnosis;
-    } catch (error) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       throw new HttpException(
-        `Failed to diagnose issue: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        `Failed to diagnose issue: ${message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  async fixRollbackIssue(userId: string): Promise<any> {
-    try {
-      const fixes = await Promise.all([
-        this.validateRollbackIntegrity(userId),
-        this.repairRollbackData(userId),
-        this.optimizeRollbackPerformance(userId)
-      ]);
-
-      const result = {
-        success: true,
-        fixes: fixes.filter(fix => fix.success),
-        message: 'Rollback issues have been automatically resolved'
-      };
-
-      return result;
-    } catch (error) {
-      throw new HttpException(
-        `Failed to fix rollback issue: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  async fixRollbackIssue(userId: string): Promise<FixResult> {
+    return this.executeFix(userId, 'Rollback', [
+      () => this.validateRollbackIntegrity(userId),
+      () => this.repairRollbackData(userId),
+      () => this.optimizeRollbackPerformance(userId),
+    ]);
   }
 
-  async fixSyncIssue(userId: string): Promise<any> {
-    try {
-      const fixes = await Promise.all([
-        this.refreshHubSpotTokens(userId),
-        this.retryFailedSyncs(userId),
-        this.validateSyncIntegrity(userId)
-      ]);
-
-      const result = {
-        success: true,
-        fixes: fixes.filter(fix => fix.success),
-        message: 'HubSpot sync issues have been automatically resolved'
-      };
-
-      return result;
-    } catch (error) {
-      throw new HttpException(
-        `Failed to fix sync issue: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  async fixSyncIssue(userId: string): Promise<FixResult> {
+    return this.executeFix(userId, 'HubSpot sync', [
+      () => this.refreshHubSpotTokens(userId),
+      () => this.retryFailedSyncs(userId),
+      () => this.validateSyncIntegrity(userId),
+    ]);
   }
 
-  async fixAuthIssue(userId: string): Promise<any> {
-    try {
-      const fixes = await Promise.all([
-        this.validateUserSession(userId),
-        this.refreshAuthTokens(userId),
-        this.resetUserPermissions(userId)
-      ]);
-
-      const result = {
-        success: true,
-        fixes: fixes.filter(fix => fix.success),
-        message: 'Authentication issues have been automatically resolved'
-      };
-
-      return result;
-    } catch (error) {
-      throw new HttpException(
-        `Failed to fix auth issue: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  async fixAuthIssue(userId: string): Promise<FixResult> {
+    return this.executeFix(userId, 'Authentication', [
+      () => this.validateUserSession(userId),
+      () => this.refreshAuthTokens(userId),
+      () => this.resetUserPermissions(userId),
+    ]);
   }
 
-  async fixDataIssue(userId: string): Promise<any> {
-    try {
-      const fixes = await Promise.all([
-        this.validateDataIntegrity(userId),
-        this.repairCorruptedData(userId),
-        this.optimizeDatabasePerformance(userId)
-      ]);
-
-      const result = {
-        success: true,
-        fixes: fixes.filter(fix => fix.success),
-        message: 'Data issues have been automatically resolved'
-      };
-
-      return result;
-    } catch (error) {
-      throw new HttpException(
-        `Failed to fix data issue: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  async fixDataIssue(userId: string): Promise<FixResult> {
+    return this.executeFix(userId, 'Data', [
+      () => this.validateDataIntegrity(userId),
+      () => this.repairCorruptedData(userId),
+      () => this.optimizeDatabasePerformance(userId),
+    ]);
   }
 
-  async optimizePerformance(userId: string): Promise<any> {
+  async optimizePerformance(userId: string): Promise<OptimizationResult> {
     try {
       const optimizations = await Promise.all([
         this.optimizeDatabaseQueries(userId),
         this.clearCache(userId),
-        this.optimizeAPIResponses(userId)
+        this.optimizeAPIResponses(userId),
       ]);
 
-      const result = {
+      return {
         success: true,
-        optimizations: optimizations.filter(opt => opt.success),
-        message: 'Performance has been automatically optimized'
+        optimizations: optimizations.filter((opt) => opt.success),
+        message: 'Performance has been automatically optimized',
       };
-
-      return result;
-    } catch (error) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       throw new HttpException(
-        `Failed to optimize performance: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        `Failed to optimize performance: ${message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  private classifyIssue(description: string): string {
-    const lowerDesc = description.toLowerCase();
-    
-    if (lowerDesc.includes('rollback') || lowerDesc.includes('restore')) {
-      return 'rollback';
-    } else if (lowerDesc.includes('sync') || lowerDesc.includes('hubspot')) {
-      return 'sync';
-    } else if (lowerDesc.includes('auth') || lowerDesc.includes('login') || lowerDesc.includes('password')) {
-      return 'auth';
-    } else if (lowerDesc.includes('slow') || lowerDesc.includes('performance') || lowerDesc.includes('timeout')) {
-      return 'performance';
-    } else if (lowerDesc.includes('data') || lowerDesc.includes('missing') || lowerDesc.includes('corrupt')) {
-      return 'data';
+  private async executeFix(
+    userId: string,
+    issueName: string,
+    fixActions: (() => Promise<FixAction>)[],
+  ): Promise<FixResult> {
+    try {
+      const fixes = await Promise.all(fixActions.map((action) => action()));
+      return {
+        success: true,
+        fixes: fixes.filter((fix) => fix.success),
+        message: `${issueName} issues have been automatically resolved`,
+      };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new HttpException(
+        `Failed to fix ${issueName.toLowerCase()} issue: ${message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    
+  }
+
+  private classifyIssue(description: string): IssueType {
+    const lowerDesc = description.toLowerCase();
+    if (lowerDesc.includes('rollback') || lowerDesc.includes('restore')) return 'rollback';
+    if (lowerDesc.includes('sync') || lowerDesc.includes('hubspot')) return 'sync';
+    if (lowerDesc.includes('auth') || lowerDesc.includes('login') || lowerDesc.includes('password')) return 'auth';
+    if (lowerDesc.includes('slow') || lowerDesc.includes('performance') || lowerDesc.includes('timeout')) return 'performance';
+    if (lowerDesc.includes('data') || lowerDesc.includes('missing') || lowerDesc.includes('corrupt')) return 'data';
     return 'general';
   }
 
-  private determineSeverity(description: string, issueType: string): string {
-    const criticalKeywords = ['broken', 'critical', 'emergency', 'failed', 'error'];
-    const highKeywords = ['not working', 'issue', 'problem', 'sync'];
-    const mediumKeywords = ['slow', 'performance', 'optimization'];
-    
+  private determineSeverity(description: string): Severity {
     const lowerDesc = description.toLowerCase();
-    
-    if (criticalKeywords.some(keyword => lowerDesc.includes(keyword))) {
-      return 'critical';
-    } else if (highKeywords.some(keyword => lowerDesc.includes(keyword))) {
-      return 'high';
-    } else if (mediumKeywords.some(keyword => lowerDesc.includes(keyword))) {
-      return 'medium';
-    }
-    
+    if (['broken', 'critical', 'emergency', 'failed', 'error'].some(kw => lowerDesc.includes(kw))) return 'critical';
+    if (['not working', 'issue', 'problem', 'sync'].some(kw => lowerDesc.includes(kw))) return 'high';
+    if (['slow', 'performance', 'optimization'].some(kw => lowerDesc.includes(kw))) return 'medium';
     return 'low';
   }
 
-  private canAutoFix(issueType: string): boolean {
-    const autoFixableTypes = ['rollback', 'sync', 'auth', 'performance', 'data'];
-    return autoFixableTypes.includes(issueType);
+  private canAutoFix(issueType: IssueType): boolean {
+    return ['rollback', 'sync', 'auth', 'performance', 'data'].includes(issueType);
   }
 
-  private getIssueDescription(issueType: string): string {
-    const descriptions: { [key: string]: string } = {
+  private getIssueDescription(issueType: IssueType): string {
+    const descriptions: Record<IssueType, string> = {
       rollback: 'Workflow rollback failure or data corruption',
       sync: 'HubSpot sync issues or missing workflows',
       auth: 'Authentication or authorization problems',
       performance: 'Slow loading or timeout issues',
       data: 'Missing or corrupted data',
-      general: 'General application issue'
+      general: 'General application issue',
     };
-    
-    return descriptions[issueType] || descriptions.general;
+    return descriptions[issueType];
   }
 
-  private getSolution(issueType: string): string {
-    const solutions: { [key: string]: string } = {
+  private getSolution(issueType: IssueType): string {
+    const solutions: Record<IssueType, string> = {
       rollback: 'Automated rollback validation and data recovery',
       sync: 'AI-powered sync monitoring and retry mechanisms',
       auth: 'Automated authentication validation and token refresh',
       performance: 'Performance optimization and caching improvements',
       data: 'Automated data integrity checks and recovery',
-      general: 'General troubleshooting and diagnostics'
+      general: 'General troubleshooting and diagnostics',
     };
-    
-    return solutions[issueType] || solutions.general;
+    return solutions[issueType];
   }
 
-  private getConfidence(description: string, issueType: string): number {
-    const keywords: { [key: string]: string[] } = {
+  private getConfidence(description: string, issueType: IssueType): number {
+    const keywords: Partial<Record<IssueType, string[]>> = {
       rollback: ['rollback', 'restore', 'version', 'previous'],
       sync: ['sync', 'hubspot', 'workflow', 'missing'],
       auth: ['login', 'password', 'token', 'auth'],
       performance: ['slow', 'timeout', 'loading', 'performance'],
-      data: ['data', 'missing', 'corrupt', 'history']
+      data: ['data', 'missing', 'corrupt', 'history'],
     };
-    
     const relevantKeywords = keywords[issueType] || [];
-    const matches = relevantKeywords.filter((keyword: string) => 
-      description.toLowerCase().includes(keyword)
-    ).length;
-    
+    if (relevantKeywords.length === 0) return 50;
+    const matches = relevantKeywords.filter(kw => description.toLowerCase().includes(kw)).length;
     return Math.min(100, (matches / relevantKeywords.length) * 100);
   }
 
-  private async validateRollbackIntegrity(userId: string): Promise<any> {
+  private async validateRollbackIntegrity(userId: string): Promise<FixAction> {
     return { success: true, action: 'validated_rollback_integrity' };
   }
 
-  private async repairRollbackData(userId: string): Promise<any> {
+  private async repairRollbackData(userId: string): Promise<FixAction> {
     return { success: true, action: 'repaired_rollback_data' };
   }
 
-  private async optimizeRollbackPerformance(userId: string): Promise<any> {
+  private async optimizeRollbackPerformance(userId: string): Promise<FixAction> {
     return { success: true, action: 'optimized_rollback_performance' };
   }
 
-  private async refreshHubSpotTokens(userId: string): Promise<any> {
+  private async refreshHubSpotTokens(userId: string): Promise<FixAction> {
     return { success: true, action: 'refreshed_hubspot_tokens' };
   }
 
-  private async retryFailedSyncs(userId: string): Promise<any> {
+  private async retryFailedSyncs(userId: string): Promise<FixAction> {
     return { success: true, action: 'retried_failed_syncs' };
   }
 
-  private async validateSyncIntegrity(userId: string): Promise<any> {
+  private async validateSyncIntegrity(userId: string): Promise<FixAction> {
     return { success: true, action: 'validated_sync_integrity' };
   }
 
-  private async validateUserSession(userId: string): Promise<any> {
+  private async validateUserSession(userId: string): Promise<FixAction> {
     return { success: true, action: 'validated_user_session' };
   }
 
-  private async refreshAuthTokens(userId: string): Promise<any> {
+  private async refreshAuthTokens(userId: string): Promise<FixAction> {
     return { success: true, action: 'refreshed_auth_tokens' };
   }
 
-  private async resetUserPermissions(userId: string): Promise<any> {
+  private async resetUserPermissions(userId: string): Promise<FixAction> {
     return { success: true, action: 'reset_user_permissions' };
   }
 
-  private async validateDataIntegrity(userId: string): Promise<any> {
+  private async validateDataIntegrity(userId: string): Promise<FixAction> {
     return { success: true, action: 'validated_data_integrity' };
   }
 
-  private async repairCorruptedData(userId: string): Promise<any> {
+  private async repairCorruptedData(userId: string): Promise<FixAction> {
     return { success: true, action: 'repaired_corrupted_data' };
   }
 
-  private async optimizeDatabasePerformance(userId: string): Promise<any> {
+  private async optimizeDatabasePerformance(userId: string): Promise<FixAction> {
     return { success: true, action: 'optimized_database_performance' };
   }
 
-  private async optimizeDatabaseQueries(userId: string): Promise<any> {
+  private async optimizeDatabaseQueries(userId: string): Promise<OptimizationAction> {
     return { success: true, action: 'optimized_database_queries' };
   }
 
-  private async clearCache(userId: string): Promise<any> {
+  private async clearCache(userId: string): Promise<OptimizationAction> {
     return { success: true, action: 'cleared_cache' };
   }
 
-  private async optimizeAPIResponses(userId: string): Promise<any> {
+  private async optimizeAPIResponses(userId: string): Promise<OptimizationAction> {
     return { success: true, action: 'optimized_api_responses' };
   }
 
-  private async logDiagnosis(userId: string, diagnosis: any): Promise<void> {
-    // Log diagnosis for analytics and improvement
+  private async logDiagnosis(userId: string, diagnosis: DiagnosisResult): Promise<void> {
+    // Placeholder for logging diagnosis for analytics and improvement
   }
-} 
+}

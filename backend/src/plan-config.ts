@@ -33,4 +33,4 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
       'audit_logs',
     ],
   },
-}; 
+};

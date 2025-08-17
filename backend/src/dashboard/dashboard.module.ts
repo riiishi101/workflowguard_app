@@ -7,4 +7,4 @@ import { SubscriptionModule } from '../subscription/subscription.module';
   imports: [WorkflowModule, SubscriptionModule],
   controllers: [DashboardController],
 })
-export class DashboardModule {} 
+export class DashboardModule {}

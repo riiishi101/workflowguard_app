@@ -42,4 +42,4 @@ export class AnalyticsService {
   async getPredictiveAnalytics(): Promise<PredictiveAnalytics[]> {
     return [];
   }
-} 
+}

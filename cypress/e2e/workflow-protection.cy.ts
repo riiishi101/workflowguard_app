@@ -33,5 +33,47 @@ describe('Workflow Protection', () => {
     cy.contains('h1', 'Select Your Workflows', { timeout: 10000 }).should('be.visible');
     cy.contains('button', 'Start Monitoring').should('be.visible');
   });
+
+  it('should allow a user to protect a workflow', () => {
+    // Mock the API response for fetching workflows
+    cy.intercept('GET', '/api/workflow/hubspot', {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: [
+          { id: 'wf-1', hubspotId: 'hs-wf-1', name: 'Test Workflow 1', isProtected: false },
+          { id: 'wf-2', hubspotId: 'hs-wf-2', name: 'Test Workflow 2', isProtected: false },
+        ],
+      },
+    }).as('getWorkflows');
+
+    // Intercept the backend call to protect a workflow
+    cy.intercept('POST', '/api/actions/protect-workflow', {
+      statusCode: 200,
+      body: { success: true },
+    }).as('protectWorkflow');
+
+    // Start at the root and log in
+    cy.visit('/');
+    cy.contains('button', 'Get Started').click();
+    cy.contains('button', 'Connect to HubSpot').click();
+    cy.visit('/?success=true&token=mock_jwt_token');
+
+    // Wait for the workflows to be loaded
+    cy.wait('@getWorkflows');
+
+    // Find the first workflow and click its 'Protect' button
+    // Note: The selector used here is a placeholder and might need to be adjusted based on the actual frontend implementation.
+    cy.contains('td', 'Test Workflow 1')
+      .parent('tr')
+      .within(() => {
+        cy.contains('button', 'Protect').click();
+      });
+
+    // Verify that the protectWorkflow API was called with the correct data
+    cy.wait('@protectWorkflow').its('request.body').should('deep.equal', {
+      workflowId: 'hs-wf-1',
+    });
+  });
 });
 

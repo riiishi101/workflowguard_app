@@ -22,4 +22,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   language?: string;
-} 
+}

@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsNumber, IsObject, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateWorkflowVersionDto {
   @IsString()
@@ -18,4 +24,4 @@ export class CreateWorkflowVersionDto {
 
   @IsObject()
   data: any; // Raw workflow JSON from HubSpot
-} 
+}

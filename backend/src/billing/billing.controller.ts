@@ -27,7 +27,7 @@ export class BillingController {
     const payments = await this.razorpay.payments.all({ count: 100 }); // Add filters if desired
     // Filter by user if storing mapping in payment.notes
     const userPayments = payments.items.filter(
-      (p: any) => p.notes && p.notes.userId === userId
+      (p: any) => p.notes && p.notes.userId === userId,
     );
     return userPayments.map((p: any) => ({
       id: p.id,
@@ -51,7 +51,10 @@ export class BillingController {
       throw new Error('No active Razorpay subscription for user');
     }
     // Cancel at end of period
-    await this.razorpay.subscriptions.cancel(sub.razorpay_subscription_id, false);
+    await this.razorpay.subscriptions.cancel(
+      sub.razorpay_subscription_id,
+      false,
+    );
 
     // Update DB
     const updatedSubscription = await this.prisma.subscription.update({
@@ -63,10 +66,16 @@ export class BillingController {
     try {
       const user = await this.userService.findOne(userId);
       if (user) {
-        await this.emailService.sendSubscriptionCancellationEmail(user, updatedSubscription);
+        await this.emailService.sendSubscriptionCancellationEmail(
+          user,
+          updatedSubscription,
+        );
       }
     } catch (error) {
-      console.error(`Failed to send cancellation email for user ${userId}`, error);
+      console.error(
+        `Failed to send cancellation email for user ${userId}`,
+        error,
+      );
       // Do not block response for email failure
     }
 

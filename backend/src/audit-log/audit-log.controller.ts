@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, Delete, HttpException, HttpStatus, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  HttpException,
+  HttpStatus,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AuditLogService } from './audit-log.service';
 import { CreateAuditLogDto } from './dto';
@@ -19,7 +31,10 @@ export class AuditLogController {
     try {
       return await this.auditLogService.create(createAuditLogDto);
     } catch (error) {
-      throw new HttpException('Failed to create audit log', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to create audit log',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -33,23 +48,32 @@ export class AuditLogController {
   ) {
     try {
       // Extract user ID from JWT with multiple fallbacks
-      const userIdFromJwt = (req.user as any)?.sub || (req.user as any)?.id || (req.user as any)?.userId;
+      const userIdFromJwt =
+        (req.user as any)?.sub ||
+        (req.user as any)?.id ||
+        (req.user as any)?.userId;
 
       if (!userIdFromJwt) {
         console.error('User ID not found in JWT token:', req.user);
-        throw new HttpException('User authentication failed - no user ID found', HttpStatus.UNAUTHORIZED);
+        throw new HttpException(
+          'User authentication failed - no user ID found',
+          HttpStatus.UNAUTHORIZED,
+        );
       }
 
       // Only check subscription if we have a valid user ID
-      const user = await this.userService.findOneWithSubscription(userIdFromJwt);
+      const user =
+        await this.userService.findOneWithSubscription(userIdFromJwt);
       if (!user) {
         console.error('User not found for ID:', userIdFromJwt);
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
 
       const planId = user?.subscription?.planId || 'starter';
-      const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
-      
+      const plan =
+        (await this.userService.getPlanById(planId)) ||
+        (await this.userService.getPlanById('starter'));
+
       console.log('🔍 AUDIT LOG DEBUG:', {
         userId: userIdFromJwt,
         userEmail: user?.email,
@@ -58,12 +82,19 @@ export class AuditLogController {
         planFeatures: plan?.features,
         hasAuditLogs: plan?.features?.includes('audit_logs'),
         planId: plan?.id,
-        planName: plan?.name
+        planName: plan?.name,
       });
 
       if (!plan?.features?.includes('audit_logs')) {
-        console.error('Plan does not include audit_logs feature:', planId, plan?.features);
-        throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+        console.error(
+          'Plan does not include audit_logs feature:',
+          planId,
+          plan?.features,
+        );
+        throw new HttpException(
+          'Audit log access is not available on your plan.',
+          HttpStatus.FORBIDDEN,
+        );
       }
 
       if (userId) {
@@ -89,13 +120,17 @@ export class AuditLogController {
         throw err;
       }
     } catch (error) {
-      console.error('Error in findAll audit logs (controller):', error, error?.stack);
+      console.error(
+        'Error in findAll audit logs (controller):',
+        error,
+        error?.stack,
+      );
       if (error instanceof HttpException) {
         throw error;
       }
       throw new HttpException(
         `Failed to fetch audit logs: ${error?.message || error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -103,10 +138,16 @@ export class AuditLogController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, TrialGuard)
   async findOne(@Req() req: Request, @Param('id') id: string) {
-    const userIdFromJwt = (req.user as any)?.sub || (req.user as any)?.id || (req.user as any)?.userId;
-    
+    const userIdFromJwt =
+      (req.user as any)?.sub ||
+      (req.user as any)?.id ||
+      (req.user as any)?.userId;
+
     if (!userIdFromJwt) {
-      throw new HttpException('User authentication failed - no user ID found', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'User authentication failed - no user ID found',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
@@ -115,9 +156,14 @@ export class AuditLogController {
     }
 
     const planId = user?.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
     const auditLog = await this.auditLogService.findOne(id);
     if (!auditLog) {
@@ -131,7 +177,10 @@ export class AuditLogController {
   async findByUser(@Req() req: Request, @Param('userId') userId: string) {
     let safeUserId = userId;
     if (!safeUserId) {
-      safeUserId = (req.user as any)?.sub || (req.user as any)?.id || (req.user as any)?.userId;
+      safeUserId =
+        (req.user as any)?.sub ||
+        (req.user as any)?.id ||
+        (req.user as any)?.userId;
     }
     if (!safeUserId) {
       const headerId = req.headers['x-user-id'];
@@ -145,21 +194,37 @@ export class AuditLogController {
       throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
     }
     const user = await this.userService.findOneWithSubscription(safeUserId);
-    const planId = user && user.subscription ? user.subscription.planId : 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const planId =
+      user && user.subscription ? user.subscription.planId : 'starter';
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
     return await this.auditLogService.findByUser(safeUserId);
   }
 
   @Get('entity/:entityType/:entityId')
   @UseGuards(JwtAuthGuard, TrialGuard)
-  async findByEntity(@Req() req: Request, @Param('entityType') entityType: string, @Param('entityId') entityId: string) {
-    const userIdFromJwt = (req.user as any)?.sub || (req.user as any)?.id || (req.user as any)?.userId;
-    
+  async findByEntity(
+    @Req() req: Request,
+    @Param('entityType') entityType: string,
+    @Param('entityId') entityId: string,
+  ) {
+    const userIdFromJwt =
+      (req.user as any)?.sub ||
+      (req.user as any)?.id ||
+      (req.user as any)?.userId;
+
     if (!userIdFromJwt) {
-      throw new HttpException('User authentication failed - no user ID found', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'User authentication failed - no user ID found',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
@@ -168,9 +233,14 @@ export class AuditLogController {
     }
 
     const planId = user?.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
     return await this.auditLogService.findByEntity(entityType, entityId);
   }
@@ -182,7 +252,7 @@ export class AuditLogController {
     if (!userId) {
       userId = req.headers['x-user-id'];
     }
-    
+
     if (!userId) {
       throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
     }
@@ -193,7 +263,7 @@ export class AuditLogController {
     } catch (error) {
       throw new HttpException(
         `Failed to get audit logs: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -207,7 +277,10 @@ export class AuditLogController {
       }
       return { message: 'Audit log deleted successfully' };
     } catch (error) {
-      throw new HttpException('Failed to delete audit log', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to delete audit log',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -215,16 +288,23 @@ export class AuditLogController {
   @UseGuards(JwtAuthGuard, TrialGuard)
   async exportAuditLogs(
     @Req() req: Request,
-    @Body() filters: {
+    @Body()
+    filters: {
       dateRange?: string;
       user?: string;
       action?: string;
-    }
+    },
   ) {
-    const userIdFromJwt = (req.user as any)?.sub || (req.user as any)?.id || (req.user as any)?.userId;
-    
+    const userIdFromJwt =
+      (req.user as any)?.sub ||
+      (req.user as any)?.id ||
+      (req.user as any)?.userId;
+
     if (!userIdFromJwt) {
-      throw new HttpException('User authentication failed - no user ID found', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'User authentication failed - no user ID found',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const user = await this.userService.findOneWithSubscription(userIdFromJwt);
@@ -233,21 +313,29 @@ export class AuditLogController {
     }
 
     const planId = user?.subscription?.planId || 'starter';
-    const plan = await this.userService.getPlanById(planId) || await this.userService.getPlanById('starter');
+    const plan =
+      (await this.userService.getPlanById(planId)) ||
+      (await this.userService.getPlanById('starter'));
     if (!plan?.features?.includes('audit_logs')) {
-      throw new HttpException('Audit log access is not available on your plan.', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Audit log access is not available on your plan.',
+        HttpStatus.FORBIDDEN,
+      );
     }
-    
+
     try {
       const auditLogs = await this.auditLogService.findAll();
       return {
         data: auditLogs,
         exportDate: new Date().toISOString(),
         filters: filters,
-        totalRecords: auditLogs.length
+        totalRecords: auditLogs.length,
       };
     } catch (error) {
-      throw new HttpException('Failed to export audit logs', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to export audit logs',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

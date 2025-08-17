@@ -14,4 +14,3 @@ import { HubspotService } from './hubspot.service';
   exports: [WebhookService, HubspotService],
 })
 export class WebhookModule {}
-

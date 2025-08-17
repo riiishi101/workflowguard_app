@@ -12,7 +12,7 @@ import { MarketplaceExceptionFilter } from './guards/marketplace-error.guard';
 // Polyfill for crypto.randomUUID if not available
 if (!global.crypto) {
   global.crypto = {
-    randomUUID: () => randomUUID()
+    randomUUID: () => randomUUID(),
   } as any;
 }
 
@@ -29,27 +29,40 @@ async function bootstrap() {
       instance.set('trust proxy', 1);
     }
   }
-  
+
   // Enhanced security middleware
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://app.hubspot.com"],
-          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-          imgSrc: ["'self'", "data:", "https:", "http:"],
-          connectSrc: ["'self'", "https://api.workflowguard.pro", "https://app.hubspot.com"],
-          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "'unsafe-eval'",
+            'https://app.hubspot.com',
+          ],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://fonts.googleapis.com',
+          ],
+          imgSrc: ["'self'", 'data:', 'https:', 'http:'],
+          connectSrc: [
+            "'self'",
+            'https://api.workflowguard.pro',
+            'https://app.hubspot.com',
+          ],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
           objectSrc: ["'none'"],
           mediaSrc: ["'none'"],
-          frameSrc: ["'self'", "https://app.hubspot.com"],
+          frameSrc: ["'self'", 'https://app.hubspot.com'],
         },
       },
       crossOriginEmbedderPolicy: false,
-      crossOriginResourcePolicy: { policy: "cross-origin" },
-      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    })
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    }),
   );
   app.use(compression());
 
@@ -64,7 +77,9 @@ async function bootstrap() {
     keyGenerator: (req) => {
       // Use X-Forwarded-For header if behind proxy, otherwise use IP
       const forwardedFor = req.headers['x-forwarded-for'];
-      return (typeof forwardedFor === 'string' ? forwardedFor : req.ip) || '0.0.0.0';
+      return (
+        (typeof forwardedFor === 'string' ? forwardedFor : req.ip) || '0.0.0.0'
+      );
     },
   });
   app.use(limiter);
@@ -79,7 +94,10 @@ async function bootstrap() {
     skipSuccessfulRequests: true, // Don't count successful requests
     keyGenerator: (req) => {
       const forwardedFor = req.headers['x-forwarded-for'];
-      return ((typeof forwardedFor === 'string' ? forwardedFor : req.ip) || '0.0.0.0') + ':oauth';
+      return (
+        ((typeof forwardedFor === 'string' ? forwardedFor : req.ip) ||
+          '0.0.0.0') + ':oauth'
+      );
     },
   });
   app.use('/api/auth/hubspot', oauthLimiter);
@@ -96,14 +114,14 @@ async function bootstrap() {
         'http://127.0.0.1:3000',
         'https://app.hubspot.com',
         'https://developers.hubspot.com',
-        'https://marketplace.hubspot.com'
+        'https://marketplace.hubspot.com',
       ];
-      
+
       // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) {
         return callback(null, true);
       }
-      
+
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -114,30 +132,37 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
-      'Content-Type', 
-      'Authorization', 
+      'Content-Type',
+      'Authorization',
       'x-user-id',
       'x-hubspot-signature',
       'x-hubspot-request-timestamp',
       'x-hubspot-portal-id',
       'Accept',
       'Origin',
-      'X-Requested-With'
+      'X-Requested-With',
     ],
-    exposedHeaders: ['Content-Length', 'X-Requested-With', 'X-Marketplace-App', 'X-Marketplace-Version'],
+    exposedHeaders: [
+      'Content-Length',
+      'X-Requested-With',
+      'X-Marketplace-App',
+      'X-Marketplace-Version',
+    ],
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
   });
 
   // Global prefix
   app.setGlobalPrefix('api');
 
   // Enable ValidationPipe for production
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Register global exception filter with marketplace support
   app.useGlobalFilters(new AllExceptionsFilter());
@@ -146,13 +171,16 @@ async function bootstrap() {
   app.use((req: Request, res: Response, next: NextFunction) => {
     const timestamp = new Date().toISOString();
     const origin = req.headers.origin || 'no-origin';
-    const isMarketplaceRequest = req.url.includes('/hubspot-marketplace') || 
-                                req.headers['x-hubspot-signature'] ||
-                                req.headers['x-hubspot-portal-id'];
+    const isMarketplaceRequest =
+      req.url.includes('/hubspot-marketplace') ||
+      req.headers['x-hubspot-signature'] ||
+      req.headers['x-hubspot-portal-id'];
     const referrer = req.headers.referer || 'no-referrer';
-    
-    console.log(`${timestamp} - ${req.method} ${req.url} - Origin: ${origin} - Referrer: ${referrer}${isMarketplaceRequest ? ' [MARKETPLACE]' : ''}`);
-    
+
+    console.log(
+      `${timestamp} - ${req.method} ${req.url} - Origin: ${origin} - Referrer: ${referrer}${isMarketplaceRequest ? ' [MARKETPLACE]' : ''}`,
+    );
+
     next();
   });
 
@@ -160,7 +188,9 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📊 Health check: http://localhost:${port}/api`);
-  console.log(`🏪 HubSpot Marketplace endpoints: http://localhost:${port}/api/hubspot-marketplace`);
+  console.log(
+    `🏪 HubSpot Marketplace endpoints: http://localhost:${port}/api/hubspot-marketplace`,
+  );
 }
 
 bootstrap();

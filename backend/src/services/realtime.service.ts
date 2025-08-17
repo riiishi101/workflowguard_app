@@ -9,4 +9,4 @@ export class RealtimeService {
   async broadcastToAdmins(message: string): Promise<void> {
     console.log(`Broadcast to admins: ${message}`);
   }
-} 
+}

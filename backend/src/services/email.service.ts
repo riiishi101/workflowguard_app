@@ -1,4 +1,38 @@
 import { Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
+
+// Define interfaces for email data to avoid using 'any'
+export interface Subscription {
+  planId: string;
+  // Add other subscription properties as needed
+}
+
+export interface NotificationData {
+  [key: string]: any; // Flexible for various templates
+}
+
+export interface OverageAlertData {
+  user: User;
+  usage: number;
+  limit: number;
+}
+
+export interface BillingUpdateData {
+  user: User;
+  invoiceId: string;
+  amount: number;
+}
+
+export interface SystemAlertData {
+  level: 'info' | 'warning' | 'error';
+  message: string;
+}
+
+export interface BulkNotificationResult {
+  success: boolean;
+  sent: number;
+  failed: number;
+}
 
 @Injectable()
 export class EmailService {
@@ -6,27 +40,31 @@ export class EmailService {
     console.log(`Email sent to ${to}: ${subject}`);
   }
 
-  async sendNotificationEmail(to: string, template: string, data: any): Promise<void> {
+  async sendNotificationEmail(
+    to: string,
+    template: string,
+    data: NotificationData,
+  ): Promise<void> {
     console.log(`Notification email sent to ${to} using template ${template}`);
   }
 
   // Add missing methods
-  async sendOverageAlert(data: any): Promise<boolean> {
+  async sendOverageAlert(data: OverageAlertData): Promise<boolean> {
     console.log('Overage alert email sent:', data);
     return true;
   }
 
-  async sendBillingUpdate(data: any): Promise<boolean> {
+  async sendBillingUpdate(data: BillingUpdateData): Promise<boolean> {
     console.log('Billing update email sent:', data);
     return true;
   }
 
-  async sendSystemAlert(data: any): Promise<boolean> {
+  async sendSystemAlert(data: SystemAlertData): Promise<boolean> {
     console.log('System alert email sent:', data);
     return true;
   }
 
-  async sendWelcomeEmail(user: any): Promise<boolean> {
+  async sendWelcomeEmail(user: User): Promise<boolean> {
     const subject = `👋 Welcome to WorkflowGuard, ${user.name}!`;
     const emailContent = `
       <h2>Welcome to WorkflowGuard!</h2>
@@ -75,9 +113,15 @@ export class EmailService {
     currentPlan: string,
     recommendedPlan: string,
     reason: string,
-    additionalData?: any
+    additionalData?: Record<string, unknown>,
   ): Promise<boolean> {
-    console.log('Upgrade recommendation email sent:', { userName, currentPlan, recommendedPlan, reason, additionalData });
+    console.log('Upgrade recommendation email sent:', {
+      userName,
+      currentPlan,
+      recommendedPlan,
+      reason,
+      additionalData,
+    });
     return true;
   }
 
@@ -87,9 +131,16 @@ export class EmailService {
     planId: string,
     currentUsage: number,
     limit: number,
-    percentageUsed: number
+    percentageUsed: number,
   ): Promise<boolean> {
-    console.log('Usage warning email sent:', { userEmail, userName, planId, currentUsage, limit, percentageUsed });
+    console.log('Usage warning email sent:', {
+      userEmail,
+      userName,
+      planId,
+      currentUsage,
+      limit,
+      percentageUsed,
+    });
     return true;
   }
 
@@ -97,15 +148,25 @@ export class EmailService {
     userEmails: string[],
     subject: string,
     message: string,
-    isHtml?: boolean
-  ): Promise<any> {
-    console.log('Bulk notification email sent:', { userEmails, subject, message, isHtml });
+    isHtml?: boolean,
+  ): Promise<BulkNotificationResult> {
+    console.log('Bulk notification email sent:', {
+      userEmails,
+      subject,
+      message,
+      isHtml,
+    });
     return { success: true, sent: 1, failed: 0 };
   }
 
-  async sendSubscriptionConfirmationEmail(user: any, subscription: any): Promise<boolean> {
+  async sendSubscriptionConfirmationEmail(
+    user: User,
+    subscription: Subscription,
+  ): Promise<boolean> {
     const subject = `✅ Your Subscription to WorkflowGuard is Confirmed!`;
-    const planName = subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1);
+    const planName =
+      subscription.planId.charAt(0).toUpperCase() +
+      subscription.planId.slice(1);
 
     const emailContent = `
       <h2>Subscription Confirmed!</h2>
@@ -135,7 +196,9 @@ export class EmailService {
         };
 
         await sgMail.default.send(msg);
-        console.log(`✅ Subscription confirmation email sent to: ${user.email}`);
+        console.log(
+          `✅ Subscription confirmation email sent to: ${user.email}`,
+        );
         return true;
       } else {
         console.log('📧 SUBSCRIPTION CONFIRMATION (SendGrid not configured):');
@@ -144,14 +207,22 @@ export class EmailService {
         return true;
       }
     } catch (error) {
-      console.error('❌ Failed to send subscription confirmation email:', error);
+      console.error(
+        '❌ Failed to send subscription confirmation email:',
+        error,
+      );
       return false;
     }
   }
 
-  async sendSubscriptionCancellationEmail(user: any, subscription: any): Promise<boolean> {
+  async sendSubscriptionCancellationEmail(
+    user: User,
+    subscription: Subscription,
+  ): Promise<boolean> {
     const subject = `🚫 Your WorkflowGuard Subscription Has Been Canceled`;
-    const planName = subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1);
+    const planName =
+      subscription.planId.charAt(0).toUpperCase() +
+      subscription.planId.slice(1);
 
     const emailContent = `
       <h2>Subscription Canceled</h2>
@@ -175,7 +246,9 @@ export class EmailService {
         };
 
         await sgMail.default.send(msg);
-        console.log(`✅ Subscription cancellation email sent to: ${user.email}`);
+        console.log(
+          `✅ Subscription cancellation email sent to: ${user.email}`,
+        );
         return true;
       } else {
         console.log('📧 SUBSCRIPTION CANCELLATION (SendGrid not configured):');
@@ -184,15 +257,21 @@ export class EmailService {
         return true;
       }
     } catch (error) {
-      console.error('❌ Failed to send subscription cancellation email:', error);
+      console.error(
+        '❌ Failed to send subscription cancellation email:',
+        error,
+      );
       return false;
     }
   }
 
-  async sendAdminSignupNotification(user: any, signupSource: string): Promise<boolean> {
+  async sendAdminSignupNotification(
+    user: User,
+    signupSource: string,
+  ): Promise<boolean> {
     const adminEmail = process.env.ADMIN_EMAIL || 'contact@workflowguard.pro';
     const subject = `🎉 New User Signup - WorkflowGuard`;
-    
+
     const emailContent = `
       <h2>🎉 New User Signup Alert</h2>
       <p>A new user has signed up for WorkflowGuard!</p>
@@ -234,11 +313,11 @@ export class EmailService {
         };
 
         await sgMail.default.send(msg);
-        
+
         console.log('📧 ADMIN EMAIL SENT SUCCESSFULLY!');
         console.log(`✅ Email delivered to: ${adminEmail}`);
         console.log(`👤 New user: ${user.email} (${user.name})`);
-        
+
         return true;
       } else {
         // Fallback to console logging if SendGrid not configured
@@ -250,15 +329,18 @@ export class EmailService {
         return true;
       }
     } catch (error) {
-      console.error('❌ Failed to send admin signup notification email:', error);
-      
+      console.error(
+        '❌ Failed to send admin signup notification email:',
+        error,
+      );
+
       // Fallback: Log email content if SendGrid fails
       console.log('📧 EMAIL CONTENT (SendGrid failed):');
       console.log(`To: ${adminEmail}`);
       console.log(`Subject: ${subject}`);
       console.log(`👤 New user: ${user.email} (${user.name})`);
       console.log('Content:', emailContent);
-      
+
       return false;
     }
   }

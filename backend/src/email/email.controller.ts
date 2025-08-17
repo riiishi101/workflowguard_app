@@ -1,5 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { EmailService } from '../services/email.service';
+import { CreateEmailDto } from './dto/create-email.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('email')
@@ -8,12 +21,12 @@ export class EmailController {
 
   @Post('send')
   @UseGuards(JwtAuthGuard)
-  async sendEmail(@Req() req: any, @Body() emailData: any) {
+  async sendEmail(@Req() req: any, @Body() emailData: CreateEmailDto) {
     let userId = req.user?.sub || req.user?.id || req.user?.userId;
     if (!userId) {
       userId = req.headers['x-user-id'];
     }
-    
+
     if (!userId) {
       throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
     }
@@ -25,8 +38,8 @@ export class EmailController {
     } catch (error) {
       throw new HttpException(
         `Failed to send email: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
-} 
+}

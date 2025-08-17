@@ -1,4 +1,10 @@
-import { IsEmail, IsString, IsOptional, IsIn, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsIn,
+  IsBoolean,
+} from 'class-validator';
 
 export class UpdateUserDto {
   @IsEmail()
@@ -40,4 +46,4 @@ export class UpdateNotificationSettingsDto {
 
   @IsBoolean()
   criticalActionModified: boolean;
-} 
+}

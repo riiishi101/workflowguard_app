@@ -60,7 +60,9 @@ describe('WorkflowVersionService', () => {
     };
 
     it('should create a new workflow version', async () => {
-      mockPrismaService.workflowVersion.create.mockResolvedValue(mockVersionData);
+      mockPrismaService.workflowVersion.create.mockResolvedValue(
+        mockVersionData,
+      );
 
       const result = await service.create(mockVersionData);
 
@@ -92,9 +94,14 @@ describe('WorkflowVersionService', () => {
     ];
 
     it('should return transformed workflow versions with history limit', async () => {
-      mockPrismaService.workflowVersion.findMany.mockResolvedValue(mockVersions);
+      mockPrismaService.workflowVersion.findMany.mockResolvedValue(
+        mockVersions,
+      );
 
-      const result = await service.findByWorkflowIdWithHistoryLimit(mockWorkflowId, mockUserId);
+      const result = await service.findByWorkflowIdWithHistoryLimit(
+        mockWorkflowId,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBeTruthy();
@@ -109,17 +116,22 @@ describe('WorkflowVersionService', () => {
     it('should return empty array when no versions found', async () => {
       mockPrismaService.workflowVersion.findMany.mockResolvedValue([]);
 
-      const result = await service.findByWorkflowIdWithHistoryLimit(mockWorkflowId, mockUserId);
+      const result = await service.findByWorkflowIdWithHistoryLimit(
+        mockWorkflowId,
+        mockUserId,
+      );
 
       expect(result).toEqual([]);
     });
 
     it('should handle errors gracefully', async () => {
-      mockPrismaService.workflowVersion.findMany.mockRejectedValue(new Error('Database error'));
+      mockPrismaService.workflowVersion.findMany.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      await expect(service.findByWorkflowIdWithHistoryLimit(mockWorkflowId, mockUserId))
-        .rejects
-        .toThrow(HttpException);
+      await expect(
+        service.findByWorkflowIdWithHistoryLimit(mockWorkflowId, mockUserId),
+      ).rejects.toThrow(HttpException);
     });
   });
 
@@ -135,7 +147,9 @@ describe('WorkflowVersionService', () => {
     };
 
     it('should restore a workflow version successfully', async () => {
-      mockPrismaService.workflowVersion.findUnique.mockResolvedValue(mockVersion);
+      mockPrismaService.workflowVersion.findUnique.mockResolvedValue(
+        mockVersion,
+      );
       mockPrismaService.workflowVersion.findFirst.mockResolvedValue({
         versionNumber: 2,
       });
@@ -144,7 +158,11 @@ describe('WorkflowVersionService', () => {
         versionNumber: 3,
       });
 
-      const result = await service.restoreWorkflowVersion(mockWorkflowId, mockVersionId, mockUserId);
+      const result = await service.restoreWorkflowVersion(
+        mockWorkflowId,
+        mockVersionId,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
       expect(result.message).toBe('Workflow restored successfully');
@@ -154,9 +172,13 @@ describe('WorkflowVersionService', () => {
     it('should throw error when version not found', async () => {
       mockPrismaService.workflowVersion.findUnique.mockResolvedValue(null);
 
-      await expect(service.restoreWorkflowVersion(mockWorkflowId, mockVersionId, mockUserId))
-        .rejects
-        .toThrow(HttpException);
+      await expect(
+        service.restoreWorkflowVersion(
+          mockWorkflowId,
+          mockVersionId,
+          mockUserId,
+        ),
+      ).rejects.toThrow(HttpException);
     });
   });
 
@@ -182,7 +204,11 @@ describe('WorkflowVersionService', () => {
         versionNumber: 1,
       });
 
-      const result = await service.createInitialVersion(mockWorkflow, mockUserId, mockInitialData);
+      const result = await service.createInitialVersion(
+        mockWorkflow,
+        mockUserId,
+        mockInitialData,
+      );
 
       expect(result).toBeDefined();
       expect(mockPrismaService.workflowVersion.create).toHaveBeenCalled();
@@ -190,11 +216,13 @@ describe('WorkflowVersionService', () => {
     });
 
     it('should handle errors during initial version creation', async () => {
-      mockPrismaService.workflowVersion.create.mockRejectedValue(new Error('Creation failed'));
+      mockPrismaService.workflowVersion.create.mockRejectedValue(
+        new Error('Creation failed'),
+      );
 
-      await expect(service.createInitialVersion(mockWorkflow, mockUserId, mockInitialData))
-        .rejects
-        .toThrow();
+      await expect(
+        service.createInitialVersion(mockWorkflow, mockUserId, mockInitialData),
+      ).rejects.toThrow();
     });
   });
 });

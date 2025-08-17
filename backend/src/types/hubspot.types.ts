@@ -38,3 +38,14 @@ export interface WorkflowResponse {
   status: string;
   hubspotData: HubSpotWorkflow;
 }
+
+export interface UpdateWorkflowPayload {
+  name?: string;
+  description?: string;
+  enabled?: boolean;
+  [key: string]: any; // For flexibility
+}
+
+export interface UpdateWorkflowResponse extends HubSpotWorkflow {
+  // The response is typically the full updated workflow object
+}

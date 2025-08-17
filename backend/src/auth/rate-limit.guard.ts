@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 interface RateLimitConfig {
@@ -8,16 +14,22 @@ interface RateLimitConfig {
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
-  private requestCounts = new Map<string, { count: number; resetTime: number }>();
+  private requestCounts = new Map<
+    string,
+    { count: number; resetTime: number }
+  >();
 
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const clientId = this.getClientId(request);
-    
+
     // Get rate limit configuration from decorator or use defaults
-    const rateLimitConfig = this.reflector.get<RateLimitConfig>('rateLimit', context.getHandler()) || {
+    const rateLimitConfig = this.reflector.get<RateLimitConfig>(
+      'rateLimit',
+      context.getHandler(),
+    ) || {
       windowMs: 15 * 60 * 1000, // 15 minutes
       maxRequests: 100, // 100 requests per window
     };
@@ -31,7 +43,7 @@ export class RateLimitGuard implements CanActivate {
     if (userId) {
       return `user:${userId}`;
     }
-    
+
     // Fallback to IP address
     const ip = request.ip || request.connection.remoteAddress || 'unknown';
     return `ip:${ip}`;
@@ -54,7 +66,7 @@ export class RateLimitGuard implements CanActivate {
     if (clientData.count >= config.maxRequests) {
       throw new HttpException(
         'Rate limit exceeded. Please try again later.',
-        HttpStatus.TOO_MANY_REQUESTS
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
@@ -80,4 +92,4 @@ export const RateLimit = (config: RateLimitConfig) => {
     Reflect.defineMetadata('rateLimit', config, descriptor.value);
     return descriptor;
   };
-}; 
+};

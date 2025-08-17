@@ -7,6 +7,10 @@ export class WorkflowDto {
 
   @IsString()
   name: string;
+
+  @IsString()
+  @IsOptional()
+  hubspotId?: string;
 }
 
 export class StartWorkflowProtectionDto {
@@ -18,4 +22,4 @@ export class StartWorkflowProtectionDto {
   @IsOptional()
   @IsString()
   userId?: string;
-} 
+}

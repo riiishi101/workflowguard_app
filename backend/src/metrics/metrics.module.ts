@@ -6,8 +6,6 @@ import { Public } from '../auth/public.decorator';
 Public()(PrometheusController);
 
 @Module({
-  imports: [
-    PrometheusModule.register(),
-  ],
+  imports: [PrometheusModule.register()],
 })
-export class MetricsModule {} 
+export class MetricsModule {}

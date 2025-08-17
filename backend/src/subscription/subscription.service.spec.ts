@@ -14,7 +14,8 @@ describe('SubscriptionService', () => {
     },
     subscription: {
       update: jest.fn(),
-    }
+      findFirst: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -46,9 +47,9 @@ describe('SubscriptionService', () => {
         status: 'active',
         createdAt: new Date(),
         trialEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
-      workflows: []
+      workflows: [],
     };
 
     it('should return subscription info with professional plan details', async () => {
@@ -62,7 +63,7 @@ describe('SubscriptionService', () => {
       expect(result.limits).toEqual({
         workflows: 25,
         versionHistory: 90,
-        teamMembers: 5
+        teamMembers: 5,
       });
       expect(result.features).toContain('workflow_selection');
       expect(result.features).toContain('priority_whatsapp_support');
@@ -71,7 +72,7 @@ describe('SubscriptionService', () => {
     it('should return starter plan details if no subscription exists', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         ...mockUser,
-        subscription: null
+        subscription: null,
       });
 
       const result = await service.getUserSubscription(userId);
@@ -82,16 +83,16 @@ describe('SubscriptionService', () => {
       expect(result.limits).toEqual({
         workflows: 5,
         versionHistory: 30,
-        teamMembers: 1
+        teamMembers: 1,
       });
     });
 
     it('should throw error if user not found', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.getUserSubscription(userId))
-        .rejects
-        .toThrow('User not found');
+      await expect(service.getUserSubscription(userId)).rejects.toThrow(
+        'User not found',
+      );
     });
   });
 
@@ -123,8 +124,8 @@ describe('SubscriptionService', () => {
         ...mockUser,
         subscription: {
           ...mockUser.subscription,
-          trialEndDate: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
-        }
+          trialEndDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        },
       };
       mockPrismaService.user.findUnique.mockResolvedValue(expiredUser);
 
@@ -138,9 +139,9 @@ describe('SubscriptionService', () => {
     it('should throw error for non-existent user', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.getTrialStatus(userId))
-        .rejects
-        .toThrow('User not found');
+      await expect(service.getTrialStatus(userId)).rejects.toThrow(
+        'User not found',
+      );
     });
   });
 
@@ -169,11 +170,13 @@ describe('SubscriptionService', () => {
         ...mockUser,
         subscription: {
           ...mockUser.subscription,
-          nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
-        }
+          nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        },
       };
       mockPrismaService.user.findUnique.mockResolvedValue(expiredUser);
-      mockPrismaService.subscription.update.mockResolvedValue({ status: 'expired' });
+      mockPrismaService.subscription.update.mockResolvedValue({
+        status: 'expired',
+      });
 
       const result = await service.checkSubscriptionExpiration(userId);
 
@@ -181,14 +184,14 @@ describe('SubscriptionService', () => {
       expect(result.message).toBe('Subscription has expired');
       expect(mockPrismaService.subscription.update).toHaveBeenCalledWith({
         where: { id: 'sub-1' },
-        data: { status: 'expired' }
+        data: { status: 'expired' },
       });
     });
 
     it('should handle case with no subscription', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         ...mockUser,
-        subscription: null
+        subscription: null,
       });
 
       const result = await service.checkSubscriptionExpiration(userId);
@@ -229,7 +232,7 @@ describe('SubscriptionService', () => {
     it('should return no subscription info when no subscription exists', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         ...mockUser,
-        subscription: null
+        subscription: null,
       });
 
       const result = await service.getNextPaymentInfo(userId);
@@ -242,8 +245,8 @@ describe('SubscriptionService', () => {
         ...mockUser,
         subscription: {
           ...mockUser.subscription,
-          nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
-        }
+          nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        },
       };
       mockPrismaService.user.findUnique.mockResolvedValue(overdueUser);
 
@@ -265,7 +268,7 @@ describe('SubscriptionService', () => {
       subscription: {
         id: 'sub-1',
         planId: 'professional',
-        status: 'active'
+        status: 'active',
       },
       workflows: Array(3).fill({ id: 'workflow-1' }), // 3 workflows
     };
@@ -286,15 +289,15 @@ describe('SubscriptionService', () => {
     it('should throw error for non-existent user', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.getUsageStats(userId))
-        .rejects
-        .toThrow('User not found');
+      await expect(service.getUsageStats(userId)).rejects.toThrow(
+        'User not found',
+      );
     });
 
     it('should return zero usage for user with no workflows', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         ...mockUser,
-        workflows: []
+        workflows: [],
       });
 
       const result = await service.getUsageStats(userId);

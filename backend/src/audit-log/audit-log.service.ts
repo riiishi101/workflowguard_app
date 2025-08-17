@@ -16,7 +16,11 @@ export class AuditLogService {
         },
       });
     } catch (error) {
-      console.error('Prisma error in AuditLogService.create:', error, error?.stack);
+      console.error(
+        'Prisma error in AuditLogService.create:',
+        error,
+        error?.stack,
+      );
       throw error;
     }
   }
@@ -32,7 +36,11 @@ export class AuditLogService {
         },
       });
     } catch (error) {
-      console.error('Prisma error in AuditLogService.findAll:', error, error?.stack);
+      console.error(
+        'Prisma error in AuditLogService.findAll:',
+        error,
+        error?.stack,
+      );
       throw error;
     }
   }
@@ -49,12 +57,19 @@ export class AuditLogService {
         },
       });
     } catch (error) {
-      console.error('Prisma error in AuditLogService.findByUser:', error, error?.stack);
+      console.error(
+        'Prisma error in AuditLogService.findByUser:',
+        error,
+        error?.stack,
+      );
       throw error;
     }
   }
 
-  async findByEntity(entityType: string, entityId: string): Promise<AuditLog[]> {
+  async findByEntity(
+    entityType: string,
+    entityId: string,
+  ): Promise<AuditLog[]> {
     try {
       return await this.prisma.auditLog.findMany({
         where: {
@@ -69,7 +84,11 @@ export class AuditLogService {
         },
       });
     } catch (error) {
-      console.error('Prisma error in AuditLogService.findByEntity:', error, error?.stack);
+      console.error(
+        'Prisma error in AuditLogService.findByEntity:',
+        error,
+        error?.stack,
+      );
       throw error;
     }
   }
@@ -83,7 +102,11 @@ export class AuditLogService {
         },
       });
     } catch (error) {
-      console.error('Prisma error in AuditLogService.findOne:', error, error?.stack);
+      console.error(
+        'Prisma error in AuditLogService.findOne:',
+        error,
+        error?.stack,
+      );
       throw error;
     }
   }
@@ -98,7 +121,11 @@ export class AuditLogService {
         },
       });
     } catch (error) {
-      console.error('Prisma error in AuditLogService.update:', error, error?.stack);
+      console.error(
+        'Prisma error in AuditLogService.update:',
+        error,
+        error?.stack,
+      );
       throw error;
     }
   }
@@ -109,7 +136,11 @@ export class AuditLogService {
         where: { id },
       });
     } catch (error) {
-      console.error('Prisma error in AuditLogService.remove:', error, error?.stack);
+      console.error(
+        'Prisma error in AuditLogService.remove:',
+        error,
+        error?.stack,
+      );
       throw error;
     }
   }

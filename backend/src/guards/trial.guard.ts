@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
@@ -10,7 +16,10 @@ export class TrialGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      throw new HttpException('Authentication required', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Authentication required',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const userId = user.sub || user.id || user.userId;
@@ -21,12 +30,12 @@ export class TrialGuard implements CanActivate {
     try {
       // Check trial status
       const trialStatus = await this.subscriptionService.getTrialStatus(userId);
-      
+
       // If trial has expired, block access
       if (trialStatus.isTrialExpired) {
         throw new HttpException(
           'Trial expired. Please upgrade your subscription to continue using WorkflowGuard.',
-          HttpStatus.FORBIDDEN
+          HttpStatus.FORBIDDEN,
         );
       }
 
@@ -35,12 +44,12 @@ export class TrialGuard implements CanActivate {
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       console.error('Trial guard error:', error);
       throw new HttpException(
         'Failed to verify trial status',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
-} 
+}

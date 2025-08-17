@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Injectable()
@@ -9,7 +15,7 @@ export class MarketplaceErrorGuard implements CanActivate {
 
     // Add marketplace-specific error handling
     this.setupMarketplaceErrorHandling(request, response);
-    
+
     return true;
   }
 
@@ -18,13 +24,13 @@ export class MarketplaceErrorGuard implements CanActivate {
     const originalJson = response.json;
     const originalStatus = response.status;
 
-    response.json = function(data: any) {
+    response.json = function (data: any) {
       // Ensure marketplace-compatible response format
       if (data && typeof data === 'object') {
         // Add marketplace-specific headers
         response.setHeader('X-Marketplace-App', 'WorkflowGuard');
         response.setHeader('X-Marketplace-Version', '1.0.0');
-        
+
         // Ensure error responses are marketplace-compatible
         if (data.error || data.message) {
           return originalJson.call(this, {
@@ -34,26 +40,26 @@ export class MarketplaceErrorGuard implements CanActivate {
             timestamp: new Date().toISOString(),
             marketplace: {
               app: 'WorkflowGuard',
-              version: '1.0.0'
-            }
+              version: '1.0.0',
+            },
           });
         }
       }
-      
+
       return originalJson.call(this, data);
     };
 
-    response.status = function(code: number) {
+    response.status = function (code: number) {
       // Log marketplace-specific status codes
       if (code >= 400) {
         console.log('HubSpot Marketplace - Error response:', {
           status: code,
           url: request.url,
           method: request.method,
-          userAgent: request.headers['user-agent']
+          userAgent: request.headers['user-agent'],
         });
       }
-      
+
       return originalStatus.call(this, code);
     };
   }
@@ -69,7 +75,7 @@ export class MarketplaceExceptionFilter {
       stack: error.stack,
       url: request.url,
       method: request.method,
-      headers: request.headers
+      headers: request.headers,
     });
 
     // Determine if this is a marketplace request
@@ -87,12 +93,14 @@ export class MarketplaceExceptionFilter {
     const marketplaceHeaders = [
       'x-hubspot-signature',
       'x-hubspot-request-timestamp',
-      'x-hubspot-portal-id'
+      'x-hubspot-portal-id',
     ];
 
-    return marketplaceHeaders.some(header => request.headers[header]) ||
-           request.url.includes('/hubspot-marketplace') ||
-           request.url.includes('/marketplace');
+    return (
+      marketplaceHeaders.some((header) => request.headers[header]) ||
+      request.url.includes('/hubspot-marketplace') ||
+      request.url.includes('/marketplace')
+    );
   }
 
   private static handleMarketplaceError(error: any, response: Response) {
@@ -103,7 +111,7 @@ export class MarketplaceExceptionFilter {
     // Map specific errors to marketplace-compatible responses
     if (error instanceof HttpException) {
       statusCode = error.getStatus();
-      
+
       switch (statusCode) {
         case HttpStatus.UNAUTHORIZED:
           errorCode = 'MARKETPLACE_AUTH_ERROR';
@@ -140,9 +148,10 @@ export class MarketplaceExceptionFilter {
       marketplace: {
         app: 'WorkflowGuard',
         version: '1.0.0',
-        support: 'support@workflowguard.pro'
+        support: 'support@workflowguard.pro',
       },
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details:
+        process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 
@@ -158,7 +167,7 @@ export class MarketplaceExceptionFilter {
     return response.status(statusCode).json({
       success: false,
       error: message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 }
@@ -172,17 +181,23 @@ export class MarketplaceValidationPipe {
     if (metadata.type === 'body') {
       return this.validateMarketplaceBody(value);
     }
-    
+
     return value;
   }
 
   private static validateMarketplaceBody(body: any) {
     // Validate marketplace-specific fields
     if (body.portalId && typeof body.portalId !== 'string') {
-      throw new HttpException('Portal ID must be a string', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Portal ID must be a string',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    if (body.planId && !['starter', 'professional', 'enterprise'].includes(body.planId)) {
+    if (
+      body.planId &&
+      !['starter', 'professional', 'enterprise'].includes(body.planId)
+    ) {
       throw new HttpException('Invalid plan ID', HttpStatus.BAD_REQUEST);
     }
 
@@ -203,7 +218,7 @@ export class MarketplaceLoggingInterceptor {
         method: request.method,
         url: request.url,
         portalId: request.headers['x-hubspot-portal-id'],
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -211,8 +226,10 @@ export class MarketplaceLoggingInterceptor {
   }
 
   private static isMarketplaceRequest(request: Request): boolean {
-    return request.url.includes('/hubspot-marketplace') ||
-           !!request.headers['x-hubspot-signature'] ||
-           !!request.headers['x-hubspot-portal-id'];
+    return (
+      request.url.includes('/hubspot-marketplace') ||
+      !!request.headers['x-hubspot-signature'] ||
+      !!request.headers['x-hubspot-portal-id']
+    );
   }
-} 
+}

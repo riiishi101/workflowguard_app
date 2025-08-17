@@ -1,11 +1,47 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  HttpException,
+  HttpStatus,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { WorkflowVersionService } from './workflow-version.service';
-import { CreateWorkflowVersionDto } from './dto/create-workflow-version.dto';
+import {
+  CreateWorkflowVersionDto,
+  HubspotWorkflowHistoryDto,
+  UpdateWorkflowVersionDto,
+  WorkflowVersionHistoryDto,
+} from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RequestWithUser } from '../types/request-with-user.interface';
 
 @Controller('workflow-version')
 export class WorkflowVersionController {
-  constructor(private readonly workflowVersionService: WorkflowVersionService) {}
+  constructor(
+    private readonly workflowVersionService: WorkflowVersionService,
+  ) {}
+
+  private getUserIdFromRequest(req: RequestWithUser): string {
+    const userId = req.user?.sub || req.user?.id || req.user?.userId;
+    if (userId) {
+      return userId;
+    }
+
+    const headerUserId = req.headers['x-user-id'];
+    if (typeof headerUserId === 'string') {
+      return headerUserId;
+    }
+
+    throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
+  }
 
   @Post()
   create(@Body() createWorkflowVersionDto: CreateWorkflowVersionDto) {
@@ -23,7 +59,10 @@ export class WorkflowVersionController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWorkflowVersionDto: any) {
+  update(
+    @Param('id') id: string,
+    @Body() updateWorkflowVersionDto: UpdateWorkflowVersionDto,
+  ) {
     return this.workflowVersionService.update(id, updateWorkflowVersionDto);
   }
 
@@ -34,53 +73,52 @@ export class WorkflowVersionController {
 
   @Get('by-hubspot-id/:hubspotId/history')
   @UseGuards(JwtAuthGuard)
-  async getWorkflowHistoryByHubspotId(@Param('hubspotId') hubspotId: string, @Req() req: any) {
-    let userId = req.user?.sub || req.user?.id || req.user?.userId;
-    
-    if (!userId) {
-      userId = req.headers['x-user-id'];
-    }
-    
-    if (!userId) {
-      throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
-    }
+  async getWorkflowHistoryByHubspotId(
+    @Param('hubspotId') hubspotId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    const userId = this.getUserIdFromRequest(req);
 
     try {
-      const history = await this.workflowVersionService.findByHubspotIdWithHistory(hubspotId, userId);
+      const history: HubspotWorkflowHistoryDto[] =
+        await this.workflowVersionService.findByHubspotIdWithHistory(
+          hubspotId,
+          userId,
+        );
       return {
         success: true,
         data: history,
-        message: 'Workflow history retrieved successfully'
+        message: 'Workflow history retrieved successfully',
       };
     } catch (error) {
       console.error('Failed to get workflow history by HubSpot ID:', error);
       throw new HttpException(
         'Workflow history not found or access denied',
-        HttpStatus.NOT_FOUND
+        HttpStatus.NOT_FOUND,
       );
     }
   }
 
   @Get(':workflowId/history')
   @UseGuards(JwtAuthGuard)
-  async getWorkflowHistory(@Param('workflowId') workflowId: string, @Req() req: any) {
-    let userId = req.user?.sub || req.user?.id || req.user?.userId;
-    
-    if (!userId) {
-      userId = req.headers['x-user-id'];
-    }
-    
-    if (!userId) {
-      throw new HttpException('User ID not found', HttpStatus.UNAUTHORIZED);
-    }
+  async getWorkflowHistory(
+    @Param('workflowId') workflowId: string,
+    @Req() req: RequestWithUser,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 50,
+  ) {
+    const userId = this.getUserIdFromRequest(req);
 
     try {
-      const history = await this.workflowVersionService.findByWorkflowIdWithHistoryLimit(workflowId, userId);
+      const history: WorkflowVersionHistoryDto[] =
+        await this.workflowVersionService.findByWorkflowIdWithHistoryLimit(
+          workflowId,
+          limit,
+        );
       return history;
     } catch (error) {
       throw new HttpException(
         `Failed to get workflow history: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

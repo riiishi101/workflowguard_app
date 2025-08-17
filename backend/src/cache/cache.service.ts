@@ -79,13 +79,16 @@ export class CacheService {
   }
 
   // Cache invalidation methods
-  async invalidateWorkflowCache(userId: string, workflowId: string): Promise<void> {
+  async invalidateWorkflowCache(
+    userId: string,
+    workflowId: string,
+  ): Promise<void> {
     const keys = [
       CacheService.getWorkflowKey(userId, workflowId),
       CacheService.getWorkflowVersionsKey(workflowId),
     ];
-    
-    await Promise.all(keys.map(key => this.del(key)));
+
+    await Promise.all(keys.map((key) => this.del(key)));
   }
 
   async invalidateUserCache(userId: string): Promise<void> {
@@ -95,15 +98,15 @@ export class CacheService {
       CacheService.getDashboardStatsKey(userId),
       CacheService.getAuditLogsKey(userId),
     ];
-    
-    await Promise.all(keys.map(key => this.del(key)));
+
+    await Promise.all(keys.map((key) => this.del(key)));
   }
 
   // Cache with automatic invalidation
   async getCachedData<T>(
     key: string,
     fetchFunction: () => Promise<T>,
-    ttl: number = 300 // 5 minutes default
+    ttl: number = 300, // 5 minutes default
   ): Promise<T> {
     // Try to get from cache first
     const cached = await this.get<T>(key);
@@ -113,17 +116,22 @@ export class CacheService {
 
     // Fetch fresh data
     const data = await fetchFunction();
-    
+
     // Cache the result
     await this.set(key, data, ttl);
-    
+
     return data;
   }
 
   // Cache with tags for easier invalidation
-  async setWithTags(key: string, value: any, tags: string[], ttl?: number): Promise<void> {
+  async setWithTags(
+    key: string,
+    value: any,
+    tags: string[],
+    ttl?: number,
+  ): Promise<void> {
     await this.set(key, value, ttl);
-    
+
     // Store tags for this key
     const tagKey = `tags:${key}`;
     await this.set(tagKey, tags, ttl);
@@ -145,4 +153,4 @@ export class CacheService {
       memoryUsage: 0,
     };
   }
-} 
+}

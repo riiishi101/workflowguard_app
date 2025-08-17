@@ -1,4 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { User, Prisma } from '@prisma/client';
+
+interface SignupStats {
+  totalSignups: number;
+  signupsByDay: Record<string, number>;
+  recentSignups: {
+    userId: string;
+    timestamp: Date;
+    details: Prisma.JsonValue;
+  }[];
+}
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../services/email.service';
 
@@ -9,7 +20,10 @@ export class UserSignupService {
     private emailService: EmailService,
   ) {}
 
-  async notifyNewUserSignup(user: any, signupSource: 'oauth' | 'marketplace' | 'direct') {
+  async notifyNewUserSignup(
+    user: User,
+    signupSource: 'oauth' | 'marketplace' | 'direct',
+  ) {
     try {
       // Log detailed signup information
       console.log('🎉 NEW USER SIGNUP DETECTED!');
@@ -45,13 +59,12 @@ export class UserSignupService {
 
       // Send welcome email to user
       await this.emailService.sendWelcomeEmail(user);
-
     } catch (error) {
       console.error('Failed to process user signup notification:', error);
     }
   }
 
-  async getUserSignupStats(days: number = 30): Promise<any> {
+  async getUserSignupStats(days: number = 30): Promise<SignupStats> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -63,20 +76,26 @@ export class UserSignupService {
       orderBy: { timestamp: 'desc' },
     });
 
-    const signupsByDay: Record<string, number> = signups.reduce((acc, signup) => {
-      const date = signup.timestamp.toISOString().split('T')[0];
-      acc[date] = (acc[date] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const signupsByDay: Record<string, number> = signups.reduce(
+      (acc, signup) => {
+        const date = signup.timestamp.toISOString().split('T')[0];
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
       totalSignups: signups.length,
       signupsByDay,
-      recentSignups: signups.slice(0, 10).map(s => ({
-        userId: s.userId,
-        timestamp: s.timestamp,
-        details: s.newValue,
-      })),
+      recentSignups: signups
+        .slice(0, 10)
+        .filter((s) => s.userId)
+        .map((s) => ({
+          userId: s.userId!,
+          timestamp: s.timestamp,
+          details: s.newValue,
+        })),
     };
   }
 }

@@ -5,4 +5,4 @@ import { CacheService } from './cache.service';
   providers: [CacheService],
   exports: [CacheService],
 })
-export class AppCacheModule {} 
+export class AppCacheModule {}

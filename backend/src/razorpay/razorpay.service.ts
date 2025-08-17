@@ -13,7 +13,13 @@ export class RazorpayService {
     });
   }
 
-  async createOrder(amount: number, currency: string = 'INR', receipt?: string, notes?: any) {
+  // TODO: Use proper types from razorpay library once import issues are resolved
+  async createOrder(
+    amount: number,
+    currency: string = 'INR',
+    receipt?: string,
+    notes?: any,
+  ) {
     return await this.razorpay.orders.create({
       amount: amount * 100, // in paise
       currency,
@@ -23,6 +29,7 @@ export class RazorpayService {
     });
   }
 
+  // TODO: Use proper types from razorpay library once import issues are resolved
   async createSubscription(params: any) {
     return await this.razorpay.subscriptions.create(params);
   }
