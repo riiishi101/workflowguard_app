@@ -75,7 +75,7 @@ describe('WorkflowVersionService', () => {
 
   describe('findByWorkflowIdWithHistoryLimit', () => {
     const mockWorkflowId = 'test-workflow-id';
-    const mockUserId = 'test-user-id';
+    const mockUserId = '1';
     const mockVersions = [
       {
         id: '1',
@@ -100,7 +100,7 @@ describe('WorkflowVersionService', () => {
 
       const result = await service.findByWorkflowIdWithHistoryLimit(
         mockWorkflowId,
-        mockUserId,
+        50,
       );
 
       expect(result).toBeDefined();
@@ -118,7 +118,7 @@ describe('WorkflowVersionService', () => {
 
       const result = await service.findByWorkflowIdWithHistoryLimit(
         mockWorkflowId,
-        mockUserId,
+        50,
       );
 
       expect(result).toEqual([]);
@@ -130,7 +130,7 @@ describe('WorkflowVersionService', () => {
       );
 
       await expect(
-        service.findByWorkflowIdWithHistoryLimit(mockWorkflowId, mockUserId),
+        service.findByWorkflowIdWithHistoryLimit(mockWorkflowId, 50),
       ).rejects.toThrow(HttpException);
     });
   });
@@ -176,19 +176,23 @@ describe('WorkflowVersionService', () => {
         service.restoreWorkflowVersion(
           mockWorkflowId,
           mockVersionId,
-          mockUserId,
+          mockUserId as any,
         ),
       ).rejects.toThrow(HttpException);
     });
   });
 
   describe('createInitialVersion', () => {
+    const mockUserId = 'test-user-id';
     const mockWorkflow = {
       id: 'test-workflow-id',
       hubspotId: 'test-hubspot-id',
       name: 'Test Workflow',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ownerId: mockUserId,
+      isProtected: true,
     };
-    const mockUserId = 'test-user-id';
     const mockInitialData = {
       hubspotId: mockWorkflow.hubspotId,
       name: mockWorkflow.name,
@@ -202,6 +206,10 @@ describe('WorkflowVersionService', () => {
         id: 'new-version-id',
         workflowId: mockWorkflow.id,
         versionNumber: 1,
+        createdAt: new Date(),
+        snapshotType: 'Initial Protection',
+        createdBy: mockUserId,
+        data: mockInitialData,
       });
 
       const result = await service.createInitialVersion(
@@ -221,7 +229,7 @@ describe('WorkflowVersionService', () => {
       );
 
       await expect(
-        service.createInitialVersion(mockWorkflow, mockUserId, mockInitialData),
+        service.createInitialVersion(mockWorkflow, mockUserId as any, mockInitialData),
       ).rejects.toThrow();
     });
   });

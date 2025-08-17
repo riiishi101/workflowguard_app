@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { CreateAuditLogDto } from '../audit-log/dto/create-audit-log.dto';
 import { HubSpotService } from '../services/hubspot.service';
+import { UpdateWorkflowPayload } from '../types/hubspot.types';
 
 @Injectable()
 export class ActionsService {
@@ -68,7 +69,7 @@ export class ActionsService {
     await this.hubspotService.updateWorkflow(
       owner.hubspotAccessToken,
       workflow.hubspotId,
-      workflowVersion.data,
+      workflowVersion.data as unknown as UpdateWorkflowPayload,
     );
 
     const auditLog: CreateAuditLogDto = {

@@ -1,6 +1,6 @@
 ﻿
 > backend@0.0.1 test
-> jest src/workflow/workflow.controller.spec.ts
+> jest src/workflow/workflow.controller.spec.ts --verbose
 
 node.exe : FAIL src/workflow/workflow.controller.spec.ts
 At line:1 char:1
@@ -11,33 +11,33 @@ At line:1 char:1
     + FullyQualifiedErrorId : NativeCommandError
  
   WorkflowController
-    ├ù should be defined (16 ms)
+    ├ù should be defined (28 ms)
     findAll
-      ├ù should return an array of workflows (3 ms)
+      ├ù should return an array of workflows (4 ms)
     getHubSpotWorkflows
       ├ù should return workflows from HubSpot (3 ms)
     findOne
-      ├ù should return a single workflow (2 ms)
+      ├ù should return a single workflow (3 ms)
     findByHubspotId
-      ├ù should return a workflow by hubspot id (2 ms)
+      ├ù should return a workflow by hubspot id (4 ms)
     startWorkflowProtection
-      ├ù should start protection for workflows (1 ms)
+      ├ù should start protection for workflows (4 ms)
     syncHubSpotWorkflows
-      ├ù should sync workflows from HubSpot (2 ms)
+      ├ù should sync workflows from HubSpot (3 ms)
     getProtectedWorkflows
-      ├ù should return protected workflows (2 ms)
+      ├ù should return protected workflows (4 ms)
     getWorkflowStats
-      ├ù should return workflow stats (2 ms)
+      ├ù should return workflow stats (4 ms)
     create
       ├ù should create a workflow (3 ms)
     update
-      ├ù should update a workflow (3 ms)
+      ├ù should update a workflow (2 ms)
     remove
       ├ù should remove a workflow (2 ms)
     Delegated Methods
       ├ù should call restoreWorkflowVersion (2 ms)
-      ├ù should call rollbackWorkflow (1 ms)
-      ├ù should call downloadWorkflowVersion (2 ms)
+      ├ù should call rollbackWorkflow (2 ms)
+      ├ù should call downloadWorkflowVersion (4 ms)
 
   ΓùÅ WorkflowController ΓÇ║ should be defined
 
@@ -55,16 +55,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -97,7 +97,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ findAll ΓÇ║ should return an array of 
 workflows
@@ -116,16 +116,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -158,7 +158,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ getHubSpotWorkflows ΓÇ║ should return 
 workflows from HubSpot
@@ -177,16 +177,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -219,7 +219,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ findOne ΓÇ║ should return a single workflow
 
@@ -237,16 +237,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -279,7 +279,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ findByHubspotId ΓÇ║ should return a workflow 
 by hubspot id
@@ -298,16 +298,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -340,7 +340,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ startWorkflowProtection ΓÇ║ should start 
 protection for workflows
@@ -359,16 +359,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -401,7 +401,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ syncHubSpotWorkflows ΓÇ║ should sync 
 workflows from HubSpot
@@ -420,16 +420,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -462,7 +462,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ getProtectedWorkflows ΓÇ║ should return 
 protected workflows
@@ -481,16 +481,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -523,7 +523,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ getWorkflowStats ΓÇ║ should return workflow 
 stats
@@ -542,16 +542,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -584,7 +584,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ create ΓÇ║ should create a workflow
 
@@ -602,16 +602,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -644,7 +644,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ update ΓÇ║ should update a workflow
 
@@ -662,16 +662,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -704,7 +704,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ remove ΓÇ║ should remove a workflow
 
@@ -722,16 +722,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -764,7 +764,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ Delegated Methods ΓÇ║ should call 
 restoreWorkflowVersion
@@ -783,16 +783,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -825,7 +825,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ Delegated Methods ΓÇ║ should call 
 rollbackWorkflow
@@ -844,16 +844,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -886,7 +886,7 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
   ΓùÅ WorkflowController ΓÇ║ Delegated Methods ΓÇ║ should call 
 downloadWorkflowVersion
@@ -905,16 +905,16 @@ module imported within RootTestModule?
         imports: [ /* the Module containing SubscriptionService */ ]
       })
 
-    [0m [90m 29 |[39m
-     [90m 30 |[39m   beforeEach([36masync[39m () [33m=>[39m {
-    [31m[1m>[22m[39m[90m 31 |[39m     [36mconst[39m 
+    [0m [90m 30 |[39m
+     [90m 31 |[39m   beforeEach([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 32 |[39m     [36mconst[39m 
 module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m 
 [33mTest[39m[33m.[39mcreateTestingModule({
      [90m    |[39m                                   [31m[1m^[22m[39m
-     [90m 32 |[39m       controllers[33m:[39m 
+     [90m 33 |[39m       controllers[33m:[39m 
 [[33mWorkflowController[39m][33m,[39m
-     [90m 33 |[39m       providers[33m:[39m [
-     [90m 34 |[39m         {[0m
+     [90m 34 |[39m       providers[33m:[39m [
+     [90m 35 |[39m         {[0m
 
       at TestingInjector.lookupComponentInParentModules 
 (../node_modules/@nestjs/core/injector/injector.js:262:19)
@@ -947,10 +947,10 @@ module[33m:[39m [33mTestingModule[39m [33m=[39m [36mawait[39m
 (../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
       at TestingModuleBuilder.compile 
 (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
-      at Object.<anonymous> (workflow/workflow.controller.spec.ts:31:35)
+      at Object.<anonymous> (workflow/workflow.controller.spec.ts:32:35)
 
 Test Suites: 1 failed, 1 total
 Tests:       15 failed, 15 total
 Snapshots:   0 total
-Time:        5.295 s
+Time:        5.189 s
 Ran all test suites matching /src\\workflow\\workflow.controller.spec.ts/i.

@@ -158,7 +158,7 @@ describe('SubscriptionService', () => {
     };
 
     it('should return not expired for active subscription', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.subscription.findFirst.mockResolvedValue(mockUser.subscription);
 
       const result = await service.checkSubscriptionExpiration(userId);
 
@@ -166,14 +166,13 @@ describe('SubscriptionService', () => {
     });
 
     it('should mark subscription as expired when past billing date', async () => {
-      const expiredUser = {
-        ...mockUser,
-        subscription: {
-          ...mockUser.subscription,
-          nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-        },
+      const expiredSubscription = {
+        id: 'sub-1',
+        planId: 'professional',
+        status: 'active',
+        nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
       };
-      mockPrismaService.user.findUnique.mockResolvedValue(expiredUser);
+      mockPrismaService.subscription.findFirst.mockResolvedValue(expiredSubscription);
       mockPrismaService.subscription.update.mockResolvedValue({
         status: 'expired',
       });
@@ -189,10 +188,7 @@ describe('SubscriptionService', () => {
     });
 
     it('should handle case with no subscription', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue({
-        ...mockUser,
-        subscription: null,
-      });
+      mockPrismaService.subscription.findFirst.mockResolvedValue(null);
 
       const result = await service.checkSubscriptionExpiration(userId);
 
@@ -214,7 +210,7 @@ describe('SubscriptionService', () => {
     };
 
     it('should return next payment info for active subscription', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.subscription.findFirst.mockResolvedValue(mockUser.subscription);
 
       const result = await service.getNextPaymentInfo(userId);
 
@@ -230,10 +226,7 @@ describe('SubscriptionService', () => {
     });
 
     it('should return no subscription info when no subscription exists', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue({
-        ...mockUser,
-        subscription: null,
-      });
+      mockPrismaService.subscription.findFirst.mockResolvedValue(null);
 
       const result = await service.getNextPaymentInfo(userId);
 
@@ -241,14 +234,13 @@ describe('SubscriptionService', () => {
     });
 
     it('should indicate overdue payment for past billing date', async () => {
-      const overdueUser = {
-        ...mockUser,
-        subscription: {
-          ...mockUser.subscription,
-          nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-        },
+      const overdueSubscription = {
+        id: 'sub-1',
+        planId: 'professional',
+        status: 'active',
+        nextBillingDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
       };
-      mockPrismaService.user.findUnique.mockResolvedValue(overdueUser);
+      mockPrismaService.subscription.findFirst.mockResolvedValue(overdueSubscription);
 
       const result = await service.getNextPaymentInfo(userId);
 
@@ -279,8 +271,8 @@ describe('SubscriptionService', () => {
       const result = await service.getUsageStats(userId);
 
       expect(result.workflows.used).toBe(3);
-      expect(result.workflows.limit).toBe(5);
-      expect(result.workflows.percentage).toBe(60);
+      expect(result.workflows.limit).toBe(25); // Professional plan limit is 25
+      expect(result.workflows.percentage).toBe(12); // 3/25 * 100 = 12%
       expect(result.versionHistory).toBeDefined();
       expect(result.teamMembers).toBeDefined();
       expect(result.storage).toBeDefined();

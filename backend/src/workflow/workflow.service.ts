@@ -18,8 +18,8 @@ import {
   WorkflowStatsDto,
 } from './dto';
 import { HubSpotService } from '../services/hubspot.service';
-import { Workflow } from '@prisma/client';
 import { WorkflowVersionService } from '../workflow-version/workflow-version.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class WorkflowService {
@@ -30,13 +30,13 @@ export class WorkflowService {
     private workflowVersionService: WorkflowVersionService,
   ) {}
 
-  async create(createWorkflowDto: CreateWorkflowDto): Promise<Workflow> {
+  async create(createWorkflowDto: CreateWorkflowDto): Promise<any> {
     return this.prisma.workflow.create({
       data: createWorkflowDto,
     });
   }
 
-  async findAll(): Promise<Workflow[]> {
+  async findAll(): Promise<any[]> {
     return this.prisma.workflow.findMany({
       include: {
         owner: true,
@@ -154,7 +154,7 @@ export class WorkflowService {
       if (!hubspotWorkflow) {
         // Return a default structure instead of throwing 404
         return {
-          id: hubspotId,
+          id: 'unknown',
           hubspotId: hubspotId,
           name: 'Unknown Workflow',
           ownerId: userId,
@@ -166,7 +166,7 @@ export class WorkflowService {
           owner: user,
           isProtected: false,
           hubspotUrl: `https://app.hubspot.com/workflows/${hubspotId}`,
-        };
+        } as WorkflowDetails;
       }
 
       // Create workflow in database if it doesn't exist
@@ -191,7 +191,7 @@ export class WorkflowService {
       console.error('Error finding workflow by HubSpot ID:', error);
       // Return a default structure instead of throwing error
       return {
-        id: hubspotId,
+        id: 'error',
         hubspotId: hubspotId,
         name: 'Error Loading Workflow',
         ownerId: userId,
@@ -203,21 +203,21 @@ export class WorkflowService {
         owner: user,
         isProtected: false,
         hubspotUrl: `https://app.hubspot.com/workflows/${hubspotId}`,
-      };
+      } as WorkflowDetails;
     }
   }
 
   async update(
     id: string,
     updateWorkflowDto: UpdateWorkflowDto,
-  ): Promise<Workflow> {
+  ): Promise<any> {
     return this.prisma.workflow.update({
       where: { id },
       data: updateWorkflowDto,
     });
   }
 
-  async remove(id: string): Promise<Workflow> {
+  async remove(id: string): Promise<any> {
     return this.prisma.workflow.delete({
       where: { id },
     });
@@ -314,7 +314,7 @@ export class WorkflowService {
                 workflow,
                 finalUserId,
                 hubspotWorkflowData || {
-                  hubspotId,
+                  hubspotId: hubspotId,
                   name: workflow.name,
                   status: 'active',
                   metadata: {
@@ -324,7 +324,7 @@ export class WorkflowService {
                       protectedBy: finalUserId,
                     },
                   },
-                },
+                } as any,
               );
 
             // Add the version to the workflow object
@@ -379,7 +379,7 @@ export class WorkflowService {
       });
 
       // Transform database records to match Dashboard expectations
-      return workflows.map((workflow) => ({
+      return workflows.map((workflow: any) => ({
         id: workflow.hubspotId || workflow.id,
         name: workflow.name,
         status:
@@ -396,7 +396,7 @@ export class WorkflowService {
           initials: workflow.owner?.name
             ? workflow.owner.name
                 .split(' ')
-                .map((n) => n[0])
+                .map((n: string) => n[0])
                 .join('')
                 .toUpperCase()
             : 'U',
@@ -606,7 +606,7 @@ export class WorkflowService {
       });
 
       // Calculate detailed stats
-      const stats = workflows.map((workflow) => {
+      const stats = workflows.map((workflow: any) => {
         const versions = workflow.versions;
         const latestVersion = versions[0];
         const totalSteps = latestVersion
@@ -624,8 +624,8 @@ export class WorkflowService {
             workflow.createdAt.toISOString(),
           versions: versions.length,
           lastModifiedBy: latestVersion?.createdBy || '',
-          status: 'active',
-          protectionStatus: 'protected',
+          status: 'active' as 'active' | 'inactive',
+          protectionStatus: 'protected' as 'protected' | 'unprotected',
           lastModified:
             latestVersion?.createdAt.toISOString() ||
             workflow.updatedAt.toISOString(),
@@ -669,10 +669,10 @@ export class WorkflowService {
       // Calculate stats efficiently
       const totalWorkflows = protectedWorkflows.length;
       const activeWorkflows = protectedWorkflows.filter(
-        (w) => w.versions.length > 0,
+        (w: any) => w.versions.length > 0,
       ).length;
       const totalVersions = protectedWorkflows.reduce(
-        (sum, w) => sum + w.versions.length,
+        (sum, w: any) => sum + w.versions.length,
         0,
       );
 
@@ -766,7 +766,7 @@ export class WorkflowService {
         name: workflow.name,
         hubspotId: workflow.hubspotId,
         owner: workflow.owner,
-        versions: workflow.versions.map((version) => ({
+        versions: workflow.versions.map((version: any) => ({
           id: version.id,
           versionNumber: version.versionNumber,
           createdAt: version.createdAt,
@@ -818,12 +818,12 @@ export class WorkflowService {
           exportedAt: new Date().toISOString(),
           totalWorkflows: workflows.length,
         },
-        workflows: workflows.map((workflow) => ({
+        workflows: workflows.map((workflow: any) => ({
           id: workflow.id,
           name: workflow.name,
           hubspotId: workflow.hubspotId,
           owner: workflow.owner,
-          versions: workflow.versions.map((version) => ({
+          versions: workflow.versions.map((version: any) => ({
             id: version.id,
             versionNumber: version.versionNumber,
             createdAt: version.createdAt,
@@ -836,7 +836,6 @@ export class WorkflowService {
 
       return exportData;
 
-      return exportData;
     } catch (error) {
       throw new HttpException(
         `Failed to export workflows: ${error.message}`,

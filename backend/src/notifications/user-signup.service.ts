@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { User, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
-interface SignupStats {
+export interface SignupStats {
   totalSignups: number;
   signupsByDay: Record<string, number>;
   recentSignups: {
     userId: string;
     timestamp: Date;
-    details: Prisma.JsonValue;
+    details: any;
   }[];
 }
 import { PrismaService } from '../prisma/prisma.service';
@@ -21,7 +21,7 @@ export class UserSignupService {
   ) {}
 
   async notifyNewUserSignup(
-    user: User,
+    user: any,
     signupSource: 'oauth' | 'marketplace' | 'direct',
   ) {
     try {
@@ -77,7 +77,7 @@ export class UserSignupService {
     });
 
     const signupsByDay: Record<string, number> = signups.reduce(
-      (acc, signup) => {
+      (acc: Record<string, number>, signup: any) => {
         const date = signup.timestamp.toISOString().split('T')[0];
         acc[date] = (acc[date] || 0) + 1;
         return acc;
@@ -90,7 +90,7 @@ export class UserSignupService {
       signupsByDay,
       recentSignups: signups
         .slice(0, 10)
-        .filter((s) => s.userId)
+        .filter((s: any) => s.userId)
         .map((s) => ({
           userId: s.userId!,
           timestamp: s.timestamp,
