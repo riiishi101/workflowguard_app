@@ -355,10 +355,10 @@ export class RazorpayBillingController {
 
       // Count actual usage (adjust based on your schema)
       const workflowCount = await this.prisma.workflow.count({
-        where: { user: { id: userId } },
+        where: { ownerId: userId },
       });
       const versionCount = await this.prisma.workflowVersion.count({
-        where: { workflow: { user: { id: userId } } },
+        where: { workflow: { ownerId: userId } },
       });
 
       const usage = {
