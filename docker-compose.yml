@@ -13,9 +13,8 @@ services:
 
   backend:
     build: ./backend
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      # Add other env vars here
+    env_file:
+      - backend/.env
     ports:
       - "4000:4000"
     depends_on:
