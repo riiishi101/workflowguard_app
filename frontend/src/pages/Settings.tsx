@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import MainAppLayout from "@/components/MainAppLayout";
 import ContentSection from "@/components/ContentSection";
 import PlanBillingTab from "@/components/settings/PlanBillingTab";
 import NotificationsTab from "@/components/settings/NotificationsTab";
 import AuditLogTab from "@/components/settings/AuditLogTab";
 import ProfileTab from "@/components/settings/ProfileTab";
+import ManageSubscriptionTab from "@/components/settings/ManageSubscriptionTab";
 import {
   CreditCard,
   Bell,
@@ -13,14 +15,17 @@ import {
 } from "lucide-react";
 
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState("plan-billing");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    () => searchParams.get("tab") || "manage-subscription"
+  );
 
   const tabs = [
     {
-      id: "plan-billing",
-      label: "My Plan & Billing",
+      id: "manage-subscription",
+      label: "Manage Subscription",
       icon: CreditCard,
-      component: PlanBillingTab,
+      component: ManageSubscriptionTab,
     },
     {
       id: "notifications",

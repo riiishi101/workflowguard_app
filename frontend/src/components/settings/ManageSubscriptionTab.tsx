@@ -67,35 +67,25 @@ const ManageSubscriptionTab = () => {
     try {
       toast({ title: 'Processing...', description: 'Opening payment...' });
       await loadRazorpayScript();
-      // Get amount for plan
-      const upgradeAmount = planId === 'professional' ? 49 : 99;
-      // Create order via backend
-      const resp = await ApiService.createRazorpayOrder({
-        userId: subscription.userId,
-        planId,
-        amount: upgradeAmount,
-        currency: 'USD', // or selected currency
-      });
-      if (!resp.id) throw new Error('Failed to create payment order');
-      // Open Razorpay Checkout with order info
+      const resp = await ApiService.createRazorpayOrder(planId);
+      const order = resp.data;
+      if (!order.id) throw new Error('Failed to create payment order');
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || window.RAZORPAY_KEY_ID, // Live key from environment
-        amount: resp.amount, // in paise (integer)
-        currency: resp.currency,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || window.RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
         name: 'WorkflowGuard',
         description: `Upgrade to ${planId} plan`,
-        order_id: resp.id,
+        order_id: order.id,
         prefill: {
           email: subscription.email || '',
         },
         handler: async function (paymentResult: any) {
-          // Call backend to confirm/activate subscription
           try {
             await ApiService.confirmRazorpayPayment({
-              userId: subscription.userId,
               planId,
               paymentId: paymentResult.razorpay_payment_id,
-              orderId: resp.id,
+              orderId: order.id,
               signature: paymentResult.razorpay_signature
             });
             toast({ title: 'Upgrade Complete', description: `You have been upgraded to ${planId}!` });
@@ -106,7 +96,6 @@ const ManageSubscriptionTab = () => {
         },
         theme: { color: '#2563eb' },
       };
-      // @ts-ignore
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error: any) {
@@ -116,7 +105,7 @@ const ManageSubscriptionTab = () => {
 
   const handleCancelSubscription = async () => {
     try {
-      await ApiService.cancelSubscription(subscription.userId);
+      await ApiService.cancelSubscription();
       toast({ title: 'Subscription Cancelled', description: 'Your subscription will not renew.' });
       fetchAllData();
     } catch (error: any) {
@@ -128,16 +117,12 @@ const ManageSubscriptionTab = () => {
     try {
       toast({ title: 'Processing...', description: 'Opening payment method update modal...' });
       await loadRazorpayScript();
-      // Ask backend for a customer token or order for payment update (this typically returns a customer ID or one-time setup intent/order)
-      const resp = await ApiService.createRazorpayPaymentMethodOrder({
-        userId: subscription.userId,
-      });
-      if (!resp.id && !resp.customer_id) throw new Error('Failed to create payment method order');
-      // Open Razorpay Checkout in "token" or "payment_method" collect mode
+      const resp = await ApiService.createRazorpayPaymentMethodOrder();
+      const order = resp.data;
+      if (!order.id && !order.customer_id) throw new Error('Failed to create payment method order');
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || window.RAZORPAY_KEY_ID,
-        customer_id: resp.customer_id, // Set by backend, must exist
-        // Enable cards, UPI, wallets etc. as per Razorpay options
+        customer_id: order.customer_id,
         method: 'card',
         name: 'WorkflowGuard',
         description: 'Update Payment Method',
@@ -145,8 +130,7 @@ const ManageSubscriptionTab = () => {
         handler: async function (paymentMethodResult: any) {
           try {
             await ApiService.saveRazorpayPaymentMethod({
-              userId: subscription.userId,
-              customerId: resp.customer_id,
+              customerId: order.customer_id,
               paymentMethodId: paymentMethodResult.razorpay_payment_id || paymentMethodResult.razorpay_payment_method_id,
               signature: paymentMethodResult.razorpay_signature,
             });
@@ -157,7 +141,6 @@ const ManageSubscriptionTab = () => {
           }
         }
       };
-      // @ts-ignore
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error: any) {
@@ -166,10 +149,9 @@ const ManageSubscriptionTab = () => {
   };
 
   const handleExportHistory = async () => {
-    // Download billing history as CSV
     try {
-      const res = await ApiService.downloadBillingHistoryCSV({ userId: subscription.userId });
-      const blob = new Blob([res.data], { type: 'text/csv' });
+      const res = await ApiService.downloadBillingHistoryCSV();
+      const blob = new Blob([res.data as any], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

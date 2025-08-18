@@ -12,6 +12,7 @@ import { RazorpayService } from './razorpay.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { Request, Response } from 'express';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
 import { UserService } from '../user/user.service';
 import { EmailService } from '../services/email.service';
 
@@ -93,5 +94,75 @@ export class RazorpayController {
     }
 
     return { id: rzSub.id, short_url: rzSub.short_url, subscription: rzSub };
+  }
+
+  /**
+   * Endpoint to confirm a payment and activate/update a subscription
+   * POST /razorpay/confirm-payment { planId, paymentId, orderId, signature }
+   */
+  @Post('confirm-payment')
+  async confirmPayment(@Body() confirmPaymentDto: ConfirmPaymentDto, @Req() req: any) {
+    const { orderId, paymentId, signature, planId } = confirmPaymentDto;
+    const userId = req.user?.sub;
+
+    if (!userId) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Verify the payment signature
+    const isValid = this.razorpayService.verifyPaymentSignature({
+      order_id: orderId,
+      payment_id: paymentId,
+      razorpay_signature: signature,
+    });
+
+    if (!isValid) {
+      throw new HttpException('Invalid payment signature', HttpStatus.BAD_REQUEST);
+    }
+
+    // Find existing subscription or create a new one
+    let subscription = await this.prisma.subscription.findFirst({
+      where: { userId, status: { in: ['active', 'trialing', 'created'] } },
+    });
+
+    if (subscription) {
+      // Update existing subscription
+      subscription = await this.prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          planId,
+          status: 'active',
+          razorpay_payment_id: paymentId,
+          // Set next billing date based on plan (e.g., 1 month from now)
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    } else {
+      // Create new subscription if none exists
+      subscription = await this.prisma.subscription.create({
+        data: {
+          userId,
+          planId,
+          status: 'active',
+          razorpay_payment_id: paymentId,
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+
+    // Record the successful payment
+    await this.prisma.payment.create({
+      data: {
+        userId,
+        amount: Number((await this.razorpayService.getPaymentDetails(paymentId)).amount) / 100,
+        currency: (await this.razorpayService.getPaymentDetails(paymentId)).currency,
+        status: 'captured',
+        razorpay_payment_id: paymentId,
+        razorpay_order_id: orderId,
+        subscriptionId: subscription.id,
+      },
+    });
+
+    return { success: true, message: 'Payment confirmed and subscription updated' };
   }
 }

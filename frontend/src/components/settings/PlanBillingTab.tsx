@@ -164,7 +164,7 @@ const PlanBillingTab = () => {
   };
 
   const handleManageSubscription = () => {
-    navigate('/manage-subscription');
+    navigate('/settings?tab=manage-subscription');
   };
 
   const handleUpdatePayment = () => {

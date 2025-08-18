@@ -706,6 +706,70 @@ class ApiService {
     }
   }
 
+  static async getBillingHistory(): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.get('/subscription/billing-history');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async downloadBillingHistoryCSV(): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.get('/subscription/billing-history/download');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async cancelSubscription(feedback?: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.post('/subscription/cancel', { feedback });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Razorpay
+  static async createRazorpayOrder(planId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.post('/razorpay/order', { planId });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async confirmRazorpayPayment(paymentData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.post('/razorpay/confirm-payment', paymentData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async createRazorpayPaymentMethodOrder(): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.post('/razorpay/payment-method-order');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async saveRazorpayPaymentMethod(paymentData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.post('/razorpay/save-payment-method', paymentData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Support tickets
   static async createSupportTicket(ticketData: any): Promise<ApiResponse<any>> {
     try {

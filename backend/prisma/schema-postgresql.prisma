@@ -74,15 +74,31 @@ model AuditLog {
 }
 
 model Subscription {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id])
-  planId          String   // 'starter', 'professional', 'enterprise'
-  status          String   // 'active', 'trial', 'cancelled', 'overdue'
-  trialEndDate    DateTime?
-  nextBillingDate DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                       String    @id @default(uuid())
+  userId                   String    @unique
+  user                     User      @relation(fields: [userId], references: [id])
+  planId                   String    // 'starter', 'professional', 'enterprise'
+  status                   String    // 'active', 'trial', 'cancelled', 'overdue'
+  trialEndDate             DateTime? 
+  nextBillingDate          DateTime? 
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  razorpay_subscription_id String?   @unique
+  razorpay_payment_id      String?   @unique
+  payments                 Payment[]
+}
+
+model Payment {
+  id                  String        @id @default(uuid())
+  userId              String
+  amount              Float
+  currency            String
+  status              String        // 'captured', 'failed', 'refunded'
+  razorpay_payment_id String        @unique
+  razorpay_order_id   String
+  subscriptionId      String?
+  subscription        Subscription? @relation(fields: [subscriptionId], references: [id])
+  createdAt           DateTime      @default(now())
 }
 
 model Webhook {

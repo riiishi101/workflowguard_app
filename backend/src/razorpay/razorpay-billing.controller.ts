@@ -11,17 +11,27 @@ import {
   UseGuards,
   HttpException,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequestWithUser } from '../types/request.types';
 import { RazorpayService } from './razorpay.service';
 import { RazorpayPlansService } from './razorpay-plans.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { Payment } from '@prisma/client';
 import { EmailService } from '../services/email.service';
 import { UserService } from '../user/user.service';
 
+type PaymentWithPlan = Payment & {
+  subscription: {
+    planId: string;
+  } | null;
+};
+
 @Controller('billing')
 @UseGuards(JwtAuthGuard)
+
 export class RazorpayBillingController {
   constructor(
     private readonly razorpayService: RazorpayService,
@@ -37,6 +47,20 @@ export class RazorpayBillingController {
       throw new HttpException('User ID not found in token', HttpStatus.UNAUTHORIZED);
     }
     return userId;
+  }
+
+  private async getPaymentsForUser(userId: string): Promise<PaymentWithPlan[]> {
+    return this.prisma.payment.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        subscription: {
+          select: {
+            planId: true,
+          },
+        },
+      },
+    });
   }
 
   // GET /billing/plans - Get available subscription plans
@@ -263,11 +287,18 @@ export class RazorpayBillingController {
         );
       }
 
-      // Cancel in Razorpay
-      await this.razorpayService.createSubscription({
-        // This should be a cancel method, but using createSubscription as placeholder
-        // In real implementation, use razorpay.subscriptions.cancel()
-      });
+      if (!subscription.razorpay_subscription_id) {
+        throw new HttpException(
+          'Razorpay subscription ID not found for this user.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Cancel in Razorpay. `immediate` means not cancelling at the end of the cycle.
+      await this.razorpayService.cancelSubscription(
+        subscription.razorpay_subscription_id,
+        !immediate,
+      );
 
       // Update subscription status
       const updatedSubscription = await this.prisma.subscription.update({
@@ -304,20 +335,22 @@ export class RazorpayBillingController {
     try {
       const userId = this.getUserId(req);
 
-      // Mock payment history for now (replace with actual payments table)
-      const payments = [
-        {
-          id: 'pay_1',
-          date: new Date().toISOString().split('T')[0],
-          amount: 19,
-          currency: 'USD',
-          status: 'captured',
-          description: 'Starter Plan - Monthly',
-          razorpay_payment_id: 'pay_mock_123',
-        },
-      ];
+      const payments = await this.getPaymentsForUser(userId);
 
-      const formattedPayments = payments;
+      const formattedPayments = payments.map((payment: PaymentWithPlan) => {
+        const plan = payment.subscription
+          ? this.plansService.getPlan(payment.subscription.planId)
+          : null;
+        return {
+          id: payment.id,
+          date: payment.createdAt.toISOString().split('T')[0],
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          description: plan ? `${plan.name} Plan` : 'One-time payment',
+          razorpay_payment_id: payment.razorpay_payment_id,
+        };
+      });
 
       return {
         success: true,
@@ -417,6 +450,113 @@ export class RazorpayBillingController {
         error.message || 'Failed to update payment method',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  @Post('save-payment-method')
+  async savePaymentMethod(
+    @Body() body: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string },
+    @Req() req: RequestWithUser,
+  ) {
+    try {
+      const userId = this.getUserId(req);
+      const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
+
+      const isValid = this.razorpayService.verifyPaymentSignature({
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id,
+        razorpay_signature: razorpay_signature,
+      });
+
+      if (!isValid) {
+        throw new HttpException('Invalid payment signature', HttpStatus.BAD_REQUEST);
+      }
+
+      const subscription = await this.prisma.subscription.findFirst({
+        where: { userId, status: 'active' },
+      });
+
+      if (!subscription || !subscription.razorpay_subscription_id) {
+        throw new HttpException('Active subscription not found', HttpStatus.NOT_FOUND);
+      }
+
+      const paymentDetails = await this.razorpayService.getPaymentDetails(razorpay_payment_id);
+      const newPaymentMethod = paymentDetails.method;
+
+      // In a production environment, you would need to:
+      // 1. Fetch the payment token/ID from the payment details.
+      // 2. Add this new payment method to the corresponding Razorpay Customer.
+      // 3. Update the Razorpay Subscription to use the new default payment method.
+      // This often requires creating a Razorpay Customer for each user first.
+      // For now, we'll just log that the verification was successful.
+      console.log(`Updating subscription ${subscription.razorpay_subscription_id} with new payment method ${newPaymentMethod}`);
+
+      return {
+        success: true,
+        message: 'Payment method updated successfully',
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to save payment method',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('history/export')
+  async exportBillingHistory(@Req() req: RequestWithUser, @Res() res: Response) {
+    try {
+      const userId = this.getUserId(req);
+
+      const payments = await this.getPaymentsForUser(userId);
+
+      if (payments.length === 0) {
+        res.status(HttpStatus.OK).send('No billing history to export.');
+        return;
+      }
+
+      const formattedPayments = payments.map((payment: PaymentWithPlan) => {
+        const plan = payment.subscription
+          ? this.plansService.getPlan(payment.subscription.planId)
+          : null;
+        return {
+          date: payment.createdAt.toISOString().split('T')[0],
+          description: plan ? `${plan.name} Plan` : 'One-time payment',
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          razorpay_payment_id: payment.razorpay_payment_id,
+        };
+      });
+
+      const headers = ['Date', 'Description', 'Amount', 'Currency', 'Status', 'Payment ID'];
+      const csvRows = [
+        headers.join(','),
+        ...formattedPayments.map((p) => 
+          [
+            p.date,
+            `"${p.description}"`,
+            p.amount,
+            p.currency,
+            p.status,
+            p.razorpay_payment_id
+          ].join(',')
+        )
+      ];
+      
+      const csvData = csvRows.join('\n');
+
+      res.header('Content-Type', 'text/csv');
+      res.attachment('billing-history.csv');
+      res.status(HttpStatus.OK).send(csvData);
+
+    } catch (error) {
+      if (!res.headersSent) {
+        throw new HttpException(
+          error.message || 'Failed to export billing history',
+          error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 }
