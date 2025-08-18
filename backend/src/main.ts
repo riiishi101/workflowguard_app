@@ -158,28 +158,19 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
-  // Additional CORS middleware as fallback for production
+  // Request logging middleware (OPTIONS handling removed to prevent CORS conflicts)
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const origin = req.headers.origin;
-    const allowedOrigins = [
-      'https://www.workflowguard.pro',
-      'https://workflowguard.pro',
-      'http://localhost:5173',
-      'http://localhost:3000',
-    ];
+    const timestamp = new Date().toISOString();
+    const origin = req.headers.origin || 'no-origin';
+    const isMarketplaceRequest =
+      req.url.includes('/hubspot-marketplace') ||
+      req.headers['x-hubspot-signature'] ||
+      req.headers['x-hubspot-portal-id'];
+    const referrer = req.headers.referer || 'no-referrer';
 
-    if (!origin || allowedOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin || '*');
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-user-id,x-hubspot-signature,x-hubspot-request-timestamp,x-hubspot-portal-id,Accept,Origin,X-Requested-With');
-      res.header('Access-Control-Expose-Headers', 'Content-Length,X-Requested-With,X-Marketplace-App,X-Marketplace-Version');
-    }
-
-    if (req.method === 'OPTIONS') {
-      console.log(`🔄 CORS Preflight: ${req.method} ${req.url} from ${origin}`);
-      return res.status(204).end();
-    }
+    console.log(
+      `${timestamp} - ${req.method} ${req.url} - Origin: ${origin} - Referrer: ${referrer}${isMarketplaceRequest ? ' [MARKETPLACE]' : ''}`,
+    );
 
     next();
   });
