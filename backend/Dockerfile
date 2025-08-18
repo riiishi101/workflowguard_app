@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 # Generate Prisma client and build
-RUN npx prisma generate
+RUN rm -rf node_modules/.prisma && npx prisma generate
 RUN npm run build
 # Verify build output exists
 RUN ls -la dist/main.js || exit 1
