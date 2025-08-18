@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,7 @@ import { ApiService } from '@/lib/api';
 
 const PlanBillingTab = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [subscription, setSubscription] = useState<any>(null);
   const [trialStatus, setTrialStatus] = useState<any>(null);
   const [usageStats, setUsageStats] = useState<any>(null);
@@ -162,7 +164,7 @@ const PlanBillingTab = () => {
   };
 
   const handleManageSubscription = () => {
-    window.open('https://app.hubspot.com/billing', '_blank');
+    navigate('/manage-subscription');
   };
 
   const handleUpdatePayment = () => {
@@ -545,17 +547,13 @@ const PlanBillingTab = () => {
           Manage Your Subscription & Plan
         </h2>
         <p className="text-gray-600 mb-4">
-          Your subscription is managed through HubSpot. To change your
-          plan, update payment methods, or manage your subscription
-          details, you will be redirected to your HubSpot account billing
-          section.
+          You can manage your plan, update payment methods, and view your billing history here.
         </p>
         <div className="flex">
           <Button 
             className="bg-blue-600 hover:bg-blue-700"
             onClick={handleManageSubscription}
           >
-            <ExternalLink className="w-4 h-4 mr-2" />
             Manage Subscription
           </Button>
         </div>
