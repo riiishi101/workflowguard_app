@@ -6,7 +6,6 @@
       "@/*": ["./src/*"]
     },
     "noEmit": true,
-    "types": ["cypress", "node"]
   },
   "exclude": ["node_modules"]
 }
