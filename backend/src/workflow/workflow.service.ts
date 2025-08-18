@@ -256,7 +256,7 @@ export class WorkflowService {
           (w: any) => w.id === workflowId,
         );
         // Always convert hubspotId to string for Prisma
-        const hubspotId = String(workflowObj?.hubspotId || workflowId);
+        const hubspotId = String(workflowObj?.hubspotId || workflowObj?.id);
 
         // Try to find the workflow by hubspotId and ownerId
         const existingWorkflow = await this.prisma.workflow.findFirst({

@@ -43,51 +43,76 @@ describe('Workflow Protection', () => {
   });
 
 
-  it('should allow a user to protect a workflow', () => {
-    // Mock the API response for fetching workflows
-    cy.intercept('GET', '/api/workflow/hubspot', {
-      statusCode: 200,
-      body: {
-        success: true,
-        data: [
-          { id: 'wf-1', hubspotId: 'hs-wf-1', name: 'Test Workflow 1', isProtected: false },
-          { id: 'wf-2', hubspotId: 'hs-wf-2', name: 'Test Workflow 2', isProtected: false },
-        ],
-      },
-    }).as('getWorkflows');
+  it('should allow a user to protect workflows', () => {
+    // Mock the API response for fetching workflows
+    cy.intercept('GET', '/api/workflow/hubspot', {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: [
+          { 
+            id: 'wf-1', 
+            hubspotId: 'hs-wf-1', 
+            name: 'Test Workflow 1', 
+            folder: 'Test Folder',
+            status: 'ACTIVE',
+            lastModified: '2024-01-01T00:00:00Z',
+            steps: 5,
+            contacts: 100,
+            isProtected: false 
+          },
+          { 
+            id: 'wf-2', 
+            hubspotId: 'hs-wf-2', 
+            name: 'Test Workflow 2', 
+            folder: 'Test Folder',
+            status: 'ACTIVE',
+            lastModified: '2024-01-01T00:00:00Z',
+            steps: 3,
+            contacts: 50,
+            isProtected: false 
+          },
+        ],
+      },
+    }).as('getWorkflows');
 
+    // Intercept the backend call to protect workflows
+    cy.intercept('POST', '/api/workflow/start-protection', {
+      statusCode: 200,
+      body: { 
+        success: true,
+        message: 'Workflow protection started successfully',
+        data: []
+      },
+    }).as('protectWorkflows');
 
-    // Intercept the backend call to protect a workflow
-    cy.intercept('POST', '/api/actions/protect-workflow', {
-      statusCode: 200,
-      body: { success: true },
-    }).as('protectWorkflow');
+    // Start at the root and log in
+    cy.visit('/');
+    cy.contains('button', 'Get Started').click();
+    cy.contains('button', 'Connect to HubSpot').click();
+    cy.visit('/?success=true&token=mock_jwt_token');
 
+    // Wait for the workflows to be loaded
+    cy.wait('@getWorkflows');
 
-    // Start at the root and log in
-    cy.visit('/');
-    cy.contains('button', 'Get Started').click();
-    cy.contains('button', 'Connect to HubSpot').click();
-    cy.visit('/?success=true&token=mock_jwt_token');
+    // Select the first workflow using checkbox
+    cy.get('[data-testid="workflow-checkbox-wf-1"]').check();
 
+    // Click the "Start Protecting" button
+    cy.contains('button', 'Start Protecting').click();
 
-    // Wait for the workflows to be loaded
-    cy.wait('@getWorkflows');
+    // Verify that the protectWorkflows API was called with the correct data
+    cy.wait('@protectWorkflows').its('request.body').should('deep.equal', {
+      workflows: [
+        {
+          id: 'wf-1',
+          hubspotId: 'wf-1',
+          name: 'Test Workflow 1'
+        }
+      ]
+    });
 
-
-    // Find the first workflow and click its 'Protect' button
-    // Note: The selector used here is a placeholder and might need to be adjusted based on the actual frontend implementation.
-    cy.contains('td', 'Test Workflow 1')
-      .parent('tr')
-      .within(() => {
-        cy.contains('button', 'Protect').click();
-      });
-
-
-    // Verify that the protectWorkflow API was called with the correct data
-    cy.wait('@protectWorkflow').its('request.body').should('deep.equal', {
-      workflowId: 'hs-wf-1',
-    });
-  });
+    // Verify navigation to dashboard
+    cy.url().should('include', '/dashboard');
+  });
 });
-

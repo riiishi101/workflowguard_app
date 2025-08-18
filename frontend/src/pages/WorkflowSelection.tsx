@@ -383,7 +383,7 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
             ...workflow,
             versions: 1,
             lastModifiedBy: { name: "Unknown", initials: "U", email: "unknown@example.com" },
-            protectionStatus: "protected",
+            protectionStatus: "protected" as "protected",
             status: (workflow.status === "DRAFT" ? "inactive" : workflow.status.toLowerCase()) as "active" | "inactive" | "error"
           }));
 
