@@ -365,13 +365,7 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
         .map(workflow => ({
           id: workflow.id,
           hubspotId: workflow.id, // Use workflow.id as hubspotId
-          name: workflow.name,
-          status: workflow.status,
-          folder: workflow.folder,
-          lastModified: workflow.lastModified,
-          steps: workflow.steps,
-          contacts: workflow.contacts,
-          isProtected: workflow.isProtected || false
+          name: workflow.name
         }));
 
       console.log('WorkflowSelection - Selected workflow objects:', selectedWorkflowObjects);
@@ -382,14 +376,19 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
       console.log('WorkflowSelection - Protection API response:', response);
 
       if (response.success) {
+        // Create a separate, fully-typed array for the WorkflowState
+        const workflowsForState = workflows
+          .filter(workflow => selectedWorkflows.includes(workflow.id))
+          .map(workflow => ({
+            ...workflow,
+            versions: 1,
+            lastModifiedBy: { name: "Unknown", initials: "U", email: "unknown@example.com" },
+            protectionStatus: "protected",
+            status: (workflow.status === "DRAFT" ? "inactive" : workflow.status.toLowerCase()) as "active" | "inactive" | "error"
+          }));
+
         // Store selected workflows in WorkflowState for backward compatibility
-        WorkflowState.setSelectedWorkflows(selectedWorkflowObjects.map(workflow => ({
-          ...workflow,
-          versions: 1,
-          lastModifiedBy: { name: "Unknown", initials: "U", email: "unknown@example.com" },
-          protectionStatus: "protected",
-          status: (workflow.status === "DRAFT" ? "inactive" : workflow.status.toLowerCase()) as "active" | "inactive" | "error"
-        })));
+        WorkflowState.setSelectedWorkflows(workflowsForState);
 
         // Add a delay to ensure dashboard has time to load properly
         await new Promise(resolve => setTimeout(resolve, 1500));

@@ -41,6 +41,10 @@ export class SubscriptionService {
       const workflowsUsed = user.workflows?.length || 0;
       
       // Get price in the requested currency
+      if (!multiCurrencyPlan) {
+        throw new HttpException('Plan configuration not found for the given currency.', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
       const priceInCurrency = multiCurrencyPlan.prices[subscriptionCurrency]?.amount || plan.price;
 
       return {
