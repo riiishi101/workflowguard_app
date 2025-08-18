@@ -18,7 +18,7 @@ export class UserSignupService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
-  ) {}
+  ) { }
 
   async notifyNewUserSignup(
     user: any,
