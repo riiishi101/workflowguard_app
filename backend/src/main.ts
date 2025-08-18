@@ -84,10 +84,10 @@ async function bootstrap() {
   });
   app.use(limiter);
 
-  // Specific rate limit for OAuth endpoints
+  // Specific rate limit for OAuth initiation only (not callback)
   const oauthLimiter = rateLimit({
     windowMs: 10 * 1000, // 10 seconds
-    max: 1, // Only allow 1 request per 10 seconds
+    max: 3, // Allow 3 requests per 10 seconds for OAuth initiation
     message: 'Please wait before retrying the authentication process.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -100,7 +100,8 @@ async function bootstrap() {
       );
     },
   });
-  app.use('/api/auth/hubspot', oauthLimiter);
+  // Only apply rate limiting to OAuth initiation, not callback
+  app.use('/api/auth/hubspot/url', oauthLimiter);
 
   // Configure CORS properly to handle credentials
   app.enableCors({

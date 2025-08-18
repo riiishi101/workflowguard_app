@@ -93,6 +93,20 @@ export class AuthController {
   }
 
   @Public()
+  @Get('hubspot/health')
+  async hubspotHealthCheck() {
+    return {
+      success: true,
+      message: 'HubSpot OAuth endpoints are healthy',
+      timestamp: new Date().toISOString(),
+      endpoints: {
+        callback: '/api/auth/hubspot/callback',
+        url: '/api/auth/hubspot/url'
+      }
+    };
+  }
+
+  @Public()
   @Get('hubspot/callback')
   async handleHubSpotCallback(
     @Query('code') code: string,

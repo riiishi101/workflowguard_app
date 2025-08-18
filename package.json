@@ -1,4 +1,8 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "workflowguard-app",
+  "version": "1.0.0",
+  "description": "WorkflowGuard - HubSpot Workflow Protection App",
   "dependencies": {
     "@nestjs/common": "^11.1.3",
     "@nestjs/core": "^11.1.3",
