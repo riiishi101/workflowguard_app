@@ -31,7 +31,7 @@ export class RazorpayWebhookController {
       const body = req.body;
 
       // Verify webhook signature
-      if (!this.razorpayService.verifySignature(Buffer.from(JSON.stringify(body)), signature)) {
+            if (!this.razorpayService.verifyWebhookSignature(Buffer.from(JSON.stringify(body)), signature)) {
         this.logger.error('Invalid Razorpay webhook signature');
         throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
       }

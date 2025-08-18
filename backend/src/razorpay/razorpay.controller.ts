@@ -132,7 +132,6 @@ export class RazorpayController {
         data: {
           planId,
           status: 'active',
-          razorpay_payment_id: paymentId,
           // Set next billing date based on plan (e.g., 1 month from now)
           nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
@@ -144,7 +143,6 @@ export class RazorpayController {
           userId,
           planId,
           status: 'active',
-          razorpay_payment_id: paymentId,
           nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       });

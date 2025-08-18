@@ -84,7 +84,6 @@ model Subscription {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
   razorpay_subscription_id String?   @unique
-  razorpay_payment_id      String?   @unique
   payments                 Payment[]
 }
 
