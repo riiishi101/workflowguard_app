@@ -103,7 +103,7 @@ async function bootstrap() {
   // Only apply rate limiting to OAuth initiation, not callback
   app.use('/api/auth/hubspot/url', oauthLimiter);
 
-  // Configure CORS properly to handle credentials
+  // Configure CORS properly to handle credentials - Enhanced for production
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
@@ -118,15 +118,20 @@ async function bootstrap() {
         'https://marketplace.hubspot.com',
       ];
 
+      console.log(`🌐 CORS Check - Origin: ${origin || 'no-origin'}, Environment: ${process.env.NODE_ENV}`);
+
       // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) {
+        console.log('✅ CORS: Allowing request with no origin');
         return callback(null, true);
       }
 
       if (allowedOrigins.includes(origin)) {
+        console.log(`✅ CORS: Allowing origin ${origin}`);
         callback(null, true);
       } else {
-        console.log(`CORS blocked origin: ${origin}`);
+        console.log(`❌ CORS: Blocking origin ${origin}`);
+        console.log(`📋 Allowed origins: ${allowedOrigins.join(', ')}`);
         callback(new Error(`Origin ${origin} not allowed by CORS`));
       }
     },
@@ -151,6 +156,32 @@ async function bootstrap() {
     ],
     preflightContinue: false,
     optionsSuccessStatus: 204,
+  });
+
+  // Additional CORS middleware as fallback for production
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+      'https://www.workflowguard.pro',
+      'https://workflowguard.pro',
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-user-id,x-hubspot-signature,x-hubspot-request-timestamp,x-hubspot-portal-id,Accept,Origin,X-Requested-With');
+      res.header('Access-Control-Expose-Headers', 'Content-Length,X-Requested-With,X-Marketplace-App,X-Marketplace-Version');
+    }
+
+    if (req.method === 'OPTIONS') {
+      console.log(`🔄 CORS Preflight: ${req.method} ${req.url} from ${origin}`);
+      return res.status(204).end();
+    }
+
+    next();
   });
 
   // Global prefix
