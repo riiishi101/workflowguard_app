@@ -1,6 +1,7 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from '../app.module';
 import { RazorpayPlansService } from '../razorpay/razorpay-plans.service';
 import { CurrencyService } from '../currency/currency.service';
-import { RazorpayService } from '../razorpay/razorpay.service';
 
 /**
  * Multi-Currency Setup Script
@@ -11,13 +12,14 @@ import { RazorpayService } from '../razorpay/razorpay.service';
  */
 
 async function setupMultiCurrency() {
+  const app = await NestFactory.createApplicationContext(AppModule);
+
   console.log('🌍 Setting up Multi-Currency Support for WorkflowGuard');
   console.log('=====================================================\n');
 
-  // Initialize services
-  const razorpayService = new RazorpayService();
-  const currencyService = new CurrencyService();
-  const razorpayPlansService = new RazorpayPlansService(razorpayService, currencyService);
+  // Initialize services from the NestJS context
+  const currencyService = app.get(CurrencyService);
+  const razorpayPlansService = app.get(RazorpayPlansService);
 
   // Display supported currencies
   console.log('📋 Supported Currencies:');
