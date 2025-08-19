@@ -27,17 +27,18 @@ export const HubSpotOAuthCallback = () => {
         // Exchange the authorization code for access tokens
         const response = await ApiService.completeHubSpotOAuth(code);
         
-        if (response.success) {
+        if (response.success && response.data?.token) {
+          // Store the token
+          localStorage.setItem('authToken', response.data.token);
+          
           toast({
             title: 'Success!',
             description: 'Successfully connected to HubSpot',
             variant: 'default',
           });
           
-          // Navigate to the dashboard or previous location
-          const returnTo = localStorage.getItem('hubspot_return_to') || '/dashboard';
-          localStorage.removeItem('hubspot_return_to');
-          navigate(returnTo);
+          // Navigate to workflow selection
+          navigate('/workflow-selection');
         } else {
           throw new Error(response.error || 'Failed to complete OAuth flow');
         }
