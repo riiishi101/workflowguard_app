@@ -149,7 +149,7 @@ export class RazorpayController {
     }
 
     // Record the successful payment
-    await this.prisma.payment.create({
+    await (this.prisma as any).payment.create({
       data: {
         userId,
         amount: Number((await this.razorpayService.getPaymentDetails(paymentId)).amount) / 100,

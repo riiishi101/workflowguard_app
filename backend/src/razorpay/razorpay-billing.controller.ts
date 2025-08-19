@@ -19,11 +19,19 @@ import { RequestWithUser } from '../types/request.types';
 import { RazorpayService } from './razorpay.service';
 import { RazorpayPlansService } from './razorpay-plans.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { Payment } from '@prisma/client';
 import { EmailService } from '../services/email.service';
 import { UserService } from '../user/user.service';
 
-type PaymentWithPlan = Payment & {
+type PaymentWithPlan = {
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  subscriptionId: string | null;
+  createdAt: Date;
   subscription: {
     planId: string;
   } | null;
@@ -50,7 +58,7 @@ export class RazorpayBillingController {
   }
 
   private async getPaymentsForUser(userId: string): Promise<PaymentWithPlan[]> {
-    return this.prisma.payment.findMany({
+    return (this.prisma as any).payment.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       include: {

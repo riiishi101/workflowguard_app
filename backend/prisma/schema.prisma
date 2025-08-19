@@ -40,6 +40,7 @@ model User {
   supportReplies        SupportReply[]
   approvalRequests      ApprovalRequest[] @relation("ApprovalRequests")
   approvedRequests      ApprovalRequest[] @relation("ApprovedRequests")
+  payments              Payment[]
 }
 
 model Workflow {
@@ -93,6 +94,7 @@ model Subscription {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   user            User      @relation(fields: [userId], references: [id])
+  payments        Payment[]
 }
 
 model Webhook {
@@ -210,4 +212,19 @@ model ApprovalRequest {
   workflow          Workflow @relation(fields: [workflowId], references: [id])
   requester         User     @relation("ApprovalRequests", fields: [requestedBy], references: [id])
   approver          User?    @relation("ApprovedRequests", fields: [approvedBy], references: [id])
+}
+
+model Payment {
+  id                  String       @id @default(uuid())
+  userId              String
+  amount              Float
+  currency            String
+  status              String
+  razorpay_payment_id String       @unique
+  razorpay_order_id   String
+  subscriptionId      String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  user                User         @relation(fields: [userId], references: [id])
+  subscription        Subscription? @relation(fields: [subscriptionId], references: [id])
 } 
