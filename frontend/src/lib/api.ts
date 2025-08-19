@@ -652,6 +652,28 @@ class ApiService {
 
 
   // Subscription and billing
+  static async getAvailablePlans(): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.get('/billing/plans');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getCurrentPlan(): Promise<ApiResponse<any>> {
+    return this.getSubscription();
+  }
+
+  static async createSubscription(planId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.post('/subscription', { planId });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getSubscription(): Promise<ApiResponse<any>> {
     try {
       const response = await apiClient.get('/subscription');
@@ -724,9 +746,27 @@ class ApiService {
     }
   }
 
-  static async cancelSubscription(feedback?: string): Promise<ApiResponse<any>> {
+  static async cancelSubscription(): Promise<ApiResponse<any>> {
     try {
-      const response = await apiClient.post('/subscription/cancel', { feedback });
+      const response = await apiClient.post('/billing/cancel');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getInvoice(invoiceId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.get(`/billing/invoice/${invoiceId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getPaymentMethodUpdateUrl(): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiClient.get('/billing/update-payment-method');
       return response.data;
     } catch (error) {
       throw error;

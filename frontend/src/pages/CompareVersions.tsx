@@ -15,7 +15,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MainAppLayout from "@/components/MainAppLayout";
 import ContentSection from "@/components/ContentSection";
 import { useToast } from "@/hooks/use-toast";
-import { ApiService, WorkflowVersion, WorkflowHistoryVersion } from "@/lib/api";
+import { ApiService } from "@/lib/api";
+import {
+  WorkflowDetailsSchema,
+  WorkflowHistoryVersionsSchema,
+  ComparisonDataSchema,
+  type WorkflowDetails,
+  type WorkflowHistoryVersion,
+  type ComparisonData,
+  type WorkflowVersion,
+  type WorkflowStep,
+} from "@/types/compare-versions.schemas";
 import {
   ArrowLeft,
   Plus,
@@ -43,16 +53,8 @@ const CompareVersions = () => {
   const [versionA, setVersionA] = useState(searchParams.get("versionA") || "");
   const [versionB, setVersionB] = useState(searchParams.get("versionB") || "");
   const [syncScroll, setSyncScroll] = useState(true);
-  const [workflowDetails, setWorkflowDetails] = useState<any>(null);
-  const [comparisonData, setComparisonData] = useState<{
-    versionA: WorkflowVersion | null;
-    versionB: WorkflowVersion | null;
-    differences: {
-      added: any[];
-      modified: any[];
-      removed: any[];
-    };
-  } | null>(null);
+  const [workflowDetails, setWorkflowDetails] = useState<WorkflowDetails | null>(null);
+  const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
@@ -76,50 +78,26 @@ const CompareVersions = () => {
       
       const [workflowResponse, versionsResponse] = await Promise.all([
         ApiService.getWorkflowDetails(workflowId),
-        ApiService.getWorkflowVersionsForComparison(workflowId)
+        ApiService.getWorkflowVersionsForComparison(workflowId),
       ]);
-      
-      // Add safety checks for responses
-      if (!workflowResponse || !workflowResponse.data) {
-        throw new Error('No workflow details received from server');
+
+      const workflowDetailsResult = WorkflowDetailsSchema.safeParse(workflowResponse.data);
+      if (!workflowDetailsResult.success) {
+        console.error("Failed to parse workflow details:", workflowDetailsResult.error);
+        throw new Error("Invalid workflow details received from server.");
       }
-      
-      if (!versionsResponse || !versionsResponse.data || !Array.isArray(versionsResponse.data)) {
-        throw new Error('No workflow versions received from server');
+      setWorkflowDetails(workflowDetailsResult.data);
+
+      const versionsResult = WorkflowHistoryVersionsSchema.safeParse(versionsResponse.data);
+      if (!versionsResult.success) {
+        console.error("Failed to parse workflow versions:", versionsResult.error);
+        throw new Error("Invalid workflow versions received from server.");
       }
-      
-      // Safely set workflow details
-      const safeWorkflowDetails = {
-        id: typeof workflowResponse.data.id === 'string' ? workflowResponse.data.id : '',
-        name: typeof workflowResponse.data.name === 'string' ? workflowResponse.data.name : 'Unknown Workflow',
-        status: typeof workflowResponse.data.status === 'string' ? workflowResponse.data.status : 'unknown',
-        lastModified: typeof workflowResponse.data.lastModified === 'string' ? workflowResponse.data.lastModified : new Date().toISOString(),
-        totalVersions: typeof workflowResponse.data.totalVersions === 'number' ? workflowResponse.data.totalVersions : 0
-      };
-      
-      setWorkflowDetails(safeWorkflowDetails);
-      
-      // Safely filter and map versions
-      const safeVersions = versionsResponse.data
-        .filter((version: any) => version && typeof version === 'object')
-        .map((version: any) => ({
-          id: typeof version.id === 'string' ? version.id : '',
-          date: typeof version.date === 'string' ? version.date : new Date().toISOString(),
-          type: typeof version.type === 'string' ? version.type : 'Unknown',
-          initiator: typeof version.initiator === 'string' ? version.initiator : 'Unknown',
-          notes: typeof version.notes === 'string' ? version.notes : 'No notes available',
-          workflowId: typeof version.workflowId === 'string' ? version.workflowId : '',
-          versionNumber: typeof version.versionNumber === 'number' ? version.versionNumber : 0,
-          changes: version.changes && typeof version.changes === 'object' ? version.changes : null,
-          status: typeof version.status === 'string' ? version.status : 'unknown'
-        }));
-      
-      setVersions(safeVersions);
-      
-      // Set default versions if not already set
-      if (safeVersions.length >= 2) {
-        if (!versionA) setVersionA(safeVersions[0].id);
-        if (!versionB) setVersionB(safeVersions[1].id);
+      setVersions(versionsResult.data);
+
+      if (versionsResult.data.length >= 2) {
+        if (!versionA) setVersionA(versionsResult.data[0].id);
+        if (!versionB) setVersionB(versionsResult.data[1].id);
       }
       
     } catch (err: any) {
@@ -143,27 +121,13 @@ const CompareVersions = () => {
       setLoading(true);
       const response = await ApiService.compareWorkflowVersions(workflowId, versionA, versionB);
       
-      // Add safety checks for response
-      if (!response || !response.data) {
-        throw new Error('No comparison data received from server');
+      const comparisonResult = ComparisonDataSchema.safeParse(response.data);
+      if (!comparisonResult.success) {
+        console.error("Failed to parse comparison data:", comparisonResult.error);
+        throw new Error("Invalid comparison data received from server.");
       }
       
-      // Safely set comparison data with validation
-      const safeComparisonData = {
-        versionA: response.data.versionA && typeof response.data.versionA === 'object' ? response.data.versionA : null,
-        versionB: response.data.versionB && typeof response.data.versionB === 'object' ? response.data.versionB : null,
-        differences: response.data.differences && typeof response.data.differences === 'object' ? {
-          added: Array.isArray(response.data.differences.added) ? response.data.differences.added : [],
-          modified: Array.isArray(response.data.differences.modified) ? response.data.differences.modified : [],
-          removed: Array.isArray(response.data.differences.removed) ? response.data.differences.removed : []
-        } : {
-          added: [],
-          modified: [],
-          removed: []
-        }
-      };
-      
-      setComparisonData(safeComparisonData);
+      setComparisonData(comparisonResult.data);
     } catch (err: any) {
       console.error('Failed to fetch comparison data:', err);
       setComparisonData(null);
@@ -250,7 +214,7 @@ const CompareVersions = () => {
     navigate(`/workflow-history/${workflowId}`);
   };
 
-  const getStepColor = (step: any) => {
+  const getStepColor = (step: WorkflowStep) => {
     if (step?.isNew) return "bg-green-50 border-green-200";
     if (step?.isModified) return "bg-yellow-50 border-yellow-200";
     if (step?.isRemoved) return "bg-red-50 border-red-200";
@@ -261,7 +225,7 @@ const CompareVersions = () => {
     return "bg-gray-50 border-gray-200";
   };
 
-  const getStepTextColor = (step: any) => {
+  const getStepTextColor = (step: WorkflowStep) => {
     if (step?.isNew) return "text-green-800";
     if (step?.isModified) return "text-yellow-800";
     if (step?.isRemoved) return "text-red-800";
@@ -272,7 +236,7 @@ const CompareVersions = () => {
     return "text-gray-800";
   };
 
-  const getStepIcon = (step: any) => {
+  const getStepIcon = (step: WorkflowStep) => {
     switch (step?.type) {
       case "email":
         return Mail;

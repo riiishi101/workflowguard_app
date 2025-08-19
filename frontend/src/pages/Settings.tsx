@@ -7,6 +7,7 @@ import NotificationsTab from "@/components/settings/NotificationsTab";
 import AuditLogTab from "@/components/settings/AuditLogTab";
 import ProfileTab from "@/components/settings/ProfileTab";
 import ManageSubscriptionTab from "@/components/settings/ManageSubscriptionTab";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   CreditCard,
   Bell,
@@ -92,7 +93,9 @@ const Settings = () => {
 
           {/* Tab Content */}
           <div className="min-h-[600px]">
-            <ActiveComponent />
+            <ErrorBoundary>
+              <ActiveComponent />
+            </ErrorBoundary>
           </div>
         </div>
       </ContentSection>

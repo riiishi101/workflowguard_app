@@ -106,11 +106,119 @@ export class BillingController {
         // Do not block response for email failure
       }
 
-      return { success: true, message: 'Subscription cancellation scheduled.' };
+        return { success: true, message: 'Subscription cancellation scheduled.' };
     } catch (error) {
       console.error('Error cancelling subscription:', error);
       throw new HttpException(
         'Failed to cancel subscription',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('history/export')
+  @UseGuards(JwtAuthGuard)
+  async exportBillingHistory(@Req() req: RequestWithUser) {
+    try {
+      const userId = this.getUserId(req);
+      
+      // Fetch all payments made by the user from Razorpay
+      const payments = await this.razorpay.payments.all({ count: 100 });
+      
+      // Filter by user if storing mapping in payment.notes
+      const userPayments = payments.items.filter(
+        (p: any) => p.notes && p.notes.userId === userId,
+      );
+      
+      // Generate CSV content
+      const csvHeader = 'Date,Amount,Status,Invoice ID,Payment ID\n';
+      const csvRows = userPayments.map((p: any) => {
+        const date = new Date(p.created_at * 1000).toISOString().split('T')[0];
+        const amount = (p.amount / 100.0).toFixed(2);
+        const status = p.status === 'captured' ? 'Paid' : 'Failed';
+        return `${date},${amount},${status},${p.invoice_id || ''},${p.id}`;
+      }).join('\n');
+      
+      const csvContent = csvHeader + csvRows;
+      
+      return {
+        success: true,
+        data: csvContent
+      };
+    } catch (error) {
+      console.error('Error exporting billing history:', error);
+      throw new HttpException(
+        'Failed to export billing history',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('invoice/:invoiceId')
+  @UseGuards(JwtAuthGuard)
+  async getInvoice(@Param('invoiceId') invoiceId: string, @Req() req: RequestWithUser) {
+    try {
+      const userId = this.getUserId(req);
+      
+      // Fetch invoice from Razorpay
+      const invoice = await this.razorpay.invoices.fetch(invoiceId);
+      
+      // Verify invoice belongs to user (check customer_id or notes)
+      if (invoice.notes && invoice.notes.userId !== userId) {
+        throw new HttpException('Invoice not found', HttpStatus.NOT_FOUND);
+      }
+      
+      // Redirect to Razorpay invoice URL
+      return {
+        success: true,
+        data: {
+          invoiceUrl: invoice.short_url || invoice.invoice_url,
+          invoice: {
+            id: invoice.id,
+            amount: invoice.amount / 100.0,
+            status: invoice.status,
+            date: new Date(invoice.date * 1000).toISOString(),
+            description: invoice.description
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      throw new HttpException(
+        'Failed to fetch invoice',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('update-payment-method')
+  @UseGuards(JwtAuthGuard)
+  async getPaymentMethodUpdateUrl(@Req() req: RequestWithUser) {
+    try {
+      const userId = this.getUserId(req);
+      
+      // Find user's active subscription
+      const sub = await this.prisma.subscription.findFirst({
+        where: { userId, status: 'active' },
+      });
+      
+      if (!sub || !sub.razorpay_subscription_id) {
+        throw new HttpException('No active subscription found', HttpStatus.NOT_FOUND);
+      }
+      
+      // For Razorpay, redirect to customer portal or subscription management
+      const updateUrl = `https://dashboard.razorpay.com/app/subscriptions/${sub.razorpay_subscription_id}`;
+      
+      return {
+        success: true,
+        data: {
+          updateUrl: updateUrl
+        }
+      };
+    } catch (error) {
+      console.error('Error getting payment method update URL:', error);
+      throw new HttpException(
+        'Failed to get payment method update URL',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

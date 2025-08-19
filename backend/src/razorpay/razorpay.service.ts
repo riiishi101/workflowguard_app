@@ -14,18 +14,24 @@ export class RazorpayService {
   }
 
   // TODO: Use proper types from razorpay library once import issues are resolved
-  async createOrder(
-    amount: number,
-    currency: string = 'INR',
-    receipt?: string,
-    notes?: any,
-  ) {
+  async createOrder(planId: string, userId: string) {
+    const planPrices: Record<string, number> = {
+      starter: 19,
+      professional: 49,
+      enterprise: 99,
+    };
+    const amount = planPrices[planId];
+
+    if (!amount) {
+      throw new Error(`Invalid planId provided: ${planId}`);
+    }
+
+    const currency = 'USD'; // Assuming USD for now, can be made dynamic
     return await this.razorpay.orders.create({
-      amount: amount * 100, // in paise
+      amount: amount * 100, // in cents
       currency,
       payment_capture: true,
-      receipt,
-      notes, // Custom metadata (userId, planId etc.)
+      notes: { userId, planId },
     });
   }
 

@@ -35,30 +35,11 @@ import MainAppLayout from "@/components/MainAppLayout";
 import ContentSection from "@/components/ContentSection";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
 import { ApiService } from "@/lib/api";
-
-interface ProtectedWorkflow {
-  id: string;
-  name: string;
-  status: string;
-  protectionStatus: string;
-  lastModified: string;
-  versions: number;
-  lastModifiedBy: {
-    name: string;
-    initials: string;
-    email: string;
-  };
-}
-
-interface VersionHistoryItem {
-  id: string;
-  version: string;
-  dateTime: string;
-  lastModifiedBy: string;
-  changeSummary: string;
-  changeType: string;
-  isCurrent: boolean;
-}
+import { 
+  ProtectedWorkflow, 
+  ProtectedWorkflowsSchema,
+  VersionHistoryItem 
+} from "@/types/workflow-history.schemas";
 
 // Helper functions
 const getStatusIcon = (status: string) => {
@@ -114,38 +95,15 @@ const WorkflowHistory = () => {
       
       console.log('🔍 WorkflowHistory - Fetching workflows from backend');
       
-      // Try to fetch from backend API first
-      try {
-        const apiResponse = await ApiService.getProtectedWorkflows();
-        console.log('🔍 WorkflowHistory - Backend API response:', apiResponse);
-        
-        // Handle ApiResponse wrapper
-        const apiWorkflows = apiResponse.data || apiResponse;
-        
-        if (apiWorkflows && Array.isArray(apiWorkflows) && apiWorkflows.length > 0) {
-          const transformedWorkflows: ProtectedWorkflow[] = apiWorkflows.map((workflow: any) => ({
-            id: workflow.id,
-            name: workflow.name || `Workflow ${workflow.id}`,
-            status: workflow.status || 'active',
-            protectionStatus: workflow.protectionStatus || 'protected',
-            lastModified: workflow.lastModified || workflow.updatedAt || new Date().toLocaleDateString(),
-            versions: workflow.versions?.length || 1,
-            lastModifiedBy: {
-              name: workflow.owner?.name || 'Unknown User',
-              initials: workflow.owner?.name ? workflow.owner.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'UU',
-              email: workflow.owner?.email || ''
-            }
-          }));
-          
-          setWorkflows(transformedWorkflows);
-          return;
-        }
-      } catch (apiError) {
-        console.warn('🔍 WorkflowHistory - Backend API failed, trying localStorage:', apiError);
+      const apiResponse = await ApiService.getProtectedWorkflows();
+      const validationResult = ProtectedWorkflowsSchema.safeParse(apiResponse.data);
+
+      if (!validationResult.success) {
+        console.error("Zod validation failed:", validationResult.error.errors);
+        throw new Error("Received invalid workflow history data from the server.");
       }
-      
-      // No fallback to localStorage or mock data. Only use real API data.
-      setWorkflows([]);
+
+      setWorkflows(validationResult.data);
     } catch (err: any) {
       console.error('Failed to fetch workflows:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to load workflows';

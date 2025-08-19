@@ -34,20 +34,10 @@ import {
   SortAsc,
   SortDesc
 } from "lucide-react";
+import { HubSpotWorkflow, HubSpotWorkflowsSchema } from "@/types/workflow-selection.schemas";
 
 interface WorkflowSelectionProps {
   onComplete?: () => void;
-}
-
-interface HubSpotWorkflow {
-  id: string;
-  name: string;
-  folder: string;
-  status: "ACTIVE" | "INACTIVE" | "DRAFT";
-  lastModified: string;
-  steps: number;
-  contacts: number;
-  isProtected?: boolean;
 }
 
 const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
@@ -123,27 +113,16 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
         throw new Error(response?.message || 'Invalid response structure from HubSpot API');
       }
       
-      // Extract workflows from the response data
-      const workflows = response.data || [];
+      const validationResult = HubSpotWorkflowsSchema.safeParse(response.data);
 
-      
-      if (workflows.length > 0) {
+      if (!validationResult.success) {
+        console.error("Zod validation failed:", validationResult.error.errors);
+        throw new Error("Received invalid workflow data from the server.");
+      }
 
+      const validWorkflows = validationResult.data;
 
-        
-        // Validate workflow structure
-        const validWorkflows = workflows.map(workflow => {
-
-          return {
-            ...workflow,
-            isProtected: workflow.isProtected ?? false, // Default to false if undefined
-          };
-        });
-        
-        if (validWorkflows.length === 0) {
-          throw new Error('No valid workflows found in response');
-        }
-        
+      if (validWorkflows.length > 0) {
         setWorkflows(validWorkflows);
         setWorkflowsFetched(true);
         toast({
@@ -380,16 +359,27 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
         const workflowsForState = workflows
           .filter(workflow => selectedWorkflows.includes(workflow.id))
           .map(workflow => ({
-            ...workflow,
-            versions: 1,
-            lastModifiedBy: { name: "Unknown", initials: "U", email: "unknown@example.com" },
-            protectionStatus: "protected" as "protected",
-            status: (workflow.status === "DRAFT" ? "inactive" : workflow.status.toLowerCase()) as "active" | "inactive" | "error"
+            id: workflow.id,
+            name: workflow.name,
+            status: workflow.status === "DRAFT" ? "inactive" : workflow.status.toLowerCase() as "active" | "inactive" | "error",
+            lastModified: workflow.lastModified,
+            folder: workflow.folder,
+            steps: workflow.steps,
+            contacts: workflow.contacts,
+            isProtected: workflow.isProtected,
+            versions: 1, // Default to 1 version when protecting
+            protectionStatus: 'protected' as const,
+            lastModifiedBy: {
+              name: user?.name || 'System',
+              initials: user?.name?.split(' ').map(n => n[0]).join('') || 'S',
+              email: user?.email || '',
+            },
           }));
 
         // Store selected workflows in WorkflowState for backward compatibility
         WorkflowState.setSelectedWorkflows(workflowsForState);
 
+// ...
         // Add a delay to ensure dashboard has time to load properly
         await new Promise(resolve => setTimeout(resolve, 1500));
         

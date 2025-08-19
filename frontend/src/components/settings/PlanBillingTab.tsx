@@ -25,13 +25,21 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ApiService } from '@/lib/api';
+import {
+  SubscriptionSchema,
+  TrialStatusSchema,
+  UsageStatsSchema,
+  type Subscription,
+  type TrialStatus,
+  type UsageStats,
+} from '@/types/plan-billing.schemas';
 
 const PlanBillingTab = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [subscription, setSubscription] = useState<any>(null);
-  const [trialStatus, setTrialStatus] = useState<any>(null);
-  const [usageStats, setUsageStats] = useState<any>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [trialStatus, setTrialStatus] = useState<TrialStatus | null>(null);
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,27 +64,38 @@ const PlanBillingTab = () => {
       const [subscriptionRes, trialRes, usageRes] = await Promise.all([
         ApiService.getSubscription(),
         ApiService.getTrialStatus(),
-        ApiService.getUsageStats()
+        ApiService.getUsageStats(),
       ]);
 
-      const subData = subscriptionRes.data;
-      const trialData = trialRes.data;
-      const usageData = usageRes.data;
+      const subscriptionResult = SubscriptionSchema.safeParse(subscriptionRes.data);
+      if (!subscriptionResult.success) {
+        console.error("Failed to parse subscription data:", subscriptionResult.error);
+        throw new Error("Invalid subscription data received.");
+      }
+      setSubscription(subscriptionResult.data);
 
-      // Calculate correct workflow limits based on plan
-      const workflowLimit = getWorkflowLimit(subData?.planId || 'starter');
-      
-      // Merge usage stats with correct limits
+      const trialStatusResult = TrialStatusSchema.safeParse(trialRes.data);
+      if (!trialStatusResult.success) {
+        console.error("Failed to parse trial status:", trialStatusResult.error);
+        throw new Error("Invalid trial status data received.");
+      }
+      setTrialStatus(trialStatusResult.data);
+
+      const usageStatsResult = UsageStatsSchema.safeParse(usageRes.data);
+      if (!usageStatsResult.success) {
+        console.error("Failed to parse usage stats:", usageStatsResult.error);
+        throw new Error("Invalid usage stats data received.");
+      }
+
+      const workflowLimit = getWorkflowLimit(subscriptionResult.data?.planId || 'starter');
       const updatedUsageStats = {
-        ...usageData,
+        ...usageStatsResult.data,
         workflows: {
-          ...usageData?.workflows,
-          limit: trialData?.isTrial ? 35 : workflowLimit
-        }
+          used: usageStatsResult.data.workflows.used,
+          limit: trialStatusResult.data?.isTrial ? 35 : workflowLimit,
+        },
       };
 
-      setSubscription(subData);
-      setTrialStatus(trialData);
       setUsageStats(updatedUsageStats);
     } catch (error: any) {
       console.error('Failed to fetch subscription data:', error);
@@ -86,22 +105,9 @@ const PlanBillingTab = () => {
         variant: "destructive",
       });
 
-      // Set default values on error
-      setSubscription({
-        planId: 'starter',
-        planName: 'Starter Plan',
-        price: 19
-      });
-      setTrialStatus({
-        isTrial: false,
-        trialDaysRemaining: 0
-      });
-      setUsageStats({
-        workflows: {
-          used: 0,
-          limit: 10
-        }
-      });
+      setSubscription(null);
+      setTrialStatus(null);
+      setUsageStats(null);
     } finally {
       setLoading(false);
     }

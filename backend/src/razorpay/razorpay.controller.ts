@@ -26,7 +26,15 @@ export class RazorpayController {
     private readonly emailService: EmailService,
   ) {}
 
-  // ...existing endpoints
+  @Post('order')
+  async createRazorpayOrder(@Body() body: { planId: string }, @Req() req: any) {
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+    }
+    return this.razorpayService.createOrder(body.planId, userId);
+  }
+
 
   /**
    * Endpoint to create a recurring Razorpay subscription
@@ -100,7 +108,7 @@ export class RazorpayController {
    * Endpoint to confirm a payment and activate/update a subscription
    * POST /razorpay/confirm-payment { planId, paymentId, orderId, signature }
    */
-  @Post('confirm-payment')
+  @Post('confirm')
   async confirmPayment(@Body() confirmPaymentDto: ConfirmPaymentDto, @Req() req: any) {
     const { orderId, paymentId, signature, planId } = confirmPaymentDto;
     const userId = req.user?.sub;
