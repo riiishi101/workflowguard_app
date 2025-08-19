@@ -163,9 +163,6 @@ const PlanBillingTab = () => {
     }
   };
 
-  const handleManageSubscription = () => {
-    navigate('/settings?tab=manage-subscription');
-  };
 
   const handleUpdatePayment = () => {
     window.open('https://app.hubspot.com/billing/payment-methods', '_blank');
@@ -541,23 +538,6 @@ const PlanBillingTab = () => {
         </div>
       </div>
 
-      {/* Manage Subscription */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          Manage Your Subscription & Plan
-        </h2>
-        <p className="text-gray-600 mb-4">
-          You can manage your plan, update payment methods, and view your billing history here.
-        </p>
-        <div className="flex">
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={handleManageSubscription}
-          >
-            Manage Subscription
-          </Button>
-        </div>
-      </div>
     </div>
   );
 };
