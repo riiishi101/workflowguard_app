@@ -149,6 +149,7 @@ async function bootstrap() {
       'Accept',
       'Origin',
       'X-Requested-With',
+      'cache-control',
     ],
     exposedHeaders: [
       'Content-Length',

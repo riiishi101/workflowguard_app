@@ -297,6 +297,54 @@ class ApiService {
     }
   }
 
+  static async getHubSpotAuthUrl(isMarketplace: boolean = false): Promise<ApiResponse<{ url: string }>> {
+    const headers: any = {
+      'Content-Type': 'application/json',
+    };
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await apiClient.get('/auth/hubspot/url', {
+        headers,
+        params: {
+          marketplace: isMarketplace,
+          _ts: Date.now() // Cache-busting parameter
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting HubSpot auth URL:', error);
+      throw error;
+    }
+  }
+
+  static async completeHubSpotOAuth(code: string): Promise<ApiResponse<any>> {
+    const headers: any = {
+      'Content-Type': 'application/json',
+    };
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await apiClient.post(
+        '/auth/hubspot/callback',
+        { code },
+        { headers }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error completing HubSpot OAuth:', error);
+      throw error;
+    }
+  }
+
   static async syncHubSpotWorkflows(): Promise<ApiResponse<any>> {
     const headers: any = {
       'Content-Type': 'application/json',
@@ -496,28 +544,6 @@ class ApiService {
     }
   }
 
-  static async getHubSpotAuthUrl(isMarketplace: boolean = false): Promise<ApiResponse<{ url: string }>> {
-    try {
-      const response = await apiClient.get('/auth/hubspot/url', {
-        // Add cache-busting param to avoid 304 Not Modified
-        params: {
-          marketplace: isMarketplace.toString(),
-          _ts: Date.now(),
-        },
-        headers: {
-          // Hint to intermediaries not to cache
-          'Cache-Control': 'no-cache',
-        },
-      });
-
-      const raw = response.data;
-      // Normalize to ApiResponse shape expected by callers
-      if (raw && typeof raw.url === 'string') {
-        return { success: true, data: { url: raw.url } };
-      }
-      if (raw && (raw.success !== undefined)) {
-        return raw;
-      }
       return { success: false, message: 'Invalid response from server' };
     } catch (error: any) {
       // If a 304 sneaks through, treat as retryable failure
@@ -538,7 +564,7 @@ class ApiService {
   }
 
   // User management
-  static async updateProfile(userData: any): Promise<ApiResponse<any>> {
+  static async updateUserProfile(userData: any): Promise<ApiResponse<any>> {
     try {
       const response = await apiClient.put('/user/profile', userData);
       return response.data;
@@ -547,11 +573,17 @@ class ApiService {
     }
   }
 
-  static async updateUserProfile(userData: any): Promise<ApiResponse<any>> {
+  static async getHubSpotAuthUrl(isMarketplace: boolean = false): Promise<ApiResponse<{ url: string }>> {
     try {
-      const response = await apiClient.put('/user/profile', userData);
+      const response = await apiClient.get('/auth/hubspot/url', {
+        params: {
+          marketplace: isMarketplace,
+          _ts: Date.now() // Cache-busting parameter
+        }
+      });
       return response.data;
     } catch (error) {
+      console.error('Error getting HubSpot auth URL:', error);
       throw error;
     }
   }

@@ -7,12 +7,14 @@ import NotificationsTab from "@/components/settings/NotificationsTab";
 import AuditLogTab from "@/components/settings/AuditLogTab";
 import ProfileTab from "@/components/settings/ProfileTab";
 import ManageSubscriptionTab from "@/components/settings/ManageSubscriptionTab";
+import HubSpotTab from "@/components/settings/HubSpotTab";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   CreditCard,
   Bell,
   FileText,
   UserCircle,
+  Link2,
 } from "lucide-react";
 
 const Settings = () => {
@@ -45,6 +47,12 @@ const Settings = () => {
       label: "Audit Log",
       icon: FileText,
       component: AuditLogTab,
+    },
+    {
+      id: "hubspot",
+      label: "HubSpot",
+      icon: Link2,
+      component: HubSpotTab,
     },
     {
       id: "profile",

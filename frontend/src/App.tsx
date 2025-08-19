@@ -27,6 +27,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactUs from "./pages/ContactUs";
 import SetupGuide from "./pages/SetupGuide";
 import NotFound from "./pages/NotFound";
+import { HubSpotOAuthCallback } from "./components/auth/HubSpotOAuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -86,7 +87,7 @@ const App = () => {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/setup-guide" element={<ProtectedRoute><TrialAccessGuard><SetupGuide /></TrialAccessGuard></ProtectedRoute>} />
-                            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/auth/hubspot/callback" element={<HubSpotOAuthCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
