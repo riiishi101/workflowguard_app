@@ -708,7 +708,7 @@ class ApiService {
 
   static async getBillingHistory(): Promise<ApiResponse<any>> {
     try {
-      const response = await apiClient.get('/subscription/billing-history');
+      const response = await apiClient.get('/billing/history');
       return response.data;
     } catch (error) {
       throw error;
@@ -717,7 +717,7 @@ class ApiService {
 
   static async downloadBillingHistoryCSV(): Promise<ApiResponse<any>> {
     try {
-      const response = await apiClient.get('/subscription/billing-history/download');
+      const response = await apiClient.get('/billing/history/export');
       return response.data;
     } catch (error) {
       throw error;
