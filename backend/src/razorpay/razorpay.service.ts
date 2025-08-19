@@ -4,27 +4,51 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class RazorpayService {
-  private razorpay: Razorpay;
+  private razorpay: Razorpay | null = null;
+  private isConfigured: boolean = false;
 
   constructor() {
-    this.razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID!,
-      key_secret: process.env.RAZORPAY_KEY_SECRET!,
-    });
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (keyId && keySecret) {
+      try {
+        this.razorpay = new Razorpay({
+          key_id: keyId,
+          key_secret: keySecret,
+        });
+        this.isConfigured = true;
+        console.log('Razorpay service initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize Razorpay:', error);
+        this.isConfigured = false;
+      }
+    } else {
+      console.warn('Razorpay credentials not configured - payment features will be disabled');
+      this.isConfigured = false;
+    }
+  }
+
+  private ensureConfigured() {
+    if (!this.isConfigured || !this.razorpay) {
+      throw new Error('Razorpay is not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
+    }
   }
 
   // TODO: Use proper types from razorpay library once import issues are resolved
-    async createOrder(
+  async createOrder(
     amount: number,
     currency: string,
     receipt: string,
     notes: Record<string, any>,
   ) {
+    this.ensureConfigured();
+    
     if (amount < 1) {
-      throw new Error('Amount must be at least 1');
+      throw new Error('Amount must be at least 1 (in smallest currency unit)');
     }
 
-    return await this.razorpay.orders.create({
+    return await this.razorpay!.orders.create({
       amount: Math.round(amount * 100), // amount in smallest currency unit (e.g., cents)
       currency,
       receipt,
@@ -34,15 +58,18 @@ export class RazorpayService {
 
   // TODO: Use proper types from razorpay library once import issues are resolved
   async createSubscription(params: any) {
-    return await this.razorpay.subscriptions.create(params);
+    this.ensureConfigured();
+    return await this.razorpay!.subscriptions.create(params);
   }
 
   async cancelSubscription(subscriptionId: string, cancelAtCycleEnd: boolean = true) {
-    return await this.razorpay.subscriptions.cancel(subscriptionId, cancelAtCycleEnd);
+    this.ensureConfigured();
+    return await this.razorpay!.subscriptions.cancel(subscriptionId, cancelAtCycleEnd);
   }
 
   async getPaymentDetails(paymentId: string) {
-    return await this.razorpay.payments.fetch(paymentId);
+    this.ensureConfigured();
+    return await this.razorpay!.payments.fetch(paymentId);
   }
 
   verifyPaymentSignature(data: {
@@ -50,6 +77,7 @@ export class RazorpayService {
     payment_id: string;
     razorpay_signature: string;
   }): boolean {
+    this.ensureConfigured();
     const { order_id, payment_id, razorpay_signature } = data;
     const secret = process.env.RAZORPAY_KEY_SECRET!;
     const body = `${order_id}|${payment_id}`;
