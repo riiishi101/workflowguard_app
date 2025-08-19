@@ -18,6 +18,7 @@ export default registerAs('hubspot', () => ({
     'crm.schemas.contacts.read',
     'crm.objects.contacts.read',
     'crm.schemas.companies.read',
+    'workflows-access-public-api',
   ].join(' '),
 
   // API Configuration
