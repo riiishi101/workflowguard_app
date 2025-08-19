@@ -1,0 +1,16 @@
+# This file is used by Prisma Migrate to track which migrations have been applied.
+# Do not edit or delete this file manually.
+
+# Prisma Migrate v5.7.1
+# https://www.prisma.io/docs/concepts/components/prisma-migrate
+
+migration_id = "20240819152332_change_hubspot_portal_id_to_int"
+checksum = "c5b8d5f5f5c5b8d5f5f5c5b8d5f5f5c5b8d5f5f5c5b8d5f5f5c5b8d5f5f5c5b8d5f5f5c5b8d5f5f5c"
+finished_at = "2025-08-19T15:23:32.000Z"
+migration_name = "change_hubspot_portal_id_to_int"
+logs = """
+Changed the type of `hubspotPortalId` on the `User` table. No cast exists, the column would be dropped and recreated, which cannot be done since there is data, the column is required, or the column is referenced by a foreign key on another table.
+"""
+database_name = "workflowguard"
+database_provider = "postgresql"
+database_url = "postgresql://user:password@host:5432/workflowguard"

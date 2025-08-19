@@ -25,7 +25,7 @@ model User {
   language              String?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
-  hubspotPortalId       String?               @unique
+  hubspotPortalId       Int?                  @unique
   hubspotAccessToken    String?
   hubspotRefreshToken   String?
   hubspotTokenExpiresAt DateTime?
