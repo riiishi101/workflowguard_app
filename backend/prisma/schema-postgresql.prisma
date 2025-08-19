@@ -29,10 +29,7 @@ model User {
   auditLogs     AuditLog[]
   subscription  Subscription?
   webhooks      Webhook[]
-  hubspotPortalId       String?   @unique
-  hubspotAccessToken    String?
-  hubspotRefreshToken   String?
-  hubspotTokenExpiresAt DateTime?
+  hubspotPortalId String? @unique
   overages      Overage[]
   notificationSettings NotificationSettings?
   apiKeys       ApiKey[]

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { useWorkflows } from "@/hooks/use-workflows";
 import { useWorkflowStats } from "@/hooks/use-workflow-stats";
 import { useWorkflowActions } from "@/hooks/use-workflow-actions";
-import { DashboardWorkflow } from '@/types/dashboard.schemas';
 import {
   Select,
   SelectContent,
@@ -44,6 +43,30 @@ import {
   Activity
 } from "lucide-react";
 
+interface DashboardWorkflow {
+  id: string;
+  name: string;
+  versions: number;
+  lastModifiedBy: {
+    name: string;
+    initials: string;
+    email: string;
+  };
+  status: "active" | "inactive" | "error";
+  protectionStatus: "protected" | "unprotected" | "error";
+  lastModified: string;
+}
+
+interface DashboardStats {
+  totalWorkflows: number;
+  activeWorkflows: number;
+  protectedWorkflows: number;
+  totalVersions: number;
+  uptime: number;
+  lastSnapshot: string;
+  planCapacity: number;
+  planUsed: number;
+}
 
 const Dashboard: React.FC = () => {
   const location = useLocation();

@@ -17,11 +17,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiService } from "@/lib/api";
 import { AlertTriangle, CheckCircle, Loader2, Save, Mail, Camera, Upload, X, Link, Unlink } from "lucide-react";
-import {
-  UserProfileSchema,
-  AvatarUploadResponseSchema,
-  type UserProfile,
-} from "@/types/profile.schemas";
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  jobTitle?: string;
+  timezone?: string;
+  language?: string;
+  avatarUrl?: string;
+  emailVerified?: boolean;
+}
 
 const ProfileTab = () => {
   const { toast } = useToast();
@@ -36,30 +42,36 @@ const ProfileTab = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  console.log('🔍 ProfileTab - Component mounted');
+
   useEffect(() => {
+    console.log('🔍 ProfileTab - useEffect called, fetching user profile');
     fetchUserProfile();
   }, []);
 
   const fetchUserProfile = async () => {
     try {
+      console.log('🔍 ProfileTab - Starting fetchUserProfile');
       setLoading(true);
       setError(null);
       const response = await ApiService.getUserProfile();
+      console.log('🔍 ProfileTab - API response:', response);
       
-      const result = UserProfileSchema.safeParse(response.data);
-      if (result.success) {
-        setProfile(result.data);
+      // Handle case where response.data might be undefined
+      if (response && response.data) {
+        setProfile(response.data);
+        console.log('🔍 ProfileTab - Profile set:', response.data);
       } else {
-        console.error("Profile validation error:", result.error);
-        setError('Received invalid profile data from the server.');
+        console.error('🔍 ProfileTab - No data in response:', response);
+        setError('No profile data received from server');
         toast({
           title: "Error",
-          description: "Failed to validate user profile. Please try again.",
+          description: "No profile data received. Please try again.",
           variant: "destructive",
         });
       }
     } catch (err: any) {
-      console.error('Failed to fetch user profile:', err);
+      console.error('🔍 ProfileTab - Failed to fetch user profile:', err);
       setError(err.response?.data?.message || 'Failed to load user profile. Please try again.');
       toast({
         title: "Error",
@@ -68,6 +80,7 @@ const ProfileTab = () => {
       });
     } finally {
       setLoading(false);
+      console.log('🔍 ProfileTab - Loading finished');
     }
   };
 
@@ -185,14 +198,14 @@ const ProfileTab = () => {
       formData.append('avatar', selectedFile);
 
       const response = await ApiService.uploadAvatar(formData);
-      const result = AvatarUploadResponseSchema.safeParse(response.data);
-
-      if (result.success) {
+      
+      if (response && response.data && response.data.avatarUrl) {
         setProfile((prev) => ({
           ...prev!,
-          avatarUrl: result.data.avatarUrl,
+          avatarUrl: response.data.avatarUrl,
         }));
         
+        // Clean up
         setSelectedFile(null);
         if (previewUrl) {
           URL.revokeObjectURL(previewUrl);
@@ -203,9 +216,6 @@ const ProfileTab = () => {
           title: "Avatar Updated",
           description: "Your profile picture has been updated successfully.",
         });
-      } else {
-        console.error('Avatar upload validation error:', result.error);
-        throw new Error('Invalid response from avatar upload.');
       }
     } catch (err: any) {
       console.error('Failed to upload avatar:', err);

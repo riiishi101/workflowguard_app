@@ -13,24 +13,23 @@ export class RazorpayService {
     });
   }
 
-  async createOrder(options: {
-    amount: number;
-    currency: string;
-    receipt?: string;
-    notes?: any;
-    payment_capture?: boolean;
-  }) {
-    if (typeof options.amount !== 'number' || options.amount <= 0) {
-      throw new Error('A valid amount is required to create an order.');
+  // TODO: Use proper types from razorpay library once import issues are resolved
+    async createOrder(
+    amount: number,
+    currency: string,
+    receipt: string,
+    notes: Record<string, any>,
+  ) {
+    if (amount < 1) {
+      throw new Error('Amount must be at least 1');
     }
 
-    const orderOptions = {
-      ...options,
-      amount: Math.round(options.amount * 100), // amount in smallest currency unit (e.g., paise, cents)
-      payment_capture: options.payment_capture !== undefined ? options.payment_capture : true,
-    };
-
-    return await this.razorpay.orders.create(orderOptions);
+    return await this.razorpay.orders.create({
+      amount: Math.round(amount * 100), // amount in smallest currency unit (e.g., cents)
+      currency,
+      receipt,
+      notes,
+    });
   }
 
   // TODO: Use proper types from razorpay library once import issues are resolved

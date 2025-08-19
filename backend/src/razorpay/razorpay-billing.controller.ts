@@ -248,12 +248,12 @@ export class RazorpayBillingController {
       );
 
       // Create one-time payment for prorated amount
-      const order = await this.razorpayService.createOrder({
-        amount: proratedAmount,
+      const order = await this.razorpayService.createOrder(
+        proratedAmount,
         currency,
-        receipt: `upgrade_${userId}_${Date.now()}`,
-        notes: { userId, currentPlan: currentSubscription.planId, newPlan: newPlanId },
-      });
+        `upgrade_${userId}_${Date.now()}`,
+        { userId, currentPlan: currentSubscription.planId, newPlan: newPlanId },
+      );
 
       return {
         success: true,
@@ -441,12 +441,12 @@ export class RazorpayBillingController {
       const { paymentMethodId } = body;
 
       // Create order for payment method update (₹1 or $0.01)
-      const order = await this.razorpayService.createOrder({
-        amount: 1, // Minimal amount
-        currency: 'USD',
-        receipt: `payment_method_${userId}_${Date.now()}`,
-        notes: { userId, type: 'payment_method_update' },
-      });
+      const order = await this.razorpayService.createOrder(
+        1, // Minimal amount
+        'USD',
+        `payment_method_${userId}_${Date.now()}`,
+        { userId, type: 'payment_method_update' },
+      );
 
       return {
         success: true,

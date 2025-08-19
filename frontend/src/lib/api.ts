@@ -652,28 +652,6 @@ class ApiService {
 
 
   // Subscription and billing
-  static async getAvailablePlans(): Promise<ApiResponse<any>> {
-    try {
-      const response = await apiClient.get('/billing/plans');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async getCurrentPlan(): Promise<ApiResponse<any>> {
-    return this.getSubscription();
-  }
-
-  static async createSubscription(planId: string): Promise<ApiResponse<any>> {
-    try {
-      const response = await apiClient.post('/subscription', { planId });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
   static async getSubscription(): Promise<ApiResponse<any>> {
     try {
       const response = await apiClient.get('/subscription');

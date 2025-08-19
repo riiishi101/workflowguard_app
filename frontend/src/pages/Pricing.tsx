@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, Star, Zap, Shield, Users, Crown } from 'lucide-react';
-import { ApiService } from '@/lib/api';
-import { BillingPlanSchema, BillingPlanListSchema, type BillingPlan } from '@/types/pricing.schemas';
+import HubSpotBillingService, { BillingPlan } from '@/services/HubSpotBillingService';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Pricing() {
@@ -24,26 +23,17 @@ export default function Pricing() {
     try {
       setLoading(true);
       setError(null);
-      const plansResponse = await ApiService.getAvailablePlans();
-      const plansResult = BillingPlanListSchema.safeParse(plansResponse.data);
-
-      if (!plansResult.success) {
-        setError('Failed to load pricing plans. Data is invalid.');
-        return;
-      }
-      setPlans(plansResult.data);
+      const availablePlans = await HubSpotBillingService.getAvailablePlans();
+      setPlans(availablePlans);
       
+      // Get current plan if user is logged in
       if (user) {
-        const currentPlanResponse = await ApiService.getCurrentPlan();
-        if (currentPlanResponse.data) {
-          const currentPlanResult = BillingPlanSchema.safeParse(currentPlanResponse.data);
-          if (currentPlanResult.success) {
-            setCurrentPlan(currentPlanResult.data);
-          }
-        }
+        const current = await HubSpotBillingService.getCurrentPlan();
+        setCurrentPlan(current);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load pricing plans');
+    } catch (err) {
+      setError('Failed to load pricing plans');
+      console.error('Pricing page error:', err);
     } finally {
       setLoading(false);
     }
@@ -51,6 +41,7 @@ export default function Pricing() {
 
   const handleSelectPlan = async (planId: string) => {
     if (!user) {
+      // Redirect to login if not authenticated
       window.location.href = '/login?redirect=pricing';
       return;
     }
@@ -59,14 +50,23 @@ export default function Pricing() {
       setProcessingPlan(planId);
       
       if (currentPlan) {
-        await ApiService.updateSubscription(planId);
+        // User has a current plan, handle upgrade/downgrade
+        const selectedPlan = plans.find(p => p.id === planId);
+        if (selectedPlan && selectedPlan.price > currentPlan.price) {
+          await HubSpotBillingService.upgradeSubscription(planId);
+        } else {
+          await HubSpotBillingService.downgradeSubscription(planId);
+        }
       } else {
-        await ApiService.createSubscription(planId);
+        // New subscription
+        await HubSpotBillingService.createSubscription(planId);
       }
       
+      // Redirect to billing dashboard
       window.location.href = '/settings?tab=billing';
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to process subscription');
+    } catch (err) {
+      setError('Failed to process subscription');
+      console.error('Plan selection error:', err);
     } finally {
       setProcessingPlan(null);
     }

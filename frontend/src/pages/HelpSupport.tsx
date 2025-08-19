@@ -30,7 +30,6 @@ import ContentSection from '@/components/ContentSection';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
 import { ApiService } from '@/lib/api';
-import { DiagnoseIssueSchema } from '@/types/help-support.schemas';
 
 const HelpSupport = () => {
   const { toast } = useToast();
@@ -38,12 +37,10 @@ const HelpSupport = () => {
   const [isDiagnosing, setIsDiagnosing] = useState(false);
 
   const handleDiagnoseIssue = async () => {
-    const result = DiagnoseIssueSchema.safeParse({ issueDescription });
-
-    if (!result.success) {
+    if (!issueDescription.trim()) {
       toast({
-        title: "Invalid Input",
-        description: result.error.errors[0].message,
+        title: "Please describe your issue",
+        description: "Enter a description of the problem you're experiencing.",
         variant: "destructive",
       });
       return;
@@ -51,7 +48,7 @@ const HelpSupport = () => {
 
     setIsDiagnosing(true);
     try {
-      const response = await ApiService.diagnoseIssue(result.data.issueDescription);
+      const response = await ApiService.diagnoseIssue(issueDescription);
       toast({
         title: "Issue Diagnosed",
         description: response.message || "AI has analyzed your issue and provided a solution.",
@@ -59,7 +56,7 @@ const HelpSupport = () => {
     } catch (error: any) {
       toast({
         title: "Diagnosis Failed",
-        description: error.response?.data?.message || "Failed to diagnose the issue. Please try again.",
+        description: error.message || "Failed to diagnose the issue. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -97,7 +94,7 @@ const HelpSupport = () => {
     } catch (error: any) {
       toast({
         title: "Auto-Fix Failed",
-        description: error.response?.data?.message || "Failed to automatically fix the issue.",
+        description: error.message || "Failed to automatically fix the issue.",
         variant: "destructive",
       });
     }

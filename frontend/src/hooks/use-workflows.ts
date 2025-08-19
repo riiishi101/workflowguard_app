@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ApiService } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { WorkflowsSchema, DashboardWorkflow } from '@/types/dashboard.schemas';
 
 interface UseWorkflowsOptions {
   autoRefresh?: boolean;
@@ -10,9 +9,9 @@ interface UseWorkflowsOptions {
 
 export function useWorkflows(options: UseWorkflowsOptions = {}) {
   const { autoRefresh = true, refreshInterval = 30000 } = options;
-  const [workflows, setWorkflows] = useState<DashboardWorkflow[]>([]);
+  const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const { toast } = useToast();
 
   const fetchWorkflows = useCallback(async (showToast = false) => {
@@ -20,31 +19,16 @@ export function useWorkflows(options: UseWorkflowsOptions = {}) {
       const response = await ApiService.getProtectedWorkflows();
       
       if (response.success && response.data) {
-        const validationResult = WorkflowsSchema.safeParse(response.data);
-        if (validationResult.success) {
-          setWorkflows(validationResult.data);
-          if (showToast) {
-            toast({
-              title: "Workflows Updated",
-              description: "Your workflow list has been refreshed.",
-            });
-          }
-        } else {
-          console.error("Dashboard data validation error:", validationResult.error.flatten());
-          const errorMessage = "Received invalid data from the server.";
-          setError(errorMessage);
+        setWorkflows(response.data);
+        if (showToast) {
           toast({
-            title: "Data Error",
-            description: errorMessage,
-            variant: "destructive",
+            title: "Workflows Updated",
+            description: "Your workflow list has been refreshed.",
           });
         }
-      } else if (!response.success) {
-        setError(response.error || 'An unknown error occurred');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
+      setError(err.message);
       toast({
         title: "Update Failed",
         description: "Failed to refresh workflows. Will retry automatically.",

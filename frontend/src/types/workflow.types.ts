@@ -39,6 +39,7 @@ export interface WorkflowTypes {
       oldValue?: any;
       newValue?: any;
     }[];
+    steps: any[];
   };
 
   WorkflowError: {

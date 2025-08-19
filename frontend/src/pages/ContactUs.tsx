@@ -18,17 +18,17 @@ import Footer from "@/components/Footer";
 import { LAYOUT, TYPOGRAPHY, COLORS } from "@/lib/layout-constants";
 import { Mail, MessageCircle, Clock, CheckCircle } from "lucide-react";
 import { ApiService } from "@/lib/api";
-import { ContactFormSchema, type ContactFormData } from "@/types/contact.schemas";
 
 const ContactUs = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<Partial<ContactFormData>>({
+  const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     subject: "",
     message: "",
+    category: "",
     priority: "medium",
   });
 
@@ -40,13 +40,10 @@ const ContactUs = () => {
   };
 
   const handleSendMessage = async () => {
-    const result = ContactFormSchema.safeParse(formData);
-
-    if (!result.success) {
-      const errorMessages = result.error.errors.map((e) => e.message).join("\n");
+    if (!formData.fullName || !formData.email || !formData.subject || !formData.message) {
       toast({
-        title: "Invalid Information",
-        description: errorMessages,
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
@@ -54,11 +51,11 @@ const ContactUs = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await ApiService.createSupportTicket(result.data);
+      const response = await ApiService.createSupportTicket(formData);
       
       toast({
         title: "Ticket Created Successfully!",
-        description: response.message || "Your support ticket has been created.",
+        description: response.message,
       });
 
       // Reset form
@@ -67,12 +64,13 @@ const ContactUs = () => {
         email: "",
         subject: "",
         message: "",
+        category: "",
         priority: "medium",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to create support ticket. Please try again.",
+        description: "Failed to create support ticket. Please try again.",
         variant: "destructive",
       });
     } finally {

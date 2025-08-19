@@ -21,12 +21,6 @@ import ContentSection from "@/components/ContentSection";
 import ViewDetailsModal from "@/components/ViewDetailsModal";
 import RollbackConfirmModal from "@/components/RollbackConfirmModal";
 import {
-  WorkflowVersion,
-  WorkflowDetails,
-  WorkflowVersionsSchema,
-  WorkflowDetailsSchema,
-} from "@/types/workflow-history-detail.schemas";
-import {
   Search,
   ExternalLink,
   AlertTriangle,
@@ -43,6 +37,28 @@ import {
   Clock,
   GitCompare,
 } from "lucide-react";
+
+interface WorkflowVersion {
+  id: string;
+  versionNumber: string;
+  dateTime: string;
+  modifiedBy: {
+    name: string;
+    initials: string;
+  };
+  changeSummary: string;
+  type: string;
+  status: string;
+}
+
+interface WorkflowDetails {
+  id: string;
+  name: string;
+  status: string;
+  lastModified: string;
+  totalVersions: number;
+  hubspotUrl?: string;
+}
 
 const WorkflowHistoryDetail = () => {
   const navigate = useNavigate();
@@ -80,18 +96,20 @@ const WorkflowHistoryDetail = () => {
 
   const fetchWorkflowDetails = async () => {
     try {
-      const response = await ApiService.getWorkflowDetails(workflowId);
-      const validationResult = WorkflowDetailsSchema.safeParse(response.data);
-
-      if (!validationResult.success) {
-        console.error("Zod validation for workflow details failed:", validationResult.error.errors);
-        return;
+      const details = await ApiService.getWorkflowDetails(workflowId);
+      if (details.data) {
+        setWorkflowDetails({
+          id: details.data.id || workflowId,
+          name: details.data.name || `Workflow ${workflowId}`,
+          status: details.data.status || 'active',
+          lastModified: details.data.lastModified || details.data.updatedAt || '',
+          totalVersions: details.data.totalVersions || 0,
+          hubspotUrl: details.data.hubspotUrl || details.data.url || ''
+        });
       }
-      
-      setWorkflowDetails(validationResult.data);
-
     } catch (error) {
       console.error('Failed to fetch workflow details:', error);
+      // Don't set error here as it's not critical
     }
   };
 
@@ -102,18 +120,38 @@ const WorkflowHistoryDetail = () => {
       
       console.log('🔍 WorkflowHistoryDetail - Fetching history for workflowId:', workflowId);
       
-      const response = await ApiService.getWorkflowHistory(workflowId);
-      const validationResult = WorkflowVersionsSchema.safeParse(response.data);
-
-      if (!validationResult.success) {
-        console.error("Zod validation for workflow history failed:", validationResult.error.errors);
-        throw new Error("Received invalid version history data from the server.");
-      }
-
-      if (validationResult.data.length > 0) {
-        setVersions(validationResult.data);
+      // Only fetch from backend API
+      const versionHistory = await ApiService.getWorkflowHistory(workflowId);
+      const apiVersions = versionHistory.data || versionHistory;
+      if (apiVersions && Array.isArray(apiVersions) && apiVersions.length > 0) {
+        const transformedVersions: WorkflowVersion[] = apiVersions.map((version: any, index: number) => ({
+          id: version.id,
+          versionNumber: version.versionNumber,
+          dateTime: version.createdAt || version.dateTime,
+          modifiedBy: {
+            name: version.user?.name || version.createdBy || 'Unknown User',
+            initials: version.user?.name ? version.user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'UU'
+          },
+          changeSummary: version.changeSummary || 'Workflow updated',
+          type: version.snapshotType || 'Manual Save',
+          status: index === 0 ? 'current' : 'archived'
+        }));
+        setVersions(transformedVersions);
+        
+        // Update workflow details if not already set
+        if (!workflowDetails) {
+          setWorkflowDetails({
+            id: apiVersions[0].workflowId,
+            name: workflowDetails?.name || `Workflow ${apiVersions[0].workflowId}`,
+            status: 'active',
+            lastModified: workflowDetails?.lastModified || '',
+            totalVersions: apiVersions.length,
+            hubspotUrl: workflowDetails?.hubspotUrl || ''
+          });
+        }
       } else {
         setVersions([]);
+        setWorkflowDetails(null);
       }
     } catch (err: any) {
       console.error('Failed to fetch workflow history:', err);

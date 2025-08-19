@@ -47,27 +47,27 @@ const ManageSubscriptionTab = () => {
         ApiService.getUsageStats(),
         ApiService.getBillingHistory(),
       ]);
-
-      const subscriptionResult = SubscriptionSchema.safeParse(subRes.data);
-      if (!subscriptionResult.success) {
-        console.error('Subscription validation error:', subscriptionResult.error);
-        throw new Error('Failed to validate subscription data.');
+      
+      if (subRes.success && subRes.data) {
+        const validatedSubscription = SubscriptionSchema.parse(subRes.data);
+        setSubscription(validatedSubscription);
+      } else {
+        throw new Error(subRes.message || 'Failed to load subscription data');
       }
-      setSubscription(subscriptionResult.data);
-
-      const usageStatsResult = UsageStatsSchema.safeParse(usageRes.data);
-      if (!usageStatsResult.success) {
-        console.error('Usage stats validation error:', usageStatsResult.error);
-        throw new Error('Failed to validate usage statistics.');
+      
+      if (usageRes.success && usageRes.data) {
+        const validatedUsageStats = UsageStatsSchema.parse(usageRes.data);
+        setUsageStats(validatedUsageStats);
+      } else {
+        throw new Error(usageRes.message || 'Failed to load usage statistics');
       }
-      setUsageStats(usageStatsResult.data);
-
-      const billingHistoryResult = BillingHistorySchema.safeParse(billingRes.data || []);
-      if (!billingHistoryResult.success) {
-        console.error('Billing history validation error:', billingHistoryResult.error);
-        throw new Error('Failed to validate billing history.');
+      
+      if (billingRes.success) {
+        const validatedBillingHistory = BillingHistorySchema.parse(billingRes.data || []);
+        setBillingHistory(validatedBillingHistory);
+      } else {
+        throw new Error(billingRes.message || 'Failed to load billing history');
       }
-      setBillingHistory(billingHistoryResult.data);
     } catch (error: any) {
       console.error('Error fetching subscription data:', error);
       toast({

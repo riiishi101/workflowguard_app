@@ -440,7 +440,6 @@ export class UserService {
         hubspotAccessToken: null,
         hubspotRefreshToken: null,
         hubspotPortalId: null,
-        hubspotTokenExpiresAt: null,
       },
     });
   }
