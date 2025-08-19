@@ -22,6 +22,12 @@ const Settings = () => {
 
   const tabs = [
     {
+      id: "plan-billing",
+      label: "My Plan & Billing",
+      icon: CreditCard,
+      component: PlanBillingTab,
+    },
+    {
       id: "manage-subscription",
       label: "Manage Subscription",
       icon: CreditCard,

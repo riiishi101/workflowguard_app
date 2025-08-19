@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ExchangeRateService } from './exchange-rate.service';
 
 export interface CurrencyConfig {
   code: string;
@@ -15,42 +16,51 @@ export interface CurrencyDetectionResult {
 }
 
 @Injectable()
-export class CurrencyService {
-  private readonly currencies: Record<string, CurrencyConfig> = {
+export class CurrencyService implements OnModuleInit {
+  private readonly logger = new Logger(CurrencyService.name);
+  private static readonly FALLBACK_RATES = {
+    USD: 1.0,
+    GBP: 0.79,
+    EUR: 0.92,
+    INR: 83.12,
+    CAD: 1.36,
+  };
+
+  private currencies: Record<string, CurrencyConfig> = {
     USD: {
       code: 'USD',
       symbol: '$',
       name: 'US Dollar',
       countryRegions: ['US', 'PR', 'VI', 'GU', 'AS', 'MP'],
-      exchangeRate: 1.0
+      exchangeRate: 1.0 // Fallback value
     },
     GBP: {
       code: 'GBP',
       symbol: '£',
       name: 'British Pound',
       countryRegions: ['GB', 'UK', 'IM', 'JE', 'GG'],
-      exchangeRate: 0.79
+      exchangeRate: 0.79 // Fallback value
     },
     EUR: {
       code: 'EUR',
       symbol: '€',
       name: 'Euro',
       countryRegions: ['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'PT', 'IE', 'FI', 'GR', 'LU', 'SI', 'CY', 'MT', 'SK', 'EE', 'LV', 'LT'],
-      exchangeRate: 0.92
+      exchangeRate: 0.92 // Fallback value
     },
     INR: {
       code: 'INR',
       symbol: '₹',
       name: 'Indian Rupee',
       countryRegions: ['IN'],
-      exchangeRate: 83.12
+      exchangeRate: 83.12 // Fallback value
     },
     CAD: {
       code: 'CAD',
       symbol: 'C$',
       name: 'Canadian Dollar',
       countryRegions: ['CA'],
-      exchangeRate: 1.36
+      exchangeRate: 1.36 // Fallback value
     }
   };
 
@@ -77,6 +87,34 @@ export class CurrencyService {
     '4506': 'CAD', // Canadian Visa
     '5191': 'CAD'  // Canadian Mastercard
   };
+
+  constructor(private readonly exchangeRateService: ExchangeRateService) {}
+
+  async onModuleInit() {
+    await this.updateExchangeRates();
+  }
+
+  private async updateExchangeRates(): Promise<void> {
+    this.logger.log('Attempting to update exchange rates from API...');
+    try {
+      const rates = await this.exchangeRateService.getRates();
+      for (const code in this.currencies) {
+        if (rates[code]) {
+          this.currencies[code].exchangeRate = rates[code];
+        }
+      }
+      this.logger.log('Successfully updated exchange rates.');
+    } catch (error) {
+      this.logger.error('Failed to update exchange rates from API. Using fallback rates.', error.stack);
+      // In case of failure, we can rely on the hardcoded fallback values
+      for (const code in this.currencies) {
+        const fallbackKey = code as keyof typeof CurrencyService.FALLBACK_RATES;
+        if (CurrencyService.FALLBACK_RATES[fallbackKey]) {
+          this.currencies[code].exchangeRate = CurrencyService.FALLBACK_RATES[fallbackKey];
+        }
+      }
+    }
+  }
 
   getSupportedCurrencies(): CurrencyConfig[] {
     return Object.values(this.currencies);
