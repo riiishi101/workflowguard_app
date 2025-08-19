@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpException,
   HttpStatus,
+  Header,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -33,6 +34,9 @@ export class AuthController {
 
   @Public()
   @Get('hubspot/url')
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
   async getHubSpotAuthUrl(@Query('marketplace') marketplace?: string) {
     try {
       const clientId = process.env.HUBSPOT_CLIENT_ID;

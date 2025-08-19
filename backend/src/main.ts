@@ -27,6 +27,8 @@ async function bootstrap() {
     const instance = httpAdapter.getInstance();
     if (instance && typeof instance.set === 'function') {
       instance.set('trust proxy', 1);
+      // Disable ETag to prevent 304 Not Modified on dynamic JSON endpoints
+      instance.set('etag', false);
     }
   }
 

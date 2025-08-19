@@ -499,12 +499,31 @@ class ApiService {
   static async getHubSpotAuthUrl(isMarketplace: boolean = false): Promise<ApiResponse<{ url: string }>> {
     try {
       const response = await apiClient.get('/auth/hubspot/url', {
+        // Add cache-busting param to avoid 304 Not Modified
         params: {
           marketplace: isMarketplace.toString(),
+          _ts: Date.now(),
+        },
+        headers: {
+          // Hint to intermediaries not to cache
+          'Cache-Control': 'no-cache',
         },
       });
-      return response.data;
-    } catch (error) {
+
+      const raw = response.data;
+      // Normalize to ApiResponse shape expected by callers
+      if (raw && typeof raw.url === 'string') {
+        return { success: true, data: { url: raw.url } };
+      }
+      if (raw && (raw.success !== undefined)) {
+        return raw;
+      }
+      return { success: false, message: 'Invalid response from server' };
+    } catch (error: any) {
+      // If a 304 sneaks through, treat as retryable failure
+      if (error?.response?.status === 304) {
+        return { success: false, message: 'Not modified. Please retry.' };
+      }
       throw error;
     }
   }
