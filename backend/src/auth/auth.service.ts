@@ -93,7 +93,7 @@ export class AuthService {
             data: {
               email: hubspotUser.email,
               name: userName,
-              hubspotPortalId: hubspotUser.portalId,
+              hubspotPortalId: hubspotUser.portalId ? Number(hubspotUser.portalId) : null,
               hubspotAccessToken: hubspotUser.accessToken,
               hubspotRefreshToken: hubspotUser.refreshToken,
               hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
@@ -133,7 +133,7 @@ export class AuthService {
           await this.prisma.user.update({
             where: { id: user.id },
             data: {
-              hubspotPortalId: hubspotUser.portalId,
+              hubspotPortalId: hubspotUser.portalId ? Number(hubspotUser.portalId) : null,
               hubspotAccessToken: hubspotUser.accessToken,
               hubspotRefreshToken: hubspotUser.refreshToken,
               hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
@@ -215,11 +215,11 @@ export class AuthService {
     });
   }
 
-  async updateUserHubspotPortalId(userId: string, hubspotPortalId: string) {
+  async updateUserHubspotPortalId(userId: string, hubspotPortalId: string | number) {
     try {
       await this.prisma.user.update({
         where: { id: userId },
-        data: { hubspotPortalId },
+        data: { hubspotPortalId: hubspotPortalId ? Number(hubspotPortalId) : null },
       });
     } catch {
       throw new HttpException(

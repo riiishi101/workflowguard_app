@@ -98,7 +98,7 @@ export class HubSpotService {
       // Call HubSpot API to get workflows
       const workflows = await this.fetchWorkflowsFromHubSpot(
         currentUser.hubspotAccessToken,
-        currentUser.hubspotPortalId || '',
+        currentUser.hubspotPortalId ? String(currentUser.hubspotPortalId) : '',
       );
 
       console.log(
