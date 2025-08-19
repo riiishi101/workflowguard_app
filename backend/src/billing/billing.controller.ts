@@ -175,7 +175,7 @@ export class BillingController {
           invoiceUrl: invoice.short_url,
           invoice: {
             id: invoice.id,
-            amount: (invoice.amount || 0) / 100.0,
+            amount: (Number(invoice.amount) || 0) / 100.0,
             status: invoice.status,
             date: invoice.date ? new Date(invoice.date * 1000).toISOString() : new Date().toISOString(),
             description: invoice.description
