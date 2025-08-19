@@ -58,44 +58,72 @@ export class AuthService {
   }
 
   async validateHubSpotUser(hubspotUser: any) {
-    // For HubSpot App Marketplace users, create account if doesn't exist
-    let user = await this.prisma.user.findUnique({
-      where: { email: hubspotUser.email },
-    });
-
-    if (!user) {
-      // Create new user from HubSpot
-      user = await this.prisma.user.create({
-        data: {
-          email: hubspotUser.email,
-          name: hubspotUser.name || hubspotUser.email,
-          hubspotPortalId: hubspotUser.portalId,
-          hubspotAccessToken: hubspotUser.accessToken,
-          hubspotRefreshToken: hubspotUser.refreshToken,
-          hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
-        },
+    try {
+      console.log('validateHubSpotUser called with:', {
+        email: hubspotUser.email,
+        portalId: hubspotUser.portalId,
+        hasAccessToken: !!hubspotUser.accessToken
       });
 
-      // Automatically create trial subscription for HubSpot users
-      await this.userService.createTrialSubscription(user.id);
-
-      // Notify about new user signup
-      await this.userSignupService.notifyNewUserSignup(user, 'oauth');
-    } else {
-      // Update existing user's HubSpot tokens
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          hubspotPortalId: hubspotUser.portalId,
-          hubspotAccessToken: hubspotUser.accessToken,
-          hubspotRefreshToken: hubspotUser.refreshToken,
-          hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
-        },
+      // For HubSpot App Marketplace users, create account if doesn't exist
+      let user = await this.prisma.user.findUnique({
+        where: { email: hubspotUser.email },
       });
+
+      if (!user) {
+        console.log('Creating new user from HubSpot OAuth');
+        // Create new user from HubSpot
+        user = await this.prisma.user.create({
+          data: {
+            email: hubspotUser.email,
+            name: hubspotUser.name || hubspotUser.email,
+            hubspotPortalId: hubspotUser.portalId,
+            hubspotAccessToken: hubspotUser.accessToken,
+            hubspotRefreshToken: hubspotUser.refreshToken,
+            hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
+          },
+        });
+
+        console.log('User created successfully:', user.id);
+
+        // Try to create trial subscription, but don't fail if it errors
+        try {
+          await this.userService.createTrialSubscription(user.id);
+          console.log('Trial subscription created for user:', user.id);
+        } catch (trialError) {
+          console.error('Failed to create trial subscription:', trialError);
+          // Continue without failing the OAuth flow
+        }
+
+        // Try to notify about signup, but don't fail if it errors
+        try {
+          await this.userSignupService.notifyNewUserSignup(user, 'oauth');
+          console.log('Signup notification sent for user:', user.id);
+        } catch (notifyError) {
+          console.error('Failed to send signup notification:', notifyError);
+          // Continue without failing the OAuth flow
+        }
+      } else {
+        console.log('Updating existing user HubSpot tokens:', user.id);
+        // Update existing user's HubSpot tokens
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            hubspotPortalId: hubspotUser.portalId,
+            hubspotAccessToken: hubspotUser.accessToken,
+            hubspotRefreshToken: hubspotUser.refreshToken,
+            hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
+          },
+        });
+        console.log('User tokens updated successfully');
+      }
+
+      const { password: _, ...result } = user;
+      return result;
+    } catch (error) {
+      console.error('validateHubSpotUser error:', error);
+      throw error;
     }
-
-    const { password: _, ...result } = user;
-    return result;
   }
 
   async validateJwtPayload(payload: { sub: string; email: string }) {
