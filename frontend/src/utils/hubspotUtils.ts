@@ -18,7 +18,7 @@ export const initiateHubSpotOAuth = () => {
     throw new Error('HubSpot integration is not properly configured');
   }
   
-  const scopes = 'crm.objects.contacts.read crm.objects.contacts.write workflows.read workflows.write';
+  const scopes = 'crm.objects.contacts.read crm.objects.contacts.write workflows.read workflows.write workflows-access-public-api';
   const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
   
   // Store the current URL to redirect back after authentication
