@@ -85,6 +85,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // Determine if we're in production to avoid leaking sensitive info
     const isProduction = process.env.NODE_ENV === 'production';
     
+    // Check for specific error types
+    let errorCode = '';
+    if (error.message?.includes('user creation failed') || 
+        error.message?.includes('Failed to create user')) {
+      errorCode = 'user_creation_failed';
+    } else if (error.message?.includes('email already exists')) {
+      errorCode = 'email_already_exists';
+    } else if (error.message?.includes('Missing required email')) {
+      errorCode = 'missing_email';
+    } else if (error.message?.includes('Missing required portalId')) {
+      errorCode = 'missing_portal_id';
+    } else if (error.message?.includes('Missing token') || 
+               error.message?.includes('Invalid token')) {
+      errorCode = 'token_error';
+    }
+    
     // Create a standardized error response
     const errorResponse: ErrorResponse = {
       statusCode: status,
@@ -92,6 +108,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error: isProduction ? 'Internal Server Error' : error.name || 'Error',
       timestamp,
       path,
+      // Include error code if available
+      ...(errorCode ? { code: errorCode } : {}),
       // Include stack trace only in development
       ...(isProduction ? {} : { details: error.stack }),
     };

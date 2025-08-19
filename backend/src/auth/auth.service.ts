@@ -59,6 +59,17 @@ export class AuthService {
 
   async validateHubSpotUser(hubspotUser: any) {
     try {
+      // Validate required fields
+      if (!hubspotUser.email) {
+        console.error('Missing required email in hubspotUser data');
+        throw new Error('Missing required email for user creation');
+      }
+
+      if (!hubspotUser.portalId) {
+        console.error('Missing required portalId in hubspotUser data');
+        throw new Error('Missing required portalId for user creation');
+      }
+
       console.log('validateHubSpotUser called with:', {
         email: hubspotUser.email,
         portalId: hubspotUser.portalId,
@@ -72,19 +83,31 @@ export class AuthService {
 
       if (!user) {
         console.log('Creating new user from HubSpot OAuth');
-        // Create new user from HubSpot
-        user = await this.prisma.user.create({
-          data: {
-            email: hubspotUser.email,
-            name: hubspotUser.name || hubspotUser.email,
-            hubspotPortalId: hubspotUser.portalId,
-            hubspotAccessToken: hubspotUser.accessToken,
-            hubspotRefreshToken: hubspotUser.refreshToken,
-            hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
-          },
-        });
-
-        console.log('User created successfully:', user.id);
+        
+        // Ensure we have a valid name
+        const userName = hubspotUser.name || hubspotUser.email.split('@')[0];
+        
+        // Create new user from HubSpot with error handling
+        try {
+          user = await this.prisma.user.create({
+            data: {
+              email: hubspotUser.email,
+              name: userName,
+              hubspotPortalId: hubspotUser.portalId,
+              hubspotAccessToken: hubspotUser.accessToken,
+              hubspotRefreshToken: hubspotUser.refreshToken,
+              hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
+            },
+          });
+          console.log('User created successfully:', user.id);
+        } catch (createError) {
+          console.error('Failed to create user:', createError);
+          // Check for specific database errors and provide better error messages
+          if (createError.code === 'P2002') {
+            throw new Error('User with this email already exists');
+          }
+          throw new Error('Failed to create user account');
+        }
 
         // Try to create trial subscription, but don't fail if it errors
         try {
@@ -106,16 +129,21 @@ export class AuthService {
       } else {
         console.log('Updating existing user HubSpot tokens:', user.id);
         // Update existing user's HubSpot tokens
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            hubspotPortalId: hubspotUser.portalId,
-            hubspotAccessToken: hubspotUser.accessToken,
-            hubspotRefreshToken: hubspotUser.refreshToken,
-            hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
-          },
-        });
-        console.log('User tokens updated successfully');
+        try {
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              hubspotPortalId: hubspotUser.portalId,
+              hubspotAccessToken: hubspotUser.accessToken,
+              hubspotRefreshToken: hubspotUser.refreshToken,
+              hubspotTokenExpiresAt: hubspotUser.tokenExpiresAt,
+            },
+          });
+          console.log('User tokens updated successfully');
+        } catch (updateError) {
+          console.error('Failed to update user tokens:', updateError);
+          throw new Error('Failed to update user account');
+        }
       }
 
       const { password: _, ...result } = user;

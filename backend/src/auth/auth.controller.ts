@@ -213,6 +213,22 @@ export class AuthController {
       console.log('Creating/updating user in database...');
       let user;
       try {
+        // Ensure we have all required data before attempting user creation
+        if (!email) {
+          console.error('Missing email from HubSpot response');
+          return res.redirect('https://www.workflowguard.pro?error=missing_email');
+        }
+        
+        if (!hub_id) {
+          console.error('Missing portal ID from HubSpot response');
+          return res.redirect('https://www.workflowguard.pro?error=missing_portal_id');
+        }
+        
+        if (!access_token) {
+          console.error('Missing access token from HubSpot response');
+          return res.redirect('https://www.workflowguard.pro?error=missing_token');
+        }
+        
         user = await this.authService.validateHubSpotUser({
           email,
           name: email.split('@')[0], // Use email prefix as name
@@ -226,6 +242,19 @@ export class AuthController {
         console.log('User found/created:', user.id);
       } catch (dbError) {
         console.error('Database operation failed:', dbError);
+        
+        // Provide more specific error messages based on the error
+        const errorMessage = dbError.message || 'Unknown error';
+        console.error('Error details:', errorMessage);
+        
+        if (errorMessage.includes('email already exists')) {
+          return res.redirect('https://www.workflowguard.pro?error=email_already_exists');
+        } else if (errorMessage.includes('Missing required email')) {
+          return res.redirect('https://www.workflowguard.pro?error=missing_email');
+        } else if (errorMessage.includes('Missing required portalId')) {
+          return res.redirect('https://www.workflowguard.pro?error=missing_portal_id');
+        }
+        
         // If all else fails, redirect with error
         return res.redirect(
           'https://www.workflowguard.pro?error=user_creation_failed',

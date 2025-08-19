@@ -97,12 +97,45 @@ const OnboardingFlow = () => {
       search: window.location.search
     });
 
-    // Check for OAuth callback success
+    // Check for OAuth callback success or errors
     const urlParams = new URLSearchParams(window.location.search);
     const isOAuthSuccess = urlParams.get('success') === 'true';
     const hasToken = urlParams.get('token');
+    const errorParam = urlParams.get('error');
     
-    console.log('🔄 OnboardingFlow - OAuth check:', { isOAuthSuccess, hasToken });
+    console.log('🔄 OnboardingFlow - OAuth check:', { isOAuthSuccess, hasToken, errorParam });
+
+    // Handle OAuth errors
+    if (errorParam) {
+      console.log('🔄 OnboardingFlow - OAuth error detected:', errorParam);
+      setHasProcessedOAuth(true);
+      setCurrentStep('connect');
+      setShowWelcomeModal(false);
+      setShowConnectModal(true);
+      setIsInitialized(true);
+      
+      // Show appropriate error message based on error type
+      let errorMessage = "Failed to connect to HubSpot. Please try again.";
+      
+      if (errorParam === 'user_creation_failed') {
+        errorMessage = "Failed to create user account. Please try again or contact support.";
+      } else if (errorParam === 'email_already_exists') {
+        errorMessage = "An account with this email already exists. Please use a different HubSpot account.";
+      } else if (errorParam === 'missing_email') {
+        errorMessage = "Email information is missing from your HubSpot account. Please update your HubSpot profile.";
+      } else if (errorParam === 'missing_portal_id') {
+        errorMessage = "HubSpot portal ID is missing. Please try again with a valid HubSpot account.";
+      } else if (errorParam === 'token_error') {
+        errorMessage = "Authentication token error. Please try connecting again.";
+      }
+      
+      toast({
+        title: "Connection Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Handle OAuth callback success - immediately go to workflow selection
     if (isOAuthSuccess && hasToken) {
@@ -318,4 +351,4 @@ const OnboardingFlow = () => {
   );
 };
 
-export default OnboardingFlow; 
+export default OnboardingFlow;

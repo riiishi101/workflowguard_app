@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ApiService } from '@/lib/api';
-import { getToken, setToken, removeToken, isAuthenticated as checkAuth } from '@/utils/tokenUtils';
+import ApiService from '../lib/api';
+import { getToken, setToken, removeToken, isAuthenticated as checkAuth } from '../utils/tokenUtils';
+import { useToast } from '../components/ui/use-toast';
 
 interface User {
   id: string;
@@ -24,13 +25,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+// This function must be consistent for HMR to work properly
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -41,6 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (hasInitialized) {
@@ -110,9 +113,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         window.location.href = response.data.url;
       } else {
         console.error('Failed to get HubSpot auth URL');
+        // Show error toast notification
+        toast({
+          title: "Connection Failed",
+          description: "Failed to get HubSpot authorization URL. Please try again or contact support.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error connecting to HubSpot:', error);
+      // Show error toast notification
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect to HubSpot. Please check your internet connection and try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsConnecting(false);
     }
