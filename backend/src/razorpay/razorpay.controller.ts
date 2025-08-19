@@ -32,7 +32,24 @@ export class RazorpayController {
     if (!userId) {
       throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
     }
-    return this.razorpayService.createOrder(body.planId, userId);
+    
+    const planPrices: Record<string, number> = {
+      starter: 19,
+      professional: 49,
+      enterprise: 99,
+    };
+    const amount = planPrices[body.planId];
+    
+    if (!amount) {
+      throw new HttpException(`Invalid planId provided: ${body.planId}`, HttpStatus.BAD_REQUEST);
+    }
+    
+    return this.razorpayService.createOrder({
+      amount,
+      currency: 'USD',
+      receipt: `order_${userId}_${Date.now()}`,
+      notes: { userId, planId: body.planId },
+    });
   }
 
 

@@ -13,26 +13,24 @@ export class RazorpayService {
     });
   }
 
-  // TODO: Use proper types from razorpay library once import issues are resolved
-  async createOrder(planId: string, userId: string) {
-    const planPrices: Record<string, number> = {
-      starter: 19,
-      professional: 49,
-      enterprise: 99,
-    };
-    const amount = planPrices[planId];
-
-    if (!amount) {
-      throw new Error(`Invalid planId provided: ${planId}`);
+  async createOrder(options: {
+    amount: number;
+    currency: string;
+    receipt?: string;
+    notes?: any;
+    payment_capture?: boolean;
+  }) {
+    if (typeof options.amount !== 'number' || options.amount <= 0) {
+      throw new Error('A valid amount is required to create an order.');
     }
 
-    const currency = 'USD'; // Assuming USD for now, can be made dynamic
-    return await this.razorpay.orders.create({
-      amount: amount * 100, // in cents
-      currency,
-      payment_capture: true,
-      notes: { userId, planId },
-    });
+    const orderOptions = {
+      ...options,
+      amount: Math.round(options.amount * 100), // amount in smallest currency unit (e.g., paise, cents)
+      payment_capture: options.payment_capture !== undefined ? options.payment_capture : true,
+    };
+
+    return await this.razorpay.orders.create(orderOptions);
   }
 
   // TODO: Use proper types from razorpay library once import issues are resolved

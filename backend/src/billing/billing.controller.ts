@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, Inject, UseGuards, Req, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Inject, UseGuards, Req, HttpException, HttpStatus, Param } from '@nestjs/common';
 import Razorpay from 'razorpay';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../services/email.service';
@@ -172,12 +172,12 @@ export class BillingController {
       return {
         success: true,
         data: {
-          invoiceUrl: invoice.short_url || invoice.invoice_url,
+          invoiceUrl: invoice.short_url,
           invoice: {
             id: invoice.id,
-            amount: invoice.amount / 100.0,
+            amount: invoice.amount ? Number(invoice.amount) / 100.0 : 0,
             status: invoice.status,
-            date: new Date(invoice.date * 1000).toISOString(),
+            date: invoice.date ? new Date(invoice.date * 1000).toISOString() : new Date().toISOString(),
             description: invoice.description
           }
         }
