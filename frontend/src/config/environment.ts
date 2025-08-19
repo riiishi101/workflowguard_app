@@ -5,8 +5,8 @@
 
 // API configuration
 export const API_CONFIG = {
-  // Base URL for API requests - use environment variable or fallback to development URL
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  // Base URL for API requests - use environment variable or fallback to production URL
+  BASE_URL: import.meta.env.VITE_API_URL || 'https://api.workflowguard.pro/api',
   
   // Request timeout in milliseconds
   TIMEOUT: 30000,
@@ -18,7 +18,7 @@ export const HUBSPOT_CONFIG = {
   CLIENT_ID: import.meta.env.VITE_HUBSPOT_CLIENT_ID,
   
   // HubSpot redirect URI
-  REDIRECT_URI: import.meta.env.VITE_HUBSPOT_REDIRECT_URI || 'http://localhost:5173/auth/hubspot/callback',
+  REDIRECT_URI: import.meta.env.VITE_HUBSPOT_REDIRECT_URI || 'https://api.workflowguard.pro/api/auth/hubspot/callback',
 };
 
 // Application configuration
