@@ -154,169 +154,170 @@ const ManageSubscriptionTab = () => {
         <p className="text-gray-600">Control your billing, payment methods, and plan details.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Current Plan Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">Current Plan</CardTitle>
-                  <CardDescription>Your active subscription details.</CardDescription>
-                </div>
-                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">{subscription.planName || 'Starter Plan'}</h3>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">${subscription.price || 19}<span className="text-base font-normal text-gray-600">/month</span></p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Change Plan</Button>
-                  <Button size="sm" onClick={() => handleUpgrade('enterprise')}>Upgrade</Button>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Up to {usageStats?.workflows?.limit || 10} workflows</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Advanced monitoring</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Priority support</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>30-day version history</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Current Plan Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Current Plan</CardTitle>
+              <CardDescription>Your active subscription details.</CardDescription>
+            </div>
+            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">{subscription?.planName || 'Starter Plan'}</h3>
+              <p className="text-3xl font-bold text-gray-900 mt-2">${subscription?.price || 19}<span className="text-base font-normal text-gray-600">/month</span></p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">Change Plan</Button>
+              <Button size="sm" onClick={() => handleUpgrade('enterprise')}>Upgrade</Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>Up to {usageStats?.workflows?.limit || 10} workflows</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>Advanced monitoring</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>Priority support</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>30-day version history</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Billing History Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">Billing History</CardTitle>
-                  <CardDescription>Your past invoices and payment records.</CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleExportHistory}>Export All</Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              {billingHistory.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <CreditCard className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p>No billing history available</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left font-medium text-gray-500 py-3">Date</th>
-                        <th className="text-left font-medium text-gray-500 py-3">Amount</th>
-                        <th className="text-left font-medium text-gray-500 py-3">Status</th>
-                        <th className="text-right font-medium text-gray-500 py-3">Invoice</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {billingHistory.map((item, index) => (
-                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 text-gray-900">{item.date}</td>
-                          <td className="py-3 font-medium text-gray-900">${item.amount}</td>
-                          <td className="py-3">
-                            <Badge variant={item.status === 'Paid' ? 'default' : 'destructive'}>
-                              {item.status}
-                            </Badge>
-                          </td>
-                          <td className="text-right py-3">
-                            <Button variant="link" size="sm" onClick={() => handleViewInvoice(item.invoice)}>
-                              View
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-8">
-          {/* Payment Method Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Payment Method</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <CreditCard className="w-6 h-6 text-gray-400" />
-                <div>
-                  <p className="font-medium text-gray-900">{subscription?.paymentMethod?.brand || 'Visa'} ending in {subscription?.paymentMethod?.last4 || '1234'}</p>
-                  <p className="text-sm text-gray-500">Expires {subscription?.paymentMethod?.exp || '12/27'}</p>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full" onClick={handleUpdatePayment}>
-                <Pencil className="w-4 h-4 mr-2"/>
-                Update Method
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Current Usage Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Current Usage</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
+      {/* Payment Method Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Payment Method</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-6 h-6 text-gray-400" />
               <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600">Workflows</span>
-                  <span className="font-medium text-gray-900">{usageStats?.workflows?.used || 0} / {usageStats?.workflows?.limit || 10}</span>
-                </div>
-                <Progress value={((usageStats?.workflows?.used || 0) / (usageStats?.workflows?.limit || 10)) * 100} className="h-2" />
+                <p className="font-medium text-gray-900">{subscription?.paymentMethod?.brand || 'Visa'} ending in {subscription?.paymentMethod?.last4 || '1234'}</p>
+                <p className="text-sm text-gray-500">Expires {subscription?.paymentMethod?.exp || '12/27'}</p>
               </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600">Version History Days</span>
-                  <span className="font-medium text-gray-900">{usageStats?.versionHistory?.used || 0} / {usageStats?.versionHistory?.limit || 30}</span>
-                </div>
-                <Progress value={((usageStats?.versionHistory?.used || 0) / (usageStats?.versionHistory?.limit || 30)) * 100} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <Button variant="outline" onClick={handleUpdatePayment}>
+              <Pencil className="w-4 h-4 mr-2"/>
+              Update Method
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Subscription Controls Card */}
-          <Card className="border-red-200">
-            <CardHeader>
-              <CardTitle className="text-lg text-red-600 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Danger Zone
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <p className="text-sm text-gray-600 mb-4">
+      {/* Billing History Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Billing History</CardTitle>
+              <CardDescription>Your past invoices and payment records.</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleExportHistory}>Export All</Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          {billingHistory.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <CreditCard className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <p>No billing history available</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left font-medium text-gray-500 py-3">Date</th>
+                    <th className="text-left font-medium text-gray-500 py-3">Amount</th>
+                    <th className="text-left font-medium text-gray-500 py-3">Status</th>
+                    <th className="text-right font-medium text-gray-500 py-3">Invoice</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billingHistory.map((item, index) => (
+                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 text-gray-900">{item.date}</td>
+                      <td className="py-3 font-medium text-gray-900">${item.amount}</td>
+                      <td className="py-3">
+                        <Badge variant={item.status === 'Paid' ? 'default' : 'destructive'}>
+                          {item.status}
+                        </Badge>
+                      </td>
+                      <td className="text-right py-3">
+                        <Button variant="link" size="sm" onClick={() => handleViewInvoice(item.invoice)}>
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Current Usage Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Current Usage</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Workflows</span>
+                <span className="font-medium text-gray-900">{usageStats?.workflows?.used || 0} / {usageStats?.workflows?.limit || 10}</span>
+              </div>
+              <Progress value={((usageStats?.workflows?.used || 0) / (usageStats?.workflows?.limit || 10)) * 100} className="h-2" />
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Version History Days</span>
+                <span className="font-medium text-gray-900">{usageStats?.versionHistory?.used || 0} / {usageStats?.versionHistory?.limit || 30}</span>
+              </div>
+              <Progress value={((usageStats?.versionHistory?.used || 0) / (usageStats?.versionHistory?.limit || 30)) * 100} className="h-2" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Subscription Controls Section */}
+      <Card className="border-red-200">
+        <CardHeader>
+          <CardTitle className="text-lg text-red-600 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900 mb-1">Cancel Subscription</p>
+              <p className="text-sm text-gray-600">
                 Cancelling your subscription will downgrade you to the free plan at the end of your billing cycle.
               </p>
-              <Button variant="destructive" className="w-full" onClick={handleCancelSubscription}>
-                Cancel Subscription
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+            <Button variant="destructive" onClick={handleCancelSubscription}>
+              Cancel Subscription
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
