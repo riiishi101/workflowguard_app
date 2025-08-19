@@ -3,14 +3,13 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
-    "role" TEXT NOT NULL,
     "password" TEXT,
     "jobTitle" TEXT,
     "timezone" TEXT,
     "language" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "hubspotPortalId" TEXT,
+    "hubspotPortalId" INTEGER,
     "hubspotAccessToken" TEXT,
     "hubspotRefreshToken" TEXT,
     "hubspotTokenExpiresAt" TIMESTAMP(3),
@@ -26,6 +25,7 @@ CREATE TABLE "Workflow" (
     "ownerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isProtected" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Workflow_pkey" PRIMARY KEY ("id")
 );
@@ -63,6 +63,8 @@ CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "planId" TEXT NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'USD',
+    "razorpay_subscription_id" TEXT,
     "status" TEXT NOT NULL,
     "trialEndDate" TIMESTAMP(3),
     "nextBillingDate" TIMESTAMP(3),
@@ -205,6 +207,22 @@ CREATE TABLE "ApprovalRequest" (
     CONSTRAINT "ApprovalRequest_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Payment" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "currency" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "razorpay_payment_id" TEXT NOT NULL,
+    "razorpay_order_id" TEXT NOT NULL,
+    "subscriptionId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -221,6 +239,9 @@ CREATE UNIQUE INDEX "WorkflowVersion_workflowId_versionNumber_key" ON "WorkflowV
 CREATE UNIQUE INDEX "Subscription_userId_key" ON "Subscription"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Subscription_razorpay_subscription_id_key" ON "Subscription"("razorpay_subscription_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "NotificationSettings_userId_key" ON "NotificationSettings"("userId");
 
 -- CreateIndex
@@ -228,6 +249,9 @@ CREATE UNIQUE INDEX "ApiKey_key_key" ON "ApiKey"("key");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SsoConfig_provider_key" ON "SsoConfig"("provider");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_razorpay_payment_id_key" ON "Payment"("razorpay_payment_id");
 
 -- AddForeignKey
 ALTER TABLE "Workflow" ADD CONSTRAINT "Workflow_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -270,3 +294,9 @@ ALTER TABLE "ApprovalRequest" ADD CONSTRAINT "ApprovalRequest_requestedBy_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "ApprovalRequest" ADD CONSTRAINT "ApprovalRequest_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
