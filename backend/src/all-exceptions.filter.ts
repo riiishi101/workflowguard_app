@@ -4,7 +4,18 @@ import {
   ArgumentsHost,
   HttpException,
   Logger,
+  HttpStatus,
 } from '@nestjs/common';
+
+interface ErrorResponse {
+  statusCode: number;
+  message: string | string[];
+  error?: string;
+  timestamp?: string;
+  path?: string;
+  code?: string;
+  details?: any;
+}
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -14,27 +25,77 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();
+    const timestamp = new Date().toISOString();
+    const path = request?.url;
 
+    // Handle HTTP exceptions (thrown by NestJS)
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      this.logger.error('HttpException', exceptionResponse);
-      response
-        .status(status)
-        .json(
-          typeof exceptionResponse === 'string'
-            ? { message: exceptionResponse }
-            : exceptionResponse,
-        );
+      
+      // Log with appropriate level based on status code
+      if (status >= 500) {
+        this.logger.error(`HttpException ${status}`, { 
+          exceptionResponse, 
+          path,
+          method: request?.method,
+          headers: request?.headers,
+        });
+      } else if (status >= 400) {
+        this.logger.warn(`HttpException ${status}`, { 
+          exceptionResponse,
+          path,
+          method: request?.method,
+        });
+      }
+
+      // Format the response
+      const errorResponse: ErrorResponse = typeof exceptionResponse === 'string'
+        ? { 
+            statusCode: status,
+            message: exceptionResponse,
+            timestamp,
+            path,
+          }
+        : {
+            ...(exceptionResponse as object),
+            statusCode: status,
+            message: (exceptionResponse as any).message || 'Unknown error',
+            timestamp,
+            path,
+          };
+
+      response.status(status).json(errorResponse);
       return;
     }
 
-    this.logger.error('Unhandled exception', exception as any);
-    response.status(500).json({
-      statusCode: 500,
-      timestamp: new Date().toISOString(),
-      path: request?.url,
-      message: 'Internal server error',
+    // Handle other types of errors
+    const error = exception as Error;
+    const status = HttpStatus.INTERNAL_SERVER_ERROR;
+    
+    // Log the error with stack trace
+    this.logger.error('Unhandled exception', {
+      error: error.message,
+      stack: error.stack,
+      path,
+      method: request?.method,
+      headers: request?.headers,
     });
+
+    // Determine if we're in production to avoid leaking sensitive info
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Create a standardized error response
+    const errorResponse: ErrorResponse = {
+      statusCode: status,
+      message: isProduction ? 'Internal server error' : error.message || 'Unknown error',
+      error: isProduction ? 'Internal Server Error' : error.name || 'Error',
+      timestamp,
+      path,
+      // Include stack trace only in development
+      ...(isProduction ? {} : { details: error.stack }),
+    };
+
+    response.status(status).json(errorResponse);
   }
 }

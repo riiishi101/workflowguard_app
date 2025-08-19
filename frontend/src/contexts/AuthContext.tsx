@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ApiService } from '@/lib/api';
+import { getToken, setToken, removeToken, isAuthenticated as checkAuth } from '@/utils/tokenUtils';
 
 interface User {
   id: string;
@@ -56,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Handle OAuth callback
         if (successParam === 'true' && tokenParam) {
-          localStorage.setItem('authToken', tokenParam);
+          setToken(tokenParam);
           
           // Clean up URL without triggering a navigation
           const newUrl = window.location.pathname + 
@@ -64,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           window.history.replaceState({}, document.title, newUrl);
         }
 
-        const token = localStorage.getItem('authToken');
+        const token = getToken();
 
         if (token) {
           try {
@@ -77,18 +78,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               if (successParam === 'true' && tokenParam) {
               }
             } else {
-              localStorage.removeItem('authToken');
+              removeToken();
               setUser(null);
             }
           } catch (error) {
-            localStorage.removeItem('authToken');
+            removeToken();
             setUser(null);
           }
         } else {
           setUser(null);
         }
       } catch (error) {
-        localStorage.removeItem('authToken');
+        removeToken();
         setUser(null);
       } finally {
         setLoading(false);

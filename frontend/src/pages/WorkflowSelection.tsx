@@ -162,43 +162,27 @@ const WorkflowSelection = ({ onComplete }: WorkflowSelectionProps) => {
       }
     } catch (err) {
       console.error('WorkflowSelection - Failed to fetch workflows:', err);
-      console.error('WorkflowSelection - Error details:', {
-        message: err.message,
-        status: err.response?.status,
-        data: err.response?.data,
-        code: err.code
-      });
       
-      // Check if it's a network error vs API error
-      const isNetworkError = err.message?.includes('Network Error') || err.code === 'NETWORK_ERROR';
-      const isTimeoutError = err.code === 'ECONNABORTED';
+      // Handle the error with standard error messages
+      let errorMessage = 'Failed to load workflows from HubSpot. This might be a temporary issue.';
       
-      if (isTimeoutError) {
-        setError('Request timed out. The server is taking too long to respond. Please try again.');
-      } else if (isNetworkError) {
-        setError('Unable to connect to HubSpot. Please check your internet connection and try again.');
-      } else if (err.response?.status === 400) {
-        const errorMessage = err.response?.data?.message || err.response?.data;
-        if (errorMessage && (errorMessage.includes('HubSpot not connected') || 
-                            errorMessage.includes('HubSpot account not connected') ||
-                            errorMessage.includes('Please connect your HubSpot account'))) {
-          setError('Your HubSpot account is not connected. Please connect your HubSpot account to view workflows.');
-          // Stop retrying for connection issues
-          setRetryCount(maxRetries);
-        } else if (errorMessage && errorMessage.includes('token expired')) {
-          setError('Your HubSpot connection has expired. Please reconnect your HubSpot account to view workflows.');
-          // Stop retrying for connection issues
-          setRetryCount(maxRetries);
-        } else {
-          setError('Invalid request. Please check your HubSpot connection and try again.');
-        }
+      if (err.message?.includes('Network Error') || err.code === 'NETWORK_ERROR') {
+        errorMessage = 'Unable to connect to HubSpot. Please check your internet connection and try again.';
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. The server is taking too long to respond. Please try again.';
       } else if (err.response?.status === 401) {
-        setError('Authentication failed. Please reconnect your HubSpot account.');
-      } else {
-        setError('Failed to load workflows from HubSpot. This might be a temporary issue.');
+        errorMessage = 'Authentication failed. Please reconnect your HubSpot account.';
+        setRetryCount(maxRetries);
+      } else if (err.response?.status === 400 && err.response?.data?.message?.includes('HubSpot not connected')) {
+        errorMessage = 'Your HubSpot account is not connected. Please connect your account to view workflows.';
+        setRetryCount(maxRetries);
       }
       
-      // Set empty workflows array instead of demo data
+      setError(errorMessage);
+      
+      // Error message is already set above
+      
+      // Set empty workflows array
       setWorkflows([]);
       
       // Mark as fetched even on error so user can see the screen

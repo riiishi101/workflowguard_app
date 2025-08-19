@@ -145,9 +145,11 @@ npx prisma generate
 
 #### **✅ Environment Variables:**
 ```bash
-DATABASE_URL="postgresql://neondb_owner:npg_oPpKhNtTR20d@ep-dry-resonance-afgqyybz-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-DIRECT_URL="postgresql://neondb_owner:npg_oPpKhNtTR20d@ep-dry-resonance-afgqyybz.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DATABASE_URL="${DATABASE_URL}"
+DIRECT_URL="${DIRECT_URL}"
 ```
+
+**Note**: These should be set in your environment variables. Never commit real credentials to version control.
 
 #### **✅ Migration Strategy:**
 1. **Schema Push**: `npx prisma db push`

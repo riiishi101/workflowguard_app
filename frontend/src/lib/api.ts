@@ -1,13 +1,11 @@
 import axios, { AxiosResponse } from 'axios';
-
-// API base URL
-// API base URL - Hardcoded to ensure the /api prefix is always present
-const API_BASE_URL = 'https://api.workflowguard.pro/api';
+import { getToken, removeToken, TOKEN_KEY } from '../utils/tokenUtils';
+import { API_CONFIG } from '../config/environment';
 
 // Create axios instance
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000,
+export const apiClient = axios.create({
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -18,7 +16,7 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,16 +27,22 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Import error handling utilities
+import { ErrorType, parseApiError } from '../utils/errorUtils';
+
 // Response interceptor
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
+    // Parse the error to standardize format
+    const parsedError = parseApiError(error);
+    
     if (error.response?.status === 401) {
       // Clear token for auth endpoints
       if (error.config.url?.includes('/auth')) {
-        localStorage.removeItem('token');
+        removeToken();
       }
       // Don't clear token for non-auth endpoints to avoid infinite loops
     }
@@ -66,6 +70,14 @@ apiClient.interceptors.response.use(
       // Redirect to settings for payment failed users
       window.location.href = '/settings';
     }
+    
+    // Log all API errors with consistent format
+    console.error(`API Error (${parsedError.type}):`, {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: parsedError.status,
+      message: parsedError.message
+    });
     
     return Promise.reject(error);
   }
@@ -268,8 +280,17 @@ class ApiService {
   }
 
   static async getHubSpotWorkflows(): Promise<ApiResponse<any>> {
+    const headers: any = {
+      'Content-Type': 'application/json',
+    };
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
-      const response = await apiClient.get('/workflow/hubspot');
+      const response = await apiClient.get('/workflow/hubspot', { headers });
       return response.data;
     } catch (error) {
       throw error;
