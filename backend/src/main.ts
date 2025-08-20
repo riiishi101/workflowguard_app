@@ -327,11 +327,12 @@ async function bootstrap() {
   console.log('🔒 Global JWT guard enabled - routes are protected by default');
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📊 Health check: http://localhost:${port}/api`);
+  const host = '0.0.0.0';
+  await app.listen(port, host);
+  console.log(`🚀 Application is running on: http://${host}:${port}`);
+  console.log(`📊 Health check: http://${host}:${port}/api`);
   console.log(
-    `🏪 HubSpot Marketplace endpoints: http://localhost:${port}/api/hubspot-marketplace`,
+    `🏪 HubSpot Marketplace endpoints: http://${host}:${port}/api/hubspot-marketplace`,
   );
 }
 
