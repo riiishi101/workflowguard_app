@@ -139,10 +139,10 @@ async function bootstrap() {
   );
 
   // Setup global cache interceptor
-  const reflector = app.get(Reflector);
   const cacheManager = app.get(CACHE_MANAGER);
+  const jwtReflector = app.get(Reflector);
   app.useGlobalInterceptors(
-    new HttpCacheInterceptor(cacheManager, reflector)
+    new HttpCacheInterceptor(cacheManager, jwtReflector)
   );
 
   // Enable shutdown hooks for graceful shutdown
@@ -323,8 +323,7 @@ async function bootstrap() {
   console.log('Rate limiting is enabled via express-rate-limit middleware');
 
   // Apply global JWT guard to all routes by default
-  const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  app.useGlobalGuards(new JwtAuthGuard(jwtReflector));
   console.log('🔒 Global JWT guard enabled - routes are protected by default');
 
   const port = process.env.PORT || 4000;
