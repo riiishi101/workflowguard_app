@@ -94,6 +94,9 @@ async function bootstrap() {
     cors: false, // We'll configure CORS manually below
     logger: ['error', 'warn', 'debug', 'log', 'verbose'],
   });
+
+  // Set global prefix for all routes
+  app.setGlobalPrefix('api');
   // Trust proxy for correct client IP and rate limiting behind Render/Cloudflare
   const httpAdapter = app.getHttpAdapter();
   if (httpAdapter.getType && httpAdapter.getType() === 'express') {
@@ -182,8 +185,8 @@ async function bootstrap() {
     headers: true,
   });
 
-  // Apply rate limiting only to API routes
-  app.use('/api', apiLimiter);
+  // Apply rate limiting to all routes (already prefixed with /api by setGlobalPrefix)
+  app.use(apiLimiter);
 
   // Add cache control headers middleware
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -210,22 +213,26 @@ async function bootstrap() {
     },
   });
   // Only apply rate limiting to OAuth initiation, not callback
-  app.use('/api/auth/hubspot/url', oauthLimiter);
+  // Note: No need to include /api prefix here as it's handled by setGlobalPrefix
+  app.use('/auth/hubspot/url', oauthLimiter);
 
-  // Configure CORS properly to handle credentials - Enhanced for production
+  // Configure CORS with essential domains only
   app.enableCors({
     origin: (origin, callback) => {
+      // Essential domains that need CORS access
       const allowedOrigins = [
-        'https://www.workflowguard.pro',
-        'https://workflowguard.pro',
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:3000',
-        'https://app.hubspot.com',
-        'https://developers.hubspot.com',
-        'https://marketplace.hubspot.com',
+        'https://www.workflowguard.pro',  // Main production domain
+        'https://workflowguard.pro',      // Non-www version
+        'http://localhost:5173',          // Local development (Vite/React)
+        'http://localhost:3000',          // Local development (React/Next.js)
+        'https://api.workflowguard.pro'   // API domain
       ];
+
+      // Allow all origins in development
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🌐 CORS: Allowing all origins in development`);
+        return callback(null, true);
+      }
 
       console.log(`🌐 CORS Check - Origin: ${origin || 'no-origin'}, Environment: ${process.env.NODE_ENV}`);
 
@@ -235,7 +242,14 @@ async function bootstrap() {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      // Check if origin is in allowed list or is a subdomain of allowed domains
+      const isAllowed = allowedOrigins.some(allowedOrigin => 
+        origin === allowedOrigin || 
+        (origin.startsWith('http://') && origin.endsWith(allowedOrigin.replace(/^https?:\/\//, ''))) ||
+        (origin.startsWith('https://') && origin.endsWith(allowedOrigin.replace(/^https?:\/\//, '')))
+      );
+
+      if (isAllowed) {
         console.log(`✅ CORS: Allowing origin ${origin}`);
         callback(null, true);
       } else {
