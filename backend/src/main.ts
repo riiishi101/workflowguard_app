@@ -19,7 +19,8 @@ import { AllExceptionsFilter } from './all-exceptions.filter';
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import * as jwt from 'jsonwebtoken';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 // Define cache key metadata constant
 const CACHE_KEY_METADATA = 'cache_module:cache_key_metadata';
@@ -320,6 +321,11 @@ async function bootstrap() {
 
   // Throttler module is not installed, using rate limiting middleware instead
   console.log('Rate limiting is enabled via express-rate-limit middleware');
+
+  // Apply global JWT guard to all routes by default
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  console.log('🔒 Global JWT guard enabled - routes are protected by default');
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
