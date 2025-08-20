@@ -226,6 +226,9 @@ async function bootstrap() {
         'https://workflowguard.pro',      // Non-www version
         'http://localhost:5173',          // Local development (Vite/React)
         'http://localhost:3000',          // Local development (React/Next.js)
+        'https://app.hubspot.com',        // HubSpot app domain
+        'https://app.hubspotqa.com',      // HubSpot QA domain
+        'https://app.hubspotqa.com:3000', // HubSpot QA with port
         'https://api.workflowguard.pro'   // API domain
       ];
 
@@ -244,11 +247,18 @@ async function bootstrap() {
       }
 
       // Check if origin is in allowed list or is a subdomain of allowed domains
-      const isAllowed = allowedOrigins.some(allowedOrigin => 
-        origin === allowedOrigin || 
-        (origin.startsWith('http://') && origin.endsWith(allowedOrigin.replace(/^https?:\/\//, ''))) ||
-        (origin.startsWith('https://') && origin.endsWith(allowedOrigin.replace(/^https?:\/\//, '')))
-      );
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        // Exact match
+        if (origin === allowedOrigin) return true;
+        
+        // Subdomain match (e.g., app.workflowguard.pro matches workflowguard.pro)
+        const originHost = origin.replace(/^https?:\/\//, '').split(':')[0];
+        const allowedHost = allowedOrigin.replace(/^https?:\/\//, '').split(':')[0];
+        
+        return originHost === allowedHost || 
+               originHost.endsWith(`.${allowedHost}`) ||
+               (allowedHost.startsWith('app.') && originHost === allowedHost.replace('app.', ''));
+      });
 
       if (isAllowed) {
         console.log(`✅ CORS: Allowing origin ${origin}`);
